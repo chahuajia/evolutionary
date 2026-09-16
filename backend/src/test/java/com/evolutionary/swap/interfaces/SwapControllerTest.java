@@ -38,6 +38,17 @@ class SwapControllerTest {
     }
 
     @Test
+    @DisplayName("缺 incomingBatteryId → 400（parse 边界）")
+    void badRequestWhenMissingIncoming() throws Exception {
+        mockMvc.perform(
+                        post("/stations/S1/swaps")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("incomingBatteryId required"));
+    }
+
+    @Test
     @DisplayName("POST 换电 → 200 + 会话字段")
     void swapOk() throws Exception {
         mockMvc.perform(

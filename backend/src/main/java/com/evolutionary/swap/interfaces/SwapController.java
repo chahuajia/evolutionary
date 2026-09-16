@@ -1,6 +1,5 @@
 package com.evolutionary.swap.interfaces;
 
-import com.evolutionary.battery.domain.Battery;
 import com.evolutionary.station.domain.Station;
 import com.evolutionary.station.domain.Station.NoAvailableBatteryException;
 import com.evolutionary.swap.application.PerformSwap;
@@ -58,12 +57,9 @@ public class SwapController {
     @PostMapping("/{stationId}/swaps")
     public SwapResponse swap(
             @PathVariable String stationId, @RequestBody SwapRequest body) {
-        if (body == null || body.incomingBatteryId() == null || body.incomingBatteryId().isBlank()) {
-            throw new IllegalArgumentException("incomingBatteryId required");
-        }
-        // 边界：外部只给 id；本轮简化为「用户持有一块 IN_USE 电池」
-        Battery incoming = Battery.create(body.incomingBatteryId()).swapOut();
-        SwapSession session = performSwap.execute(stationId, incoming);
+        IncomingSwapRequest parsed =
+                IncomingSwapRequest.parse(body == null ? null : body.incomingBatteryId());
+        SwapSession session = performSwap.execute(stationId, parsed.incomingBattery());
         return SwapResponse.from(session);
     }
 
