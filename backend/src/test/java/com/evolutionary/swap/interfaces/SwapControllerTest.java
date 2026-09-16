@@ -1,5 +1,6 @@
 package com.evolutionary.swap.interfaces;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -68,6 +69,16 @@ class SwapControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"incomingBatteryId\":\"B-in\"}"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET 站点 → 200 + 视图字段（第 8 轮）")
+    void getStation() throws Exception {
+        mockMvc.perform(get("/stations/S1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("S1"))
+                .andExpect(jsonPath("$.name").value("东门站"))
+                .andExpect(jsonPath("$.batteries[0].id").value("B-out"));
     }
 
     @Test

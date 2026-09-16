@@ -1,0 +1,19 @@
+package com.evolutionary.swap.interfaces;
+
+import com.evolutionary.battery.domain.Battery;
+import com.evolutionary.station.domain.Station;
+import com.evolutionary.swap.infrastructure.JpaStationRepository;
+import java.util.List;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/** 开发种子：前端打开即可打到 S1。仅内存 H2，重启即重置。 */
+@Configuration
+public class DevSeedConfig {
+
+    @Bean
+    ApplicationRunner seedStation(JpaStationRepository stations) {
+        return args -> stations.seed(Station.create("S1", "东门站", List.of(Battery.create("B-out"))));
+    }
+}

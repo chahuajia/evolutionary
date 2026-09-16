@@ -1,0 +1,57 @@
+.main {
+  max-width: 40rem;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.5;
+}
+
+.title {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.note {
+  color: #555;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.form input {
+  padding: 0.4rem 0.5rem;
+  font-size: 1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions button {
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+}
+
+.panel {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #ccc;
+}
+
+.error {
+  color: #b00020;
+  margin-top: 1rem;
+}
