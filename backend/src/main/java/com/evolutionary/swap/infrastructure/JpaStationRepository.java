@@ -37,6 +37,15 @@ public final class JpaStationRepository implements StationRepository {
         jpa.save(toRow(station));
     }
 
+    @Override
+    public List<Station> findAll() {
+        List<Station> result = new ArrayList<>();
+        for (StationJpaEntity row : jpa.findAll()) {
+            result.add(toDomain(row));
+        }
+        return result;
+    }
+
     public void seed(Station station) {
         save(station);
     }

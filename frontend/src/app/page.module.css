@@ -51,6 +51,41 @@
   border: 1px solid #ccc;
 }
 
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.panelHead h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.stationList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.stationPick,
+.stationPickActive {
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.25rem;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+
+.stationPickActive {
+  border-color: #333;
+  background: #eee;
+}
+
 .error {
   color: #b00020;
   margin-top: 1rem;

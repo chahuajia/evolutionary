@@ -33,6 +33,18 @@ public class SwapController {
         this.stations = stations;
     }
 
+    /** 多站概览：单次读，避免 UI N+1。见 specs/round-11.md */
+    @GetMapping
+    public List<StationSummaryView> list() {
+        return stations.findAll().stream()
+                .map(
+                        s ->
+                                new StationSummaryView(
+                                        s.id(), s.name(), s.canSwapOut(), s.batteries().size()))
+                .sorted(java.util.Comparator.comparing(StationSummaryView::id))
+                .toList();
+    }
+
     @GetMapping("/{stationId}")
     public StationView get(@PathVariable String stationId) {
         Station station = stations.get(stationId);
@@ -79,6 +91,9 @@ public class SwapController {
 
     /** 视图 DTO —— 不是领域对象的移植。 */
     public record StationView(String id, String name, List<BatteryView> batteries) {}
+
+    public record StationSummaryView(
+            String id, String name, boolean canSwapOut, int batteryCount) {}
 
     public record BatteryView(String id, String status) {}
 }

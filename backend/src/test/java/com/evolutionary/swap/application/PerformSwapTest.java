@@ -33,6 +33,11 @@ class PerformSwapTest {
         public void save(Station station) {
             store.put(station.id(), station);
         }
+
+        @Override
+        public List<Station> findAll() {
+            return List.copyOf(store.values());
+        }
     }
 
     @Test

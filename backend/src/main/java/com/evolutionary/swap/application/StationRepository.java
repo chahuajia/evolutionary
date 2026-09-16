@@ -13,4 +13,7 @@ public interface StationRepository {
     Station get(String stationId);
 
     void save(Station station);
+
+    /** 全量读（本轮多站概览；调用方负责映射为视图 DTO）。 */
+    java.util.List<Station> findAll();
 }

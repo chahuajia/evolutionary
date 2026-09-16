@@ -72,6 +72,19 @@ class SwapControllerTest {
     }
 
     @Test
+    @DisplayName("GET /stations → 多站概览（第 11 轮）")
+    void listStations() throws Exception {
+        stations.seed(Station.create("S2", "西门站", List.of(Battery.create("B2"))));
+        stations.seed(Station.create("S3", "南站"));
+
+        mockMvc.perform(get("/stations"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$[?(@.id=='S1')].canSwapOut").value(true))
+                .andExpect(jsonPath("$[?(@.id=='S3')].canSwapOut").value(false));
+    }
+
+    @Test
     @DisplayName("GET 站点 → 200 + 视图字段（第 8 轮）")
     void getStation() throws Exception {
         mockMvc.perform(get("/stations/S1"))

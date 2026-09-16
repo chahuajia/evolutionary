@@ -1,37 +1,79 @@
 "use client";
 
 /**
- * 界面状态：表单 + 上次响应。不是领域 Station / Battery 的移植。
- * 见项目 AGENTS.md 局部约定 #3；暴露点 F2。
+ * 界面状态：表单 + 列表 DTO + 上次响应。不是领域 Station 的移植。
+ * 第 11 轮：站列表单次 GET /stations，禁止 per-id N+1。
  */
 
-import { FormEvent, useCallback, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import styles from "./page.module.css";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "/api";
 
 type BatteryView = { id: string; status: string };
 type StationView = { id: string; name: string; batteries: BatteryView[] };
+type StationSummary = {
+  id: string;
+  name: string;
+  canSwapOut: boolean;
+  batteryCount: number;
+};
 type SwapResult = { stationId: string; outgoingId: string; incomingId: string };
 
 type UiState = {
   stationId: string;
   incomingBatteryId: string;
+  stationList: StationSummary[] | null;
   station: StationView | null;
   lastSwap: SwapResult | null;
   error: string | null;
   busy: boolean;
 };
 
+function triageFetchError(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e);
+  if (msg === "Failed to fetch" || msg.includes("NetworkError")) {
+    return "站列表拉取失败（W1）：请确认 Spring 已启动 :8080，且 Next rewrite /api 生效。";
+  }
+  return msg;
+}
+
 export default function Home() {
   const [ui, setUi] = useState<UiState>({
     stationId: "S1",
     incomingBatteryId: "B-user-1",
+    stationList: null,
     station: null,
     lastSwap: null,
     error: null,
     busy: false,
   });
+
+  const loadStationList = useCallback(async () => {
+    setUi((s) => ({ ...s, busy: true, error: null }));
+    try {
+      const res = await fetch(`${API_BASE}/stations`);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
+      setUi((s) => ({
+        ...s,
+        stationList: body as StationSummary[],
+        busy: false,
+      }));
+    } catch (e) {
+      setUi((s) => ({
+        ...s,
+        busy: false,
+        error: triageFetchError(e),
+      }));
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadStationList();
+  }, [loadStationList]);
 
   const loadStation = useCallback(async () => {
     setUi((s) => ({ ...s, busy: true, error: null }));
@@ -46,7 +88,7 @@ export default function Home() {
       setUi((s) => ({
         ...s,
         busy: false,
-        error: e instanceof Error ? e.message : String(e),
+        error: triageFetchError(e),
       }));
     }
   }, [ui.stationId]);
@@ -69,7 +111,6 @@ export default function Home() {
       }
       const swap = body as SwapResult;
       setUi((s) => ({ ...s, lastSwap: swap, busy: false }));
-      // 刷新视图状态（仍是 DTO，不是聚合）
       const stationRes = await fetch(
         `${API_BASE}/stations/${encodeURIComponent(ui.stationId)}`,
       );
@@ -77,11 +118,12 @@ export default function Home() {
         const station = (await stationRes.json()) as StationView;
         setUi((s) => ({ ...s, station }));
       }
+      await loadStationList();
     } catch (err) {
       setUi((s) => ({
         ...s,
         busy: false,
-        error: err instanceof Error ? err.message : String(err),
+        error: triageFetchError(err),
       }));
     }
   }
@@ -90,8 +132,35 @@ export default function Home() {
     <main className={styles.main}>
       <h1 className={styles.title}>换电（压测 UI）</h1>
       <p className={styles.note}>
-        调用后端 REST；本页只持有表单与展示状态，不移植领域聚合。
+        站列表单次 REST 读取；详情/换电仍按站 ID。不移植领域聚合。
       </p>
+
+      <section className={styles.panel}>
+        <div className={styles.panelHead}>
+          <h2>站点概览</h2>
+          <button type="button" onClick={loadStationList} disabled={ui.busy}>
+            刷新列表
+          </button>
+        </div>
+        {ui.stationList && (
+          <ul className={styles.stationList}>
+            {ui.stationList.map((s) => (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  className={
+                    s.id === ui.stationId ? styles.stationPickActive : styles.stationPick
+                  }
+                  onClick={() => setUi((prev) => ({ ...prev, stationId: s.id }))}
+                >
+                  {s.name}（{s.id}）— {s.canSwapOut ? "可换出" : "不可换出"} · 电池{" "}
+                  {s.batteryCount}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <form className={styles.form} onSubmit={onSwap}>
         <label>

@@ -8,12 +8,16 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** 开发种子：前端打开即可打到 S1。仅内存 H2，重启即重置。 */
+/** 开发种子：3 站供多站概览压测。H2 内存，重启重置。 */
 @Configuration
 public class DevSeedConfig {
 
     @Bean
-    ApplicationRunner seedStation(JpaStationRepository stations) {
-        return args -> stations.seed(Station.create("S1", "东门站", List.of(Battery.create("B-out"))));
+    ApplicationRunner seedStations(JpaStationRepository stations) {
+        return args -> {
+            stations.seed(Station.create("S1", "东门站", List.of(Battery.create("B-out"))));
+            stations.seed(Station.create("S2", "西门站", List.of(Battery.create("B-west"))));
+            stations.seed(Station.create("S3", "南站", List.of()));
+        };
     }
 }
