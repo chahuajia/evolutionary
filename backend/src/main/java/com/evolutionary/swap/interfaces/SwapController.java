@@ -2,8 +2,9 @@ package com.evolutionary.swap.interfaces;
 
 import com.evolutionary.station.domain.Station;
 import com.evolutionary.station.domain.Station.NoAvailableBatteryException;
+import com.evolutionary.swap.application.GetStation;
+import com.evolutionary.swap.application.ListStations;
 import com.evolutionary.swap.application.PerformSwap;
-import com.evolutionary.swap.application.StationRepository;
 import com.evolutionary.swap.domain.SwapSession;
 import java.util.List;
 import java.util.Map;
@@ -19,34 +20,30 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * HTTP 适配器。边界负责把 JSON 解析成领域能吃的类型（parse-dont-validate）。
+ * 读写均经 application 用例 —— 见 specs/round-13.md。
  */
 @RestController
 @RequestMapping("/stations")
 public class SwapController {
 
     private final PerformSwap performSwap;
-    private final StationRepository stations;
+    private final ListStations listStations;
+    private final GetStation getStation;
 
-    public SwapController(PerformSwap performSwap, StationRepository stations) {
+    public SwapController(PerformSwap performSwap, ListStations listStations, GetStation getStation) {
         this.performSwap = performSwap;
-        this.stations = stations;
+        this.listStations = listStations;
+        this.getStation = getStation;
     }
 
-    /** 多站概览：单次读，避免 UI N+1。见 specs/round-11.md */
     @GetMapping
     public List<StationSummaryView> list() {
-        return stations.findAll().stream()
-                .map(
-                        s ->
-                                new StationSummaryView(
-                                        s.id(), s.name(), s.canSwapOut(), s.batteries().size()))
-                .sorted(java.util.Comparator.comparing(StationSummaryView::id))
-                .toList();
+        return listStations.execute().stream().map(SwapController::toSummary).toList();
     }
 
     @GetMapping("/{stationId}")
     public StationView get(@PathVariable String stationId) {
-        Station station = stations.get(stationId);
+        Station station = getStation.execute(stationId);
         List<BatteryView> batteries =
                 station.batteries().stream()
                         .map(b -> new BatteryView(b.id(), b.status().name()))
@@ -61,6 +58,11 @@ public class SwapController {
                 IncomingSwapRequest.parse(body == null ? null : body.incomingBatteryId());
         SwapSession session = performSwap.execute(stationId, parsed.incomingBattery());
         return SwapResponse.from(session);
+    }
+
+    private static StationSummaryView toSummary(Station station) {
+        return new StationSummaryView(
+                station.id(), station.name(), station.canSwapOut(), station.batteries().size());
     }
 
     @ExceptionHandler(NoAvailableBatteryException.class)
@@ -85,7 +87,6 @@ public class SwapController {
         }
     }
 
-    /** 视图 DTO —— 不是领域对象的移植。 */
     public record StationView(String id, String name, List<BatteryView> batteries) {}
 
     public record StationSummaryView(
