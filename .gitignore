@@ -1,0 +1,15 @@
+# IDE
+.idea/
+*.iml
+
+# Maven 编译产物（不进版本库）
+target/
+
+# 前端（第 1 轮还没建，先占位）
+node_modules/
+.next/
+
+# 编辑器 / 系统
+.vscode/
+Thumbs.db
+.DS_Store
