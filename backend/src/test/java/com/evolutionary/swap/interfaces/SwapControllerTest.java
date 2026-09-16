@@ -1,0 +1,89 @@
+package com.evolutionary.swap.interfaces;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.evolutionary.battery.domain.Battery;
+import com.evolutionary.station.domain.Station;
+import com.evolutionary.swap.application.StationRepository;
+import com.evolutionary.swap.infrastructure.JpaStationRepository;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class SwapControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private JpaStationRepository stations;
+
+    @Autowired
+    private StationRepository stationPort;
+
+    @BeforeEach
+    void seed() {
+        stations.seed(Station.create("S1", "东门站", List.of(Battery.create("B-out"))));
+    }
+
+    @Test
+    @DisplayName("POST 换电 → 200 + 会话字段")
+    void swapOk() throws Exception {
+        mockMvc.perform(
+                        post("/stations/S1/swaps")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"incomingBatteryId\":\"B-in\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stationId").value("S1"))
+                .andExpect(jsonPath("$.outgoingId").value("B-out"))
+                .andExpect(jsonPath("$.incomingId").value("B-in"));
+    }
+
+    @Test
+    @DisplayName("无可用电池 → 409")
+    void conflictWhenEmpty() throws Exception {
+        stations.seed(Station.create("S-empty", "空站"));
+        mockMvc.perform(
+                        post("/stations/S-empty/swaps")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"incomingBatteryId\":\"B-in\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("未知站 → 404")
+    void notFound() throws Exception {
+        mockMvc.perform(
+                        post("/stations/missing/swaps")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"incomingBatteryId\":\"B-in\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("换电后通过仓储再读：状态已持久化（J3）")
+    void persistsAcrossReads() throws Exception {
+        mockMvc.perform(
+                        post("/stations/S1/swaps")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"incomingBatteryId\":\"B-in\"}"))
+                .andExpect(status().isOk());
+
+        Station reloaded = stationPort.get("S1");
+        org.junit.jupiter.api.Assertions.assertEquals(1, reloaded.batteries().size());
+        org.junit.jupiter.api.Assertions.assertEquals("B-in", reloaded.batteries().get(0).id());
+        org.junit.jupiter.api.Assertions.assertEquals(
+                com.evolutionary.battery.domain.BatteryStatus.CHARGING,
+                reloaded.batteries().get(0).status());
+    }
+}
