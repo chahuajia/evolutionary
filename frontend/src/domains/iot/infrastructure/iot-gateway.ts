@@ -7,6 +7,10 @@
  *
  * 对接 BE ShadowView（telemetry POST）：
  * `{ batteryId, soc, voltageMilli, stale, lastSeenAt, … }`
+ *
+ * 对接 BE TriageOutdatedSoc（假设 View / Report 序列化）：
+ * `{ nextStep, orderedChecks, shadow: { batteryId, soc, voltageMilli, stale, lastSeenAt, … } }`
+ * 路径：POST /iot/batteries/{id}/triage-outdated-soc（与 detect-comm-lost 同风格）
  */
 
 import { fetchJson } from "@/shared/http/fetch-json";
@@ -130,4 +134,71 @@ function parseTelemetryResult(
       : String(raw.lastSeenAt);
 
   return { batteryId, soc, voltageMilli, stale, lastSeenAt };
+}
+
+/** TriageOutdatedSoc.NextStep（BE 枚举名） */
+export type TriageNextStep = "SHADOW_STALE" | "CHECK_ADAPTER" | string;
+
+/** 诊断报告中的影子摘要（对齐 ShadowView 常用字段） */
+export type TriageShadowSummary = {
+  batteryId: string;
+  soc: number;
+  voltageMilli: number;
+  stale: boolean;
+  lastSeenAt: string | null;
+};
+
+/**
+ * POST /iot/batteries/{id}/triage-outdated-soc 读模型
+ * 含 nextStep / orderedChecks / shadow（AC-61）
+ */
+export type TriageOutdatedSocResult = {
+  batteryId: string;
+  nextStep: TriageNextStep;
+  orderedChecks: string[];
+  shadow: TriageShadowSummary;
+};
+
+/**
+ * POST /iot/batteries/{batteryId}/triage-outdated-soc
+ * 错误经 fetchJson 已拼 suggestion。
+ */
+export async function postTriageOutdatedSoc(
+  batteryId: string = DEFAULT_IOT_BATTERY,
+): Promise<TriageOutdatedSocResult> {
+  const base = resolveIotApiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/iot/batteries/${encodeURIComponent(batteryId)}/triage-outdated-soc`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return parseTriageOutdatedSoc(raw, batteryId);
+}
+
+function parseTriageOutdatedSoc(
+  raw: Record<string, unknown>,
+  fallbackBatteryId: string,
+): TriageOutdatedSocResult {
+  const shadowRaw =
+    raw.shadow != null && typeof raw.shadow === "object"
+      ? (raw.shadow as Record<string, unknown>)
+      : raw;
+  const shadow = parseTelemetryResult(shadowRaw, fallbackBatteryId);
+  const nextStep = String(raw.nextStep ?? "");
+  const orderedChecks = Array.isArray(raw.orderedChecks)
+    ? raw.orderedChecks.map((c) => String(c))
+    : [];
+  const batteryId = String(
+    raw.batteryId ?? shadow.batteryId ?? fallbackBatteryId,
+  );
+
+  return {
+    batteryId,
+    nextStep,
+    orderedChecks,
+    shadow,
+  };
 }
