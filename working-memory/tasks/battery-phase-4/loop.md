@@ -1,7 +1,7 @@
 # 换电 phase-4 实现（L2）— 分润与结算
 
-**更新**：2026-09-17 13:25 ｜ **压力层**：**L2**｜ **状态**：✅ 切片1–3 收口 · **停 wake**
-**分支**：`phase/4-profit-sharing` ← **待人确认后**合回 `version/v0` 再删
+**更新**：2026-09-17 13:30 ｜ **压力层**：**L2**｜ **状态**：✅ 已合入 `version/v0` · **停 wake**
+**分支**：`version/v0`（`phase/4-profit-sharing` 已删）
 **语言**：中文（`profiles/heiniao.yaml`）
 
 ## 门禁
