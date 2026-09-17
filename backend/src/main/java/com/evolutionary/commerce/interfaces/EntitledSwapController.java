@@ -33,16 +33,23 @@ public class EntitledSwapController {
                         body.cabinetId(),
                         body.socBefore(),
                         body.socAfter());
-        DomainOutcome<UsageEvent> outcome =
-                parsed.isMetered()
-                        ? performEntitledSwap.execute(
-                                parsed.userId(),
-                                parsed.entitlementId(),
-                                parsed.cabinetId(),
-                                parsed.socBefore(),
-                                parsed.socAfter())
-                        : performEntitledSwap.execute(
-                                parsed.userId(), parsed.entitlementId(), parsed.cabinetId());
+        DomainOutcome<UsageEvent> outcome;
+        if (parsed.useDefaultSelect()) {
+            // AC-14：省略 entitlementId → 默认优先 FINITE（非计量路径）
+            outcome = performEntitledSwap.executeWithoutId(parsed.userId(), parsed.cabinetId());
+        } else if (parsed.isMetered()) {
+            outcome =
+                    performEntitledSwap.execute(
+                            parsed.userId(),
+                            parsed.entitlementId(),
+                            parsed.cabinetId(),
+                            parsed.socBefore(),
+                            parsed.socAfter());
+        } else {
+            outcome =
+                    performEntitledSwap.execute(
+                            parsed.userId(), parsed.entitlementId(), parsed.cabinetId());
+        }
         if (outcome instanceof DomainOutcome.Ok<UsageEvent> ok) {
             UsageEvent event = ok.value();
             Money charged = event.chargedAmount();

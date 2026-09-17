@@ -32,14 +32,14 @@ class EntitledSwapControllerTest {
     }
 
     @Test
-    @DisplayName("缺字段 → 400（边界 parse）")
+    @DisplayName("缺 userId → 400（边界 parse；entitlementId 可空走默认选卡）")
     void missingField400() throws Exception {
         mvc.perform(
                         post("/entitled-swaps")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content("{\"userId\":\"U1\",\"cabinetId\":\"CAB-1\"}"))
+                                .content("{\"entitlementId\":\"E-1\",\"cabinetId\":\"CAB-1\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("entitlementId required"));
+                .andExpect(jsonPath("$.error").value("userId required"));
     }
 
     @Test

@@ -51,10 +51,11 @@ cd frontend && npm run dev
 curl -s -X POST http://localhost:8080/entitled-swaps \
   -H "Content-Type: application/json" \
   -d '{"userId":"U1","entitlementId":"E-1","cabinetId":"CAB-1"}'
+# 省略 entitlementId → 默认选卡优先 E-FINITE（AC-14）
+# curl ... -d '{"userId":"U1","cabinetId":"CAB-1"}'
 ```
 
 ## 新接通（计量权益换电）
-
 ```bash
 # E-M1 PAY_AS_YOU_GO；soc 80→60 × 50¢ = 1000¢ → chargedAmountCents=1000
 curl -s -X POST http://localhost:8080/entitled-swaps \

@@ -76,9 +76,10 @@ public class CommerceConfig {
     }
 
     /**
-     * 正式种子：E-1 ACTIVE（非计量）+ BAT-1；计量独立面 P-M1 / E-M1 / BAT-M1 + ORG-1 SETTLEMENT。
+     * 正式种子：E-1 UNLIMITED + E-FINITE FINITE ACTIVE（U1）+ BAT-1；计量独立面 P-M1 / E-M1 /
+     * BAT-M1 + ORG-1 SETTLEMENT。
      *
-     * <p>用户余额 ACC-U1-BAL 由 CreditConfig 种子；计量结算走 ORG-1。
+     * <p>用户余额 ACC-U1-BAL 由 CreditConfig 种子；计量结算走 ORG-1。E-FINITE 供 AC-14 默认选卡。
      */
     @Bean
     ApplicationRunner seedEntitledSwap(
@@ -97,6 +98,17 @@ public class CommerceConfig {
                             now.minusSeconds(3600),
                             now.plusSeconds(86_400),
                             EntitlementStatus.ACTIVE));
+            // 切片12a / AC-14：FINITE 与 E-1 并存，默认选卡优先次卡
+            entitlements.save(
+                    Entitlement.rehydrate(
+                            "E-FINITE",
+                            "O-FINITE",
+                            "U1",
+                            "P-FINITE",
+                            now.minusSeconds(3600),
+                            now.plusSeconds(86_400),
+                            EntitlementStatus.ACTIVE,
+                            5));
             batteries.save(BatteryAsset.createIdle("BAT-1", "ORG-1", "vendor", "model"));
 
             InMemoryProductRepository productStore = (InMemoryProductRepository) products;
