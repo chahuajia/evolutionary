@@ -1,8 +1,8 @@
 # evo-collab-extreme（双轴极端）
 
-**更新**：2026-09-17 23:30  
-**主轴**：L2 · extreme **v6 交付凭证**  
-**期望 HEAD**：`c2f0096`（切片9a）+ 既有 8a/8b/9b  
+**更新**：2026-09-17 23:55  
+**主轴**：L2 · extreme **v7 收口≠停派**  
+**期望 HEAD**：切片10 mall∥11 IoT 遥测（四路）  
 **idle**：0 / 3  
 **分支**：`topic/fe-ddd-rsc`
 
@@ -10,21 +10,21 @@
 
 `AGENT_LOOP_WAKE_evo-collab-extreme`
 
-## v6 本 tick
+## v7 本 tick
 
-- 根因：派工幻觉 / 未提交 WIP / docs 通胀 → 已补门禁并落地 9a  
-- 父：收口验绿 + commit；不声称「还在集群中」
+- 违规：上波 8–9 ✅ 后父单会话「收口/答问」未派下一波 → 补 v7 门禁并立刻全派  
+- 并行：`mall/**` ∥ `iot/**`（路径写锁）  
+- 父：60s 查 transcript 工具调用；无则接管  
 
 ## 切片
 
 | 步 | 轴 | 范围 | 状态 |
 | :-- | :--- | :--- | :--- |
-| 0–6 | — | 至还款 | ✅ |
-| 7 | L2 | 计量换电 HTTP+FE | ✅ |
-| 8a | L2 IoT BE | COMM_LOST HTTP | ✅ `08a6445` |
-| 8b | L2 IoT FE | IoT 诊断岛 | ✅ `86c2bf2` |
-| 9a | L2 信用购 BE | PurchaseWithCredit HTTP | ✅ `c2f0096` |
-| 9b | L2 信用购 FE | 信用购岛 | ✅ `a2e38b8` |
+| 0–9 | — | 至信用购/IoT COMM_LOST | ✅ |
+| 10a | L2 商城 BE | ClaimCouponFromCampaign HTTP | 🔄 |
+| 10b | L2 商城 FE | 领券客户端岛 | 🔄 |
+| 11a | L2 IoT BE | ApplyTelemetryToShadow HTTP | 🔄 |
+| 11b | L2 IoT FE | 遥测入影岛 | 🔄 |
 
 ## 停止
 
