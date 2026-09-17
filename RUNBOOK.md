@@ -36,7 +36,7 @@ cd frontend && npm run dev
 
 ## 尚未接通（非正式完整场景）
 
-- 信用购 / 还款 HTTP
+- 信用购 HTTP
 - 计量权益换电 / 默认选卡 HTTP
 - IoT 遥测入影 / 影子查询 / COMM_LOST 的 HTTP 与 UI
 - 登录与多用户
@@ -56,6 +56,15 @@ curl -s -X POST http://localhost:8080/entitled-swaps \
 curl -s -X POST http://localhost:8080/credit/profiles/U1/mark-overdue \
   -H "Content-Type: application/json" \
   -d '{"statementId":"STMT-2026-02"}'
+```
+
+## 新接通（还款解冻）
+
+```bash
+# 全额还 STMT-2026-02（需先 mark-overdue）；随后 POST /entitled-swaps → 200 COMPLETED
+curl -s -X POST http://localhost:8080/credit/profiles/U1/repay \
+  -H "Content-Type: application/json" \
+  -d '{"statementId":"STMT-2026-02","amountCents":3000}'
 ```
 
 ## 正式验收（两枪）

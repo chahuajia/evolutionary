@@ -39,4 +39,12 @@ public final class InMemoryEntitlementRepository implements EntitlementRepositor
                 .filter(e -> e.status() == EntitlementStatus.ACTIVE)
                 .toList();
     }
+
+    @Override
+    public List<Entitlement> findByUserIdAndStatus(String userId, EntitlementStatus status) {
+        return byId.values().stream()
+                .filter(e -> e.userId().equals(userId))
+                .filter(e -> e.status() == status)
+                .toList();
+    }
 }

@@ -1,8 +1,10 @@
 package com.evolutionary.credit.interfaces;
 
+import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.application.CreditProfileRepository;
 import com.evolutionary.credit.application.MarkCreditOverdue;
+import com.evolutionary.credit.application.RepayBillingStatement;
 import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditProfile;
@@ -19,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 信用 HTTP（只读档案/账单 + 逾期冻权益）。
+ * 信用 HTTP（档案/账单 + 逾期冻权益 + 还款解冻）。
  *
  * <p>JSON 字段对齐 phase-6 IDL / 前端 types（status 小写 good|overdue|frozen）。
  */
@@ -33,14 +35,17 @@ public class CreditController {
     private final CreditProfileRepository profiles;
     private final BillingStatementRepository statements;
     private final MarkCreditOverdue markCreditOverdue;
+    private final RepayBillingStatement repayBillingStatement;
 
     public CreditController(
             CreditProfileRepository profiles,
             BillingStatementRepository statements,
-            MarkCreditOverdue markCreditOverdue) {
+            MarkCreditOverdue markCreditOverdue,
+            RepayBillingStatement repayBillingStatement) {
         this.profiles = profiles;
         this.statements = statements;
         this.markCreditOverdue = markCreditOverdue;
+        this.repayBillingStatement = repayBillingStatement;
     }
 
     @GetMapping("/profiles/{userId}")
@@ -78,6 +83,25 @@ public class CreditController {
         return ResponseEntity.status(translated.status()).body(translated.body());
     }
 
+    @PostMapping("/profiles/{userId}/repay")
+    public ResponseEntity<?> repay(@PathVariable String userId, @RequestBody RepayRequest body) {
+        if (body == null || body.statementId() == null || body.statementId().isBlank()) {
+            throw new IllegalArgumentException("statementId required");
+        }
+        if (body.amountCents() == null || body.amountCents() <= 0) {
+            throw new IllegalArgumentException("amountCents required");
+        }
+        CreditOutcome<BillingStatement> outcome =
+                repayBillingStatement.execute(
+                        userId, body.statementId().trim(), Money.cny(body.amountCents()));
+        if (outcome instanceof CreditOutcome.Ok<BillingStatement> ok) {
+            return ResponseEntity.ok(toStatement(ok.value()));
+        }
+        CreditOutcome.Err<BillingStatement> err = (CreditOutcome.Err<BillingStatement>) outcome;
+        CreditApiErrorTranslator.Translated translated = CreditApiErrorTranslator.translate(err);
+        return ResponseEntity.status(translated.status()).body(translated.body());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<CreditApiErrorTranslator.ApiError> handleBadRequest(
             IllegalArgumentException ex) {
@@ -110,6 +134,8 @@ public class CreditController {
     }
 
     public record MarkOverdueRequest(String statementId) {}
+
+    public record RepayRequest(String statementId, Long amountCents) {}
 
     public record CreditProfileView(
             String userId,

@@ -1,14 +1,18 @@
 package com.evolutionary.commerce.interfaces;
 
+import com.evolutionary.commerce.application.AccountRepository;
 import com.evolutionary.commerce.application.BatteryAssetRepository;
 import com.evolutionary.commerce.application.EntitlementRepository;
+import com.evolutionary.commerce.application.LedgerRepository;
 import com.evolutionary.commerce.application.PerformEntitledSwap;
 import com.evolutionary.commerce.application.UsageEventRepository;
 import com.evolutionary.commerce.domain.BatteryAsset;
 import com.evolutionary.commerce.domain.Entitlement;
 import com.evolutionary.commerce.domain.EntitlementStatus;
+import com.evolutionary.commerce.infrastructure.InMemoryAccountRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryBatteryAssetRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryEntitlementRepository;
+import com.evolutionary.commerce.infrastructure.InMemoryLedgerRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryUsageEventRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -22,6 +26,16 @@ public class CommerceConfig {
     @Bean
     EntitlementRepository entitlementRepository() {
         return new InMemoryEntitlementRepository();
+    }
+
+    @Bean
+    AccountRepository accountRepository() {
+        return new InMemoryAccountRepository();
+    }
+
+    @Bean
+    LedgerRepository ledgerRepository() {
+        return new InMemoryLedgerRepository();
     }
 
     @Bean

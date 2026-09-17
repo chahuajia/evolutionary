@@ -34,6 +34,9 @@ public final class CreditApiErrorTranslator {
             case CREDIT_OVERDUE_BLOCKED -> "settle overdue credit before new purchases";
             case CREDIT_PROFILE_FROZEN -> "contact support or repay to unfreeze profile";
             case CREDIT_LIMIT_EXCEEDED -> "repay outstanding credit or request a higher limit";
+            case PARTIAL_REPAY_NOT_ALLOWED -> "repay the full statement totalDue in one payment";
+            case CREDIT_NOT_AVAILABLE -> "top up user balance to cover the statement totalDue";
+            case INSUFFICIENT_BALANCE -> "top up user balance before repay";
             default -> null;
         };
     }
