@@ -65,33 +65,39 @@ phase/p{N}-fix-{slug}        # 例：phase/p4-fix-batch-reversal
 更细粒度优先落在：
 
 1. **phase 内顺序 commit**（切片1→2→3）+ `loop.md` 状态表  
-2. **并行冲突时**才临时加：`phase/p{N}-wip-{slug}`（从 phase 叉出 → 合回 **phase** → 再合 version）  
-3. 已合入后的修补：已有 `phase/p{N}-fix-{slug}`
+2. **同 phase 前后端/多 agent 并行**：`wip/p{N}-be-{slug}` · `wip/p{N}-fe-{slug}` → 合回 **phase** → 再合 version  
+3. **已合入模块上并行增量**：`topic/{module}-{slug}` 从 `version/v*` 开（不新占 phase 号）  
+4. 已合入后的修补：`phase/p{N}-fix-{slug}`
 
-**不要**为「功能注入 / 热插拔能力」单独开常驻分支族——那是领域设计（模块边界），用 phase 规格与包路径表达即可。
+合入 version 后 phase 指针：**删除**（默认）或改名 `archive/p{N}-{slug}`（若需本地扫档）；历史以 merge commit 为准。
 
-反面：三层常驻（version / phase / feat）→ agent 对齐成本上升，合入路径变长，易半成品滞留。
+**不要**为「功能注入」单独开常驻分支族——那是领域/包边界。
+
+反面：三层常驻长期滞留 → agent 对齐成本上升。
 
 ## 4. 版本 × 阶段流程
 
 ```text
 main（可选镜像）
   └── version/v0
-        ├── phase/p4-profit-sharing   （短命）
-        └── phase/p5-mall
+        ├── phase/p6-credit
+        │     ├── wip/p6-be-overdue
+        │     └── wip/p6-fe-credit-ui
+        └── topic/mall-coupon-ui
 ```
 
 1. 从 `version/v*` 检出 `phase/p{N}-{slug}`
-2. 阶段验收绿 + W4 → **merge 回 version** → **删除** phase 分支
+2. 阶段验收绿 + W4 → **merge 回 version** → **删除**（或 archive）phase 分支
 3. 事后修：`phase/p{N}-fix-{slug}` → 再合回 version
-4. Agent 只在当前 phase 分支 commit；不 push 除非人要求
+4. Agent 只在当前 phase/wip/topic 分支 commit；不 push 除非人要求
+5. **前后端默认可并行**：同 phase 上 BE∥FE 双集群，契约冲突面用 wip 隔离
 
 ### 当前线
 
 | 分支 | 状态 |
 | :--- | :--- |
 | `version/v0` | 稳定线（含已合入阶段） |
-| `phase/p5-mall` | 合入后删除 |
+| `phase/p6-credit` | 合入后删除 |
 
 ## 5. 与 User Profile
 

@@ -1,15 +1,8 @@
 # 换电 phase-6 实现（L2）— 信用与先用后付
 
-**更新**：2026-09-17 14:35 ｜ **压力层**：**L2**｜ **状态**：✅ 切片全绿 · **停 wake** · 待合入
-**分支**：`phase/p6-credit` ← 合回 `version/v0` 后删除
+**更新**：2026-09-17 14:40 ｜ **压力层**：**L2**｜ **状态**：✅ 已合入 `version/v0` · **停 wake**
+**分支**：`version/v0`（`phase/p6-credit` 已删）
 **语言**：中文（`profiles/heiniao.yaml`）
-
-## 门禁
-
-1. 只在本 phase 分支 commit；不 push
-2. 读 `phase-6-spec.md` + `phase-6-acceptance.md`；IDL 仅对照
-3. 实现落 `com.evolutionary.credit`（独立子域，不并入 PaymentIntent）
-4. 仅换电 Order；不碰 MallOrder 信用
 
 ## 句柄
 
@@ -25,4 +18,4 @@
 
 ## 停止
 
-切片全绿 → **停 wake** → 等人确认合入 `version/v0`
+已合入 `version/v0` → 删 phase 分支 → W4
