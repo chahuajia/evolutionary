@@ -8,6 +8,7 @@ import {
   fetchStationSummaries,
   type StationSummary,
 } from "@/domains/swap/infrastructure/station-gateway";
+import { DefaultSelectPanel } from "./default-select-panel";
 import { EntitledSwapPanel } from "./entitled-swap-panel";
 import { MeteredSwapPanel } from "./metered-swap-panel";
 import { SwapPanel } from "./swap-panel";
@@ -47,6 +48,7 @@ export default async function Home() {
       />
 
       <EntitledSwapPanel />
+      <DefaultSelectPanel />
       <MeteredSwapPanel />
     </main>
   );

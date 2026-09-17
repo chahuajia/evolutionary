@@ -8,7 +8,8 @@ const TIMEOUT_MS = 8000;
 
 export type EntitledSwapRequest = {
   userId: string;
-  entitlementId: string;
+  /** 省略则 BE 默认选卡（AC-14） */
+  entitlementId?: string;
   cabinetId: string;
   /** 计量权益换电：换前 SOC（可选） */
   socBefore?: number;
@@ -37,10 +38,20 @@ export async function postEntitledSwap(
   body: EntitledSwapRequest,
 ): Promise<EntitledSwapResult> {
   const base = resolveApiBase();
+  const payload: Record<string, unknown> = {
+    userId: body.userId,
+    cabinetId: body.cabinetId,
+  };
+  if (body.entitlementId != null && body.entitlementId.trim() !== "") {
+    payload.entitlementId = body.entitlementId.trim();
+  }
+  if (body.socBefore != null) payload.socBefore = body.socBefore;
+  if (body.socAfter != null) payload.socAfter = body.socAfter;
+
   return fetchJson<EntitledSwapResult>(`${base}/entitled-swaps`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify(payload),
     timeoutMs: TIMEOUT_MS,
   });
 }
