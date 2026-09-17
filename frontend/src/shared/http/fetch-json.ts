@@ -25,13 +25,21 @@ export async function fetchJson<T = unknown>(
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
+      const record =
+        typeof body === "object" && body != null
+          ? (body as Record<string, unknown>)
+          : null;
+      const errorCode =
+        record && typeof record.error === "string" ? record.error : null;
+      const suggestion =
+        record && typeof record.suggestion === "string"
+          ? record.suggestion
+          : null;
+      const base = errorCode ?? `HTTP ${res.status}`;
       const errMsg =
-        typeof body === "object" &&
-        body != null &&
-        "error" in body &&
-        typeof (body as { error: unknown }).error === "string"
-          ? (body as { error: string }).error
-          : `HTTP ${res.status}`;
+        suggestion != null && suggestion.length > 0
+          ? `${base}: ${suggestion}`
+          : base;
       throw new Error(errMsg);
     }
     return body as T;
