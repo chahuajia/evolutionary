@@ -3,6 +3,8 @@
 | 日期 | 决策 | 理由 | 状态 |
 | :--- | :--- | :--- | :--- |
 | 2026-09-17 | **Monorepo 不拆仓**；全局工作区 = 本仓根。拆 FE/BE 仓的门槛：独立发布/权限/团队 | 当前一人+agent，拆仓增加契约同步成本 | 生效中 |
+| 2026-09-17 | 并行 agent 工作区 = **路径约定 + `working-memory/agents/{fe,be}/` + `wip/` 分支**；不为此拆 git 远程 | 集群已用、目录沙箱未建 → 复盘补齐 | 待实施 |
+| 2026-09-17 | collaboration 账本分层：`evolution-log`/`interceptions` 主表只留跨项目摘要；项目证据留本仓 WM | 防项目日志淹没 KB | 待 W5 |
 | 2026-09-17 | 分支命名 = **id + slug**：`version/v{MAJOR}`；`phase/p{N}-{slug}`（N 对齐规格 phase-N） | 可脚本对齐 + 人可读；见 `git-branching.md` | 生效中 |
 | 2026-09-17 | **不默认第三层常驻分支**；切片用 commit/WM；并行用 `wip/pN-*` 与 `topic/*` | 两层够用；合入后删或 archive phase | 生效中 |
 | 2026-09-17 | 用户偏好进 collaboration `profiles/heiniao.yaml`（S11） | 中文 commit/注释、H2 开头回复跨仓生效 | 生效中 |
