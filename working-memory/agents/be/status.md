@@ -1,23 +1,22 @@
 # BE agent status（S36）
 
 **分支**：`topic/fe-ddd-rsc`  
-**日期**：2026-09-18 · evo-collab-extreme 切片10a · 商城领券 HTTP  
-**HEAD**：`f207055`
+**日期**：2026-09-18 · evo-collab-extreme 切片11a · IoT 遥测入影 HTTP  
+**HEAD**：`cee4189`（feat `6f188bb`/`7ffac90`）
 
 ## 完成
 
-- `InMemoryCampaignRepository` / `InMemoryCouponTemplateRepository` / `InMemoryUserCouponRepository`
-- `MallConfig`：beans + 种子 CAMP-OK / CAMP-EMPTY + T-C1（预算 5000¢ / 0）
-- `POST /mall/campaigns/{campaignId}/claims`：body `{userId,templateId}` → 200（id/userId/templateId/status）；预算耗尽 → 409 `CAMPAIGN_BUDGET_EXHAUSTED`
-- `MallApiErrorTranslator`：S34 按码映射，不嗅探 message
-- `ClaimCouponHttpIT`：200 + 409
-- RUNBOOK：商城领券 curl 段
-- 未改 frontend / iot / credit / commerce entitled-swaps
+- `InMemoryTelemetryStore` + `@Bean TelemetryStore` / `ApplyTelemetryToShadow`（IotConfig）
+- `POST /iot/batteries/{batteryId}/telemetry`：body `{vendorId,soc,voltageMilli}` → 200 影子摘要；未知电池 → 404
+- `reportedAt` 由服务端 `Instant.now()` 填充
+- `TelemetryHttpIT`：入影后 GET shadow soc=75 stale=false + 404
+- RUNBOOK：遥测入影 curl 段（已在 HEAD）
+- 未改 frontend / mall / credit
 
 ## Tests run
 
 ```text
-mvn -B "-Dtest=ClaimCouponHttpIT,ClaimCouponFromCampaignTest" test
+mvn -B "-Dtest=TelemetryHttpIT,CommLostHttpIT" test
 Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
 ```
 
@@ -28,4 +27,3 @@ Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
 ## 备注
 
 - 未改 frontend；未 merge `version/v0`；未 push
-- FE 10b 可对接同路径 `/mall/campaigns/{campaignId}/claims`
