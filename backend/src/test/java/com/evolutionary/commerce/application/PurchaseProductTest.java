@@ -234,6 +234,14 @@ class PurchaseProductTest {
         public Optional<Entitlement> findByOrderId(String orderId) {
             return saved.stream().filter(e -> e.orderId().equals(orderId)).findFirst();
         }
+
+        @Override
+        public List<Entitlement> findActiveByUser(String userId) {
+            return saved.stream()
+                    .filter(e -> e.userId().equals(userId))
+                    .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                    .toList();
+        }
     }
 
     private static final class InMemoryLedger implements LedgerRepository {

@@ -7,6 +7,7 @@ import com.evolutionary.commerce.domain.Entitlement;
 import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.UsageEvent;
 import java.time.Clock;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -14,6 +15,7 @@ import java.util.UUID;
  * 权益换电（phase-0）：一次调用完成 STARTED→COMPLETED，电池 idle→rented→idle。
  *
  * <p>顺带完成切片 2 过期校验；INV-3 在分配前检查同电池是否已有 STARTED。
+ * phase-1：无 entitlementId 时走 {@link SelectEntitlement} 默认策略（AC-14）。
  */
 public final class PerformEntitledSwap {
 
@@ -51,6 +53,22 @@ public final class PerformEntitledSwap {
             return DomainOutcome.err(DomainErrorCode.BATTERY_NOT_AVAILABLE, "no idle battery");
         }
         return runSwap(userId, entitlementId, cabinetId, idle, now);
+    }
+
+    /** 无显式 entitlementId：默认优先 FINITE，否则 UNLIMITED（AC-14）。 */
+    public DomainOutcome<UsageEvent> executeWithoutId(String userId, String cabinetId) {
+        Objects.requireNonNull(userId, "userId");
+        Objects.requireNonNull(cabinetId, "cabinetId");
+
+        var now = clock.instant();
+        List<Entitlement> active = entitlements.findActiveByUser(userId);
+        return SelectEntitlement.selectDefault(active, now)
+                .map(selected -> execute(userId, selected.id(), cabinetId))
+                .orElseGet(
+                        () ->
+                                DomainOutcome.err(
+                                        DomainErrorCode.ENTITLEMENT_INACTIVE,
+                                        "no usable entitlement"));
     }
 
     /** 柜机已选定电池时的入口。 */

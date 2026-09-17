@@ -133,6 +133,14 @@ class FiniteSwapEntitlementTest {
         public Optional<Entitlement> findByOrderId(String orderId) {
             return byId.values().stream().filter(e -> e.orderId().equals(orderId)).findFirst();
         }
+
+        @Override
+        public List<Entitlement> findActiveByUser(String userId) {
+            return byId.values().stream()
+                    .filter(e -> e.userId().equals(userId))
+                    .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                    .toList();
+        }
     }
 
     private static final class InMemoryBatteries implements BatteryAssetRepository {

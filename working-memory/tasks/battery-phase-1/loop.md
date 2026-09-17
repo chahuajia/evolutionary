@@ -1,6 +1,6 @@
 # 换电 phase-1 实现（L2）— 多 Product 规则
 
-**更新**：2026-09-17 12:15 ｜ **压力层**：**L2**｜ **状态**：🔄 切片 1 ✅ · 切片 2 集群中
+**更新**：2026-09-17 12:16 ｜ **压力层**：**L2**｜ **状态**：🔄 切片 1–2 ✅ · 切片 3 待
 
 ## 门禁（每 tick）
 
@@ -17,7 +17,7 @@
 | 步 | 范围 | 状态 |
 | :-- | :--- | :--- |
 | 1 | FINITE 次卡 remainingSwaps（INV-6/7 · AC-10/11/12） | ✅ `slice-1-report.md` |
-| 2 | 多 Entitlement 默认策略优先 FINITE（AC-14） | 🔄 集群并行 |
+| 2 | 多 Entitlement 默认策略优先 FINITE（AC-14） | ✅ `slice-2-report.md` |
 | 3 | METERED + PAY_AS_YOU_GO + METERED_CHARGE（INV-8 · AC-13） | 待 |
 
 ## 停止
