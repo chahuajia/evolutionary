@@ -3,9 +3,11 @@ package com.evolutionary.iot.interfaces;
 import com.evolutionary.iot.application.ApplyTelemetryToShadow;
 import com.evolutionary.iot.application.DetectCommLost;
 import com.evolutionary.iot.application.DeviceShadowRepository;
+import com.evolutionary.iot.application.TriageOutdatedSoc;
 import com.evolutionary.iot.domain.BatteryTelemetryReported;
 import com.evolutionary.iot.domain.DeviceShadow;
 import java.time.Instant;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * IoT HTTP：影子只读 + COMM_LOST 检测开单。
+ * IoT HTTP：影子只读 + COMM_LOST 检测开单 + 遥测入影 + SOC 过时诊断。
  *
  * <p>领域错误经 {@link IotApiErrorTranslator} 按码翻译（S34）；不嗅探 message。
  */
@@ -27,14 +29,17 @@ public class IotController {
     private final DeviceShadowRepository shadows;
     private final DetectCommLost detectCommLost;
     private final ApplyTelemetryToShadow applyTelemetryToShadow;
+    private final TriageOutdatedSoc triageOutdatedSoc;
 
     public IotController(
             DeviceShadowRepository shadows,
             DetectCommLost detectCommLost,
-            ApplyTelemetryToShadow applyTelemetryToShadow) {
+            ApplyTelemetryToShadow applyTelemetryToShadow,
+            TriageOutdatedSoc triageOutdatedSoc) {
         this.shadows = shadows;
         this.detectCommLost = detectCommLost;
         this.applyTelemetryToShadow = applyTelemetryToShadow;
+        this.triageOutdatedSoc = triageOutdatedSoc;
     }
 
     @GetMapping("/batteries/{batteryId}/shadow")
@@ -72,6 +77,16 @@ public class IotController {
         return ResponseEntity.ok(toDetectView(result));
     }
 
+    /** 切片13a / AC-61：SOC 过时诊断（先 shadow.stale，再适配器）。 */
+    @PostMapping("/batteries/{batteryId}/triage-outdated-soc")
+    public ResponseEntity<?> triageOutdatedSoc(@PathVariable String batteryId) {
+        if (shadows.findByBatteryId(batteryId).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        TriageOutdatedSoc.Report report = triageOutdatedSoc.execute(batteryId);
+        return ResponseEntity.ok(toTriageView(report));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<IotApiErrorTranslator.ApiError> handleBadRequest(
             IllegalArgumentException ex) {
@@ -91,6 +106,17 @@ public class IotController {
                 result.raised(),
                 alertType,
                 ticketId);
+    }
+
+    private static TriageView toTriageView(TriageOutdatedSoc.Report report) {
+        DeviceShadow s = report.shadow();
+        return new TriageView(
+                s.batteryId(),
+                report.nextStep().name(),
+                report.orderedChecks(),
+                s.soc(),
+                s.stale(),
+                s.lastSeenAt().toString());
     }
 
     private static ShadowView toShadow(DeviceShadow s) {
@@ -115,6 +141,14 @@ public class IotController {
             boolean raised,
             String alertType,
             String ticketId) {}
+
+    public record TriageView(
+            String batteryId,
+            String nextStep,
+            List<String> orderedChecks,
+            int soc,
+            boolean stale,
+            String lastSeenAt) {}
 
     public record ShadowView(
             String batteryId,

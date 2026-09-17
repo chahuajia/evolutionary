@@ -41,9 +41,13 @@ cd frontend && npm run dev
 
 ## 尚未接通（非正式完整场景）
 
-- 默认选卡 HTTP
-- IoT 遥测入影 UI（HTTP 已接通）
 - 登录与多用户
+
+## 已接通（wave12）
+
+- 默认选卡 HTTP / FE（省略 entitlementId → E-FINITE）
+- IoT 遥测入影 UI
+- IoT SOC 过时诊断 HTTP / FE（triage-outdated-soc）
 
 ## 新接通（权益换电）
 
@@ -109,6 +113,9 @@ curl -s -X POST http://localhost:8080/iot/batteries/BAT-IOT-1/telemetry \
 
 # 验证：GET shadow soc=75 stale=false
 curl -s http://localhost:8080/iot/batteries/BAT-IOT-1/shadow
+
+# SOC 过时诊断：先 shadow.stale → SHADOW_STALE；遥测刷新后 → CHECK_ADAPTER
+curl -s -X POST http://localhost:8080/iot/batteries/BAT-IOT-1/triage-outdated-soc
 ```
 
 ## 正式验收（两枪）

@@ -6,6 +6,7 @@ import com.evolutionary.iot.application.DetectCommLost;
 import com.evolutionary.iot.application.DeviceShadowRepository;
 import com.evolutionary.iot.application.MaintenanceTicketRepository;
 import com.evolutionary.iot.application.TelemetryStore;
+import com.evolutionary.iot.application.TriageOutdatedSoc;
 import com.evolutionary.iot.domain.DeviceShadow;
 import com.evolutionary.iot.infrastructure.InMemoryAlertStore;
 import com.evolutionary.iot.infrastructure.InMemoryDeviceShadowRepository;
@@ -52,6 +53,11 @@ public class IotConfig {
             AlertStore alerts,
             MaintenanceTicketRepository tickets) {
         return new DetectCommLost(shadows, alerts, tickets, Clock.systemUTC());
+    }
+
+    @Bean
+    TriageOutdatedSoc triageOutdatedSoc(DeviceShadowRepository shadows) {
+        return new TriageOutdatedSoc(shadows, Clock.systemUTC());
     }
 
     /**
