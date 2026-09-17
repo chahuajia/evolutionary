@@ -1,6 +1,6 @@
 # 换电 phase-3 实现（L2）— 多级运营商套餐继承
 
-**更新**：2026-09-17 12:45 ｜ **压力层**：**L2**｜ **状态**：🔄 切片1 ✅ · 切片2 集群中
+**更新**：2026-09-17 12:45 ｜ **压力层**：**L2**｜ **状态**：🔄 进行中
 **语言**：commit / 注释 / WM → **中文**
 **契约**：`contracts/*.ts` = 设计期 IDL；实现落 **Java**（见 `contracts/README.md`）
 
@@ -18,9 +18,9 @@
 
 | 步 | 范围 | 状态 |
 | :-- | :--- | :--- |
-| 1 | Organization + RoleBinding + canManage（禁 level 授权） | ✅ `slice-1-report.md` |
-| 2 | PackageTemplate 发布不可变 AC-24/25 | 🔄 集群并行 |
-| 3 | PackageOverride + EffectiveProduct AC-26+ | 待 |
+| 1 | Organization + RoleBinding + canManage（禁 level 授权）AC-24 前半 | ✅ |
+| 2 | PackageTemplate 发布不可变 AC-24/25 | ✅ |
+| 3 | PackageOverride + EffectiveProduct AC-26+ | **下一 tick** |
 
 ## 停止
 
