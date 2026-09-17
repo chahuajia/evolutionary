@@ -9,6 +9,7 @@ import {
   type StationSummary,
 } from "@/domains/swap/infrastructure/station-gateway";
 import { EntitledSwapPanel } from "./entitled-swap-panel";
+import { MeteredSwapPanel } from "./metered-swap-panel";
 import { SwapPanel } from "./swap-panel";
 import styles from "./page.module.css";
 
@@ -42,6 +43,7 @@ export default async function Home() {
       />
 
       <EntitledSwapPanel />
+      <MeteredSwapPanel />
     </main>
   );
 }

@@ -10,6 +10,10 @@ export type EntitledSwapRequest = {
   userId: string;
   entitlementId: string;
   cabinetId: string;
+  /** 计量权益换电：换前 SOC（可选） */
+  socBefore?: number;
+  /** 计量权益换电：换后 SOC（可选） */
+  socAfter?: number;
 };
 
 export type EntitledSwapResult = {
@@ -18,6 +22,8 @@ export type EntitledSwapResult = {
   batteryId: string;
   cabinetId: string;
   entitlementId: string;
+  /** 计量扣费（分）；非计量权益可能缺省 */
+  chargedAmountCents?: number;
 };
 
 function resolveApiBase(): string {
