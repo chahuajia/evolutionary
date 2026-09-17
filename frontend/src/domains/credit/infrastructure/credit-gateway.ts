@@ -93,6 +93,86 @@ export async function postCreditRepay(
   );
 }
 
+export type CreditPurchaseRequest = {
+  userId: string;
+  productId: string;
+};
+
+/** 信用购成功读模型 — 对齐 POST /credit/purchases 200（orderId/entitlementId/…） */
+export type CreditPurchaseResult = {
+  orderId: string;
+  entitlementId: string;
+  productId?: string;
+  userId?: string;
+  paidAmountCents?: number;
+  debtId?: string;
+};
+
+/** POST /credit/purchases — 错误经 fetchJson 已拼 suggestion */
+export async function postCreditPurchase(
+  req: CreditPurchaseRequest,
+): Promise<CreditPurchaseResult> {
+  const base = resolveCreditApiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/credit/purchases`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: req.userId,
+        productId: req.productId,
+      }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return parsePurchaseResult(raw);
+}
+
+function parsePurchaseResult(raw: Record<string, unknown>): CreditPurchaseResult {
+  const order =
+    raw.order != null && typeof raw.order === "object"
+      ? (raw.order as Record<string, unknown>)
+      : null;
+  const entitlement =
+    raw.entitlement != null && typeof raw.entitlement === "object"
+      ? (raw.entitlement as Record<string, unknown>)
+      : null;
+  const orderId = String(raw.orderId ?? order?.id ?? "");
+  const entitlementId = String(raw.entitlementId ?? entitlement?.id ?? "");
+  if (!orderId || !entitlementId) {
+    throw new Error("信用购响应缺少 orderId/entitlementId");
+  }
+  const paidRaw = raw.paidAmountCents ?? order?.paidAmountCents;
+  const debt =
+    raw.debt != null && typeof raw.debt === "object"
+      ? (raw.debt as Record<string, unknown>)
+      : null;
+  return {
+    orderId,
+    entitlementId,
+    productId:
+      raw.productId != null
+        ? String(raw.productId)
+        : order?.productId != null
+          ? String(order.productId)
+          : undefined,
+    userId:
+      raw.userId != null
+        ? String(raw.userId)
+        : order?.userId != null
+          ? String(order.userId)
+          : undefined,
+    paidAmountCents:
+      paidRaw != null && paidRaw !== "" ? Number(paidRaw) : undefined,
+    debtId:
+      raw.debtId != null
+        ? String(raw.debtId)
+        : debt?.id != null
+          ? String(debt.id)
+          : undefined,
+  };
+}
+
 function parseProfile(raw: Record<string, unknown>): CreditProfile {
   const status = String(raw.status ?? "");
   if (!isCreditStatus(status)) {
