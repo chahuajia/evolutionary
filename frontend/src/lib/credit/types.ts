@@ -1,6 +1,6 @@
 /**
  * 信用域前端类型 — 字段名对齐 phase-6 IDL（contracts/phase-6.ts）
- * 本任务仅 mock，不接 Spring。
+ * 数据经 `/api/credit/...` → Spring。
  */
 
 export type MoneyCents = number;
@@ -17,7 +17,7 @@ export type CreditStatus =
 
 export type ScoreTier = "A" | "B" | "C";
 
-/** 用户信用档案（只读壳） */
+/** 用户信用档案 */
 export interface CreditProfile {
   readonly userId: UserId;
   readonly creditLimit: MoneyCents;
@@ -36,7 +36,7 @@ export const StatementStatusValues = {
 export type StatementStatus =
   (typeof StatementStatusValues)[keyof typeof StatementStatusValues];
 
-/** 月度账单（只读壳） */
+/** 月度账单 */
 export interface BillingStatement {
   readonly id: StatementId;
   readonly userId: UserId;
@@ -65,4 +65,12 @@ export const STATEMENT_STATUS_LABEL: Record<StatementStatus, string> = {
 
 export function formatYuan(cents: MoneyCents): string {
   return (cents / 100).toFixed(2);
+}
+
+export function isCreditStatus(v: string): v is CreditStatus {
+  return v === "good" || v === "overdue" || v === "frozen";
+}
+
+export function isStatementStatus(v: string): v is StatementStatus {
+  return v === "OPEN" || v === "DUE" || v === "PAID" || v === "OVERDUE";
 }

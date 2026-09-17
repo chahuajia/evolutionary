@@ -134,7 +134,7 @@ export default function Home() {
       <h1 className={styles.title}>换电（压测 UI）</h1>
       <p className={styles.note}>
         站列表单次 REST 读取；详情/换电仍按站 ID。不移植领域聚合。{" "}
-        <a href="/credit">信用账单（mock）</a>
+        <a href="/credit">信用账单</a>
       </p>
 
       <section className={styles.panel}>
