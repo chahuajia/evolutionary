@@ -20,7 +20,7 @@
 | 步 | 范围 | 状态 |
 | :-- | :--- | :--- |
 | 1 | MERCHANT 入驻 + 禁发 PackageTemplate（AC-40） | ✅ `415addf` |
-| 2 | MallSku + MallOrder（INV-16，无 Entitlement）AC-41 | ✅ `c8680db` |
+| 2 | MallSku + MallOrder（INV-16，无 Entitlement）AC-41 | ✅ `5c46fb3` |
 | 3 | Coupon 核销互斥（AC-42+） | **本 tick** |
 
 ## 停止
