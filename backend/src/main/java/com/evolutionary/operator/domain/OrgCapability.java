@@ -1,6 +1,7 @@
 package com.evolutionary.operator.domain;
 
-/** 组织能力（对齐 IDL capabilities；phase-5 可扩 MERCHANT）。 */
+/** 组织能力（对齐 IDL capabilities）。 */
 public enum OrgCapability {
-    OPERATOR
+    OPERATOR,
+    MERCHANT
 }
