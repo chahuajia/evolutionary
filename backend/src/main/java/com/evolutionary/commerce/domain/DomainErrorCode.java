@@ -13,5 +13,7 @@ public enum DomainErrorCode {
     REFUND_BLOCKED_IN_PROGRESS_SWAP,
     ORDER_NOT_REFUNDABLE,
     /** 信用逾期冻结权益，换电拒绝（AC-52）。 */
-    CREDIT_OVERDUE_BLOCKED
+    CREDIT_OVERDUE_BLOCKED,
+    /** 影子过期，禁止按电量计费（INV-19 / AC-58）。 */
+    TELEMETRY_STALE
 }

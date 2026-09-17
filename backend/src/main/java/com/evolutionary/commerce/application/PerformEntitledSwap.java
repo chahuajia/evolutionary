@@ -33,6 +33,7 @@ public final class PerformEntitledSwap {
     private final AccountRepository accounts;
     private final LedgerRepository ledger;
     private final Clock clock;
+    private final TelemetryFreshnessPort telemetryFreshness;
 
     /** 非计量路径（phase-0 / FINITE）；METERED 请用全参构造。 */
     public PerformEntitledSwap(
@@ -40,7 +41,7 @@ public final class PerformEntitledSwap {
             BatteryAssetRepository batteries,
             UsageEventRepository usages,
             Clock clock) {
-        this(entitlements, batteries, usages, null, null, null, clock);
+        this(entitlements, batteries, usages, null, null, null, clock, null);
     }
 
     public PerformEntitledSwap(
@@ -51,6 +52,18 @@ public final class PerformEntitledSwap {
             AccountRepository accounts,
             LedgerRepository ledger,
             Clock clock) {
+        this(entitlements, batteries, usages, products, accounts, ledger, clock, null);
+    }
+
+    public PerformEntitledSwap(
+            EntitlementRepository entitlements,
+            BatteryAssetRepository batteries,
+            UsageEventRepository usages,
+            ProductRepository products,
+            AccountRepository accounts,
+            LedgerRepository ledger,
+            Clock clock,
+            TelemetryFreshnessPort telemetryFreshness) {
         this.entitlements = Objects.requireNonNull(entitlements, "entitlements");
         this.batteries = Objects.requireNonNull(batteries, "batteries");
         this.usages = Objects.requireNonNull(usages, "usages");
@@ -58,6 +71,7 @@ public final class PerformEntitledSwap {
         this.accounts = accounts;
         this.ledger = ledger;
         this.clock = Objects.requireNonNull(clock, "clock");
+        this.telemetryFreshness = telemetryFreshness;
     }
 
     public DomainOutcome<UsageEvent> execute(String userId, String entitlementId, String cabinetId) {
@@ -163,6 +177,13 @@ public final class PerformEntitledSwap {
         Money charge = null;
         Product meteredProduct = null;
         if (entitlement.isPayAsYouGo()) {
+            // INV-19 / AC-58：计量前校验影子新鲜度
+            if (telemetryFreshness != null) {
+                DomainOutcome<Void> fresh = telemetryFreshness.assertFresh(battery.id());
+                if (fresh instanceof DomainOutcome.Err<Void> err) {
+                    return DomainOutcome.err(err.code(), err.message());
+                }
+            }
             DomainOutcome<Money> priced = priceMetered(entitlement, meterReading, userId);
             if (priced instanceof DomainOutcome.Err<Money> err) {
                 return DomainOutcome.err(err.code(), err.message());

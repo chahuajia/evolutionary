@@ -1,6 +1,6 @@
 ﻿# Working Memory — evolutionary（换电平台）
 
-**更新**：2026-09-17 ｜ HEAD `a3b8089`
+**更新**：2026-09-17 ｜ HEAD `phase/p7-iot`（切片1–3 绿，待合入）
 
 ## 仓库归属
 
@@ -12,14 +12,11 @@
 
 | 任务 | 状态 | 文件 |
 | :--- | :--- | :--- |
-| **battery-phase-5 实现** | ✅ 已合入 `version/v0` · phase 分支已删 | `tasks/battery-phase-5/retro.md` |
-| **battery-phase-4 实现** | ✅ 已合入 `version/v0` · phase 分支已删 | `tasks/battery-phase-4/retro.md` |
-| **battery-phase-3 实现** | ✅ 切片 1–3 收口 · 停 wake | `tasks/battery-phase-3/retro.md` |
-| **battery-phase-2 实现** | ✅ 切片 1–3 收口 · 停 wake | `tasks/battery-phase-2/retro.md` |
-| **battery-phase-1 实现** | ✅ 切片 1–3 收口 · 停 wake | `tasks/battery-phase-1/retro.md` |
-| **battery-phase-0 实现** | ✅ 切片 1–4 收口 | `tasks/battery-phase-0/retro.md` |
+| **battery-phase-7 IoT** | ✅ 切片全绿 · **停 wake** · 待合入 `version/v0` | `tasks/battery-phase-7/loop.md` |
+| **battery-phase-6 信用** | ✅ 已合入 `version/v0` · phase 已删 | `tasks/battery-phase-6/retro.md` |
+| **battery-phase-5 商城** | ✅ 已合入 `version/v0` · phase 已删 | `tasks/battery-phase-5/retro.md` |
+| **battery-phase-4 实现** | ✅ 已合入 `version/v0` · phase 已删 | `tasks/battery-phase-4/retro.md` |
 | **battery-pressure** | ✅ 规格 0–7 收口 | `tasks/battery-pressure/retro.md` |
-| evolutionary KB 压测 | ✅ 4–15 轮 | `../specs/pressure-test-retro.md` |
 
 ## 知识库
 
@@ -27,4 +24,4 @@
 
 ## 陷阱
 
-AI 不 push
+AI 不 push · 合入 version 需人确认 · FE∥BE 用 `wip/pN-*`
