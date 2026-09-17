@@ -36,6 +36,8 @@ export default async function Home() {
         <Link href="/credit">信用账单</Link>
         {" · "}
         <Link href="/iot">IoT 诊断</Link>
+        {" · "}
+        <Link href="/mall">商城领券</Link>
       </p>
 
       <SwapPanel
