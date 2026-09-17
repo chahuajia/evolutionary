@@ -18,7 +18,8 @@
 ## 测量
 
 - collaboration HEAD：不变
-- interceptions：0（候选：Battery vs BatteryAsset 双模型边界，暂不入库）
+- interceptions：0
+- 候选（暂不入库）：① 旧 `Battery` vs `BatteryAsset` 双模型；② §4.2 步骤5–6 与 INV-4「COMPLETED⇒idle」口径冲突——实现取 INV-4；③ 跨聚合 INV 无专条
 - `mvn test`：绿
 
 ## 下一 tick
