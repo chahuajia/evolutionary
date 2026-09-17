@@ -2,7 +2,7 @@
 
 **分支**：`topic/fe-ddd-rsc`  
 **日期**：2026-09-17 · evo-collab-extreme 切片9a · 信用购 HTTP  
-**HEAD**：（本提交后见 git log）
+**HEAD**：`c2f0096`
 
 ## 完成
 
