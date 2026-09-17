@@ -15,3 +15,4 @@
 
 - collaboration：不变
 - interceptions：0
+- 探路备注：退款逆序暂无 KB 专条（known-gap 候选）；切片1已落地支付侧新名，探路「尚未改名」表述作废
