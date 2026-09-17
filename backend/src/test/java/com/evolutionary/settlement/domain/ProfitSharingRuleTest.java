@@ -45,6 +45,32 @@ class ProfitSharingRuleTest {
         assertEquals(ProfitSharingRule.PLATFORM_ORG_ID, shares.get(2).orgId());
         assertEquals(8_500, shares.get(2).amountCents());
     }
+
+    @Test
+    @DisplayName("推广补贴从 PLATFORM 扣")
+    void promoterBonusFromPlatform() {
+        ProfitSharingRule rule =
+                ProfitSharingRule.create(
+                        "R1",
+                        "ORG-L2",
+                        List.of(ProfitSplit.of("ORG-L2", 10), ProfitSplit.of("ORG-L1", 5)),
+                        2,
+                        T0,
+                        1);
+        List<ProfitSharingRule.AllocatedShare> shares =
+                rule.allocate(10_000, "ORG-L2", true);
+        assertEquals(8_300, shares.stream()
+                .filter(s -> ProfitSharingRule.PLATFORM_ORG_ID.equals(s.orgId()))
+                .findFirst()
+                .orElseThrow()
+                .amountCents());
+        long promoter =
+                shares.stream()
+                        .filter(s -> "ORG-L2".equals(s.orgId()))
+                        .mapToLong(ProfitSharingRule.AllocatedShare::amountCents)
+                        .sum();
+        assertEquals(1_200, promoter);
+    }
 }
 
 class ReferralBindingTest {
