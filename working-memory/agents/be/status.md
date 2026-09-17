@@ -1,14 +1,17 @@
 # BE agent status（S36）
 
 **分支**：`topic/fe-ddd-rsc`  
-**日期**：2026-09-17 · heartbeat slice-2 FormalLive 加固  
-**HEAD**：`85aa8df`
+**日期**：2026-09-17 · evo-collab-extreme 切片4 · POST /entitled-swaps  
+**HEAD**：待 commit 后回填
 
 ## 完成
 
-- 加固 `FormalLiveContractTest`：`/stations` 断言 length≥3 且含 S1/S2；保留 U1 credit 断言
-- RUNBOOK：注明 FormalLive 钉死 S1/S2/S3 + U1
-- 未改 frontend / collaboration
+- `commerce/infrastructure`：InMemory Entitlement / BatteryAsset / UsageEvent（非计量最小面）
+- `CommerceConfig`：仓储 + `PerformEntitledSwap(Clock.systemUTC())`；种子 E-1 ACTIVE（U1）+ BAT-1 idle
+- `EntitledSwapController`：`POST /entitled-swaps`；边界 parse→400；`DomainOutcome`→200 / 409|422（S34，`EntitledSwapApiErrorTranslator`）
+- `EntitledSwapControllerTest`：200 / 400 / 422 绿；`FormalLiveContractTest` 仍绿
+- RUNBOOK：权益换电 curl（U1 / E-1 / CAB-1）
+- 未改 frontend / collaboration（FE 岛由并行 agent 负责）
 
 ## 阻塞
 
@@ -16,4 +19,4 @@
 
 ## 备注
 
-- Slice-2 仅契约测试收紧；种子面未变（DevSeed S1/S2/S3 + CreditConfig U1）
+- 种子用户为 **U1**（对齐信用 FormalLive）；单元测 `PerformEntitledSwapTest` 仍用 U-1，互不影响
