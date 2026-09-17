@@ -127,6 +127,10 @@ public final class PerformEntitledSwap {
     }
 
     private DomainOutcome<Void> gateEntitlement(Entitlement entitlement, String userId, java.time.Instant now) {
+        if (entitlement.status() == EntitlementStatus.FROZEN) {
+            return DomainOutcome.err(
+                    DomainErrorCode.CREDIT_OVERDUE_BLOCKED, "credit overdue: entitlement frozen");
+        }
         if (entitlement.status() != EntitlementStatus.ACTIVE) {
             return DomainOutcome.err(DomainErrorCode.ENTITLEMENT_INACTIVE, "entitlement not active");
         }

@@ -130,7 +130,9 @@ public final class Entitlement {
         if (status == EntitlementStatus.REVOKED) {
             return this;
         }
-        if (status != EntitlementStatus.ACTIVE && status != EntitlementStatus.EXPIRED) {
+        if (status != EntitlementStatus.ACTIVE
+                && status != EntitlementStatus.EXPIRED
+                && status != EntitlementStatus.FROZEN) {
             throw new IllegalStateException("cannot revoke entitlement in status " + status);
         }
         return new Entitlement(
@@ -141,6 +143,43 @@ public final class Entitlement {
                 validFrom,
                 validUntil,
                 EntitlementStatus.REVOKED,
+                remainingSwaps,
+                meteringMode);
+    }
+
+    /** 信用逾期：ACTIVE → FROZEN（可恢复）。 */
+    public Entitlement freeze() {
+        if (status == EntitlementStatus.FROZEN) {
+            return this;
+        }
+        if (status != EntitlementStatus.ACTIVE) {
+            throw new IllegalStateException("cannot freeze entitlement in status " + status);
+        }
+        return new Entitlement(
+                id,
+                orderId,
+                userId,
+                productId,
+                validFrom,
+                validUntil,
+                EntitlementStatus.FROZEN,
+                remainingSwaps,
+                meteringMode);
+    }
+
+    /** 还款解冻：FROZEN → ACTIVE。 */
+    public Entitlement unfreeze() {
+        if (status != EntitlementStatus.FROZEN) {
+            throw new IllegalStateException("cannot unfreeze entitlement in status " + status);
+        }
+        return new Entitlement(
+                id,
+                orderId,
+                userId,
+                productId,
+                validFrom,
+                validUntil,
+                EntitlementStatus.ACTIVE,
                 remainingSwaps,
                 meteringMode);
     }

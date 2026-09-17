@@ -163,6 +163,26 @@ public final class LedgerEntry {
                 Objects.requireNonNull(createdAt, "createdAt"));
     }
 
+    /**
+     * 信用账单还款：借用户 BALANCE，贷清账过渡户；refId = BillingStatementId。
+     */
+    public static LedgerEntry creditStatementRepayment(
+            String id,
+            String userBalanceAccountId,
+            String clearingAccountId,
+            Money amount,
+            String statementId,
+            Instant createdAt) {
+        return new LedgerEntry(
+                requireId(id),
+                requireId(userBalanceAccountId),
+                requireId(clearingAccountId),
+                Objects.requireNonNull(amount, "amount"),
+                LedgerRefType.CREDIT_STATEMENT_REPAYMENT,
+                requireId(statementId),
+                Objects.requireNonNull(createdAt, "createdAt"));
+    }
+
     public String id() {
         return id;
     }
