@@ -1,24 +1,25 @@
-# FE agent status（extreme pressure · slice 10b）
+# FE agent status（extreme pressure · slice 11b）
 
 **分支**：`topic/fe-ddd-rsc`  
 **日期**：2026-09-18  
-**心跳**：slice 10b 商城领券 FE（extreme v7 · 加厚 · 交付凭证）  
-**HEAD（10b）**：`待 commit 后刷新`
+**心跳**：slice 11b IoT 遥测入影 FE（extreme v7 · 加厚 · 交付凭证）  
+**HEAD（11b）**：`050c033`
 
 ## 完成
 
-### Slice 10b（商城领券 · FE 加厚）
+### Slice 11b（IoT 遥测入影 FE · 加厚）
 
-- `domains/mall/infrastructure/mall-gateway.ts`：`postClaimCoupon` → `POST /mall/campaigns/{campaignId}/claims`；默认 `CAMP-OK` / `U1` / `T-C1`；解析 `id`/`status`；错误经 `fetchJson` suggestion
-- `app/mall/`：路由 `/mall` + `CouponClaimPanel` 客户端岛（展示券 id/status）
-- 首页链到 `/mall`
+- `domains/iot/infrastructure/iot-gateway.ts`：`postTelemetry` → `POST /iot/batteries/{id}/telemetry`；默认 `BAT-IOT-1` / `vendorA` / soc 75 / voltageMilli 4150；对齐 BE ShadowView 摘要 `{ batteryId, soc, voltageMilli, stale, lastSeenAt }`；错误经 `fetchJson` suggestion
+- `app/iot/telemetry-panel.tsx`：遥测入影客户端岛（展示 soc / stale）
+- `app/iot/page.tsx`：挂载 `TelemetryPanel`；保留 `CommLostPanel`
 - `npx tsc --noEmit` 通过
 - 未改 backend；未 push
 
 ### 前序切片摘要
 
-- Slice 8b：IoT COMM_LOST 诊断岛
-- Slice 9b：信用购客户端岛
+- Slice 10b：商城领券客户端岛
+- Slice 8b：COMM_LOST 检测岛
+- Slice 9b：信用购岛
 - Slice 7：计量权益换电岛
 - Slice 6：信用还款解冻岛
 - Slice 4–5：权益换电岛 + `fetchJson` suggestion
@@ -31,8 +32,12 @@
 ## 调用示例
 
 ```http
-POST /mall/campaigns/CAMP-OK/claims
+POST /iot/batteries/BAT-IOT-1/telemetry
 Content-Type: application/json
 
-{"userId":"U1","templateId":"T-C1"}
+{"vendorId":"vendorA","soc":75,"voltageMilli":4150}
+```
+
+```http
+POST /iot/batteries/BAT-IOT-1/detect-comm-lost
 ```
