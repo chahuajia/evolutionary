@@ -1,6 +1,6 @@
 # Working Memory — evolutionary（换电平台）
 
-**更新**：2026-09-17 ｜ HEAD `a4e9f4f`
+**更新**：2026-09-17 ｜ HEAD（切片3 后见 git log）
 
 ## 仓库归属
 
@@ -12,7 +12,7 @@
 
 | 任务 | 状态 | 文件 |
 | :--- | :--- | :--- |
-| **battery-phase-3 实现** | 🔄 切片1–2 ✅ · 切片3 待 | `tasks/battery-phase-3/loop.md` |
+| **battery-phase-3 实现** | ✅ 切片 1–3 收口 · 停 wake | `tasks/battery-phase-3/retro.md` |
 | **battery-phase-2 实现** | ✅ 切片 1–3 收口 · 停 wake | `tasks/battery-phase-2/retro.md` |
 | **battery-phase-1 实现** | ✅ 切片 1–3 收口 · 停 wake | `tasks/battery-phase-1/retro.md` |
 | **battery-phase-0 实现** | ✅ 切片 1–4 收口 | `tasks/battery-phase-0/retro.md` |

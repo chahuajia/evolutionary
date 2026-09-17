@@ -53,6 +53,18 @@ public final class OrgAuthorization {
         return false;
     }
 
+    /**
+     * descendantOrg 是否为 ancestorOrg 的严格后代（不含自身）。
+     *
+     * <p>用于 PackageOverride：orgId 必须是 template.ownerOrg 的后代。
+     */
+    public boolean isDescendant(String descendantOrgId, String ancestorOrgId) {
+        if (descendantOrgId.equals(ancestorOrgId)) {
+            return false;
+        }
+        return isSelfOrAncestor(ancestorOrgId, descendantOrgId);
+    }
+
     private Organization require(String orgId) {
         Organization org = byId.get(orgId);
         if (org == null) {
