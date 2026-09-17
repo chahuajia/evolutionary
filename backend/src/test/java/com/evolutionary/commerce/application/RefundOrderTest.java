@@ -17,6 +17,7 @@ import com.evolutionary.commerce.domain.LedgerRefType;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Order;
 import com.evolutionary.commerce.domain.OrderStatus;
+import com.evolutionary.commerce.domain.PaymentIntent;
 import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.domain.UsageEvent;
@@ -102,7 +103,7 @@ class RefundOrderTest {
         assertEquals(
                 1,
                 ledger.findAll().stream()
-                        .filter(e -> e.refType() == LedgerRefType.ORDER_REFUND)
+                        .filter(e -> e.refType() == LedgerRefType.ORDER_REFUND_BALANCE)
                         .count());
     }
 
@@ -191,6 +192,19 @@ class RefundOrderTest {
                                     a.ownerType() == AccountOwnerType.USER
                                             && a.ownerId().equals(userId)
                                             && a.type() == AccountType.BALANCE
+                                            && a.currency() == currency)
+                    .findFirst()
+                    .orElseThrow();
+        }
+
+        @Override
+        public Account findUserPoints(String userId, Currency currency) {
+            return byId.values().stream()
+                    .filter(
+                            a ->
+                                    a.ownerType() == AccountOwnerType.USER
+                                            && a.ownerId().equals(userId)
+                                            && a.type() == AccountType.POINTS
                                             && a.currency() == currency)
                     .findFirst()
                     .orElseThrow();
@@ -306,6 +320,11 @@ class RefundOrderTest {
         @Override
         public List<LedgerEntry> findAll() {
             return List.copyOf(entries);
+        }
+
+        @Override
+        public List<LedgerEntry> findByOrderId(String orderId) {
+            return entries.stream().filter(e -> e.refId().equals(orderId)).toList();
         }
     }
 }

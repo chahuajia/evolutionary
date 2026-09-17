@@ -264,6 +264,17 @@ class MeteredChargeSwapTest {
         }
 
         @Override
+        public Account findUserPoints(String userId, Currency currency) {
+            return byId.values().stream()
+                    .filter(a -> a.ownerType() == AccountOwnerType.USER)
+                    .filter(a -> a.ownerId().equals(userId))
+                    .filter(a -> a.type() == AccountType.POINTS)
+                    .filter(a -> a.currency() == currency)
+                    .findFirst()
+                    .orElseThrow();
+        }
+
+        @Override
         public Account findOrgSettlement(String orgId, Currency currency) {
             return byId.values().stream()
                     .filter(a -> a.ownerType() == AccountOwnerType.ORG)
@@ -291,6 +302,11 @@ class MeteredChargeSwapTest {
         @Override
         public List<LedgerEntry> findAll() {
             return List.copyOf(entries);
+        }
+
+        @Override
+        public List<LedgerEntry> findByOrderId(String orderId) {
+            return entries.stream().filter(e -> e.refId().equals(orderId)).toList();
         }
     }
 }

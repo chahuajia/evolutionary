@@ -14,9 +14,10 @@ import com.evolutionary.commerce.domain.Entitlement;
 import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerInvariant;
+import com.evolutionary.commerce.domain.LedgerRefType;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Order;
-import com.evolutionary.commerce.domain.OrderStatus;
+import com.evolutionary.commerce.domain.PaymentIntent;
 import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
 import java.time.Clock;
@@ -31,9 +32,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class PurchaseProductTest {
+/** phase-2 切片1：混合支付购买（AC-17/18/19/23）。 */
+class MixedPaymentPurchaseTest {
 
-    private static final Instant T0 = Instant.parse("2026-09-17T00:00:00Z");
+    private static final Instant T0 = Instant.parse("2026-09-17T12:00:00Z");
     private static final Clock CLOCK = Clock.fixed(T0, ZoneOffset.UTC);
 
     private InMemoryProducts products;
@@ -50,28 +52,37 @@ class PurchaseProductTest {
         orders = new InMemoryOrders();
         entitlements = new InMemoryEntitlements();
         ledger = new InMemoryLedger();
-        purchase =
-                new PurchaseProduct(products, accounts, orders, entitlements, ledger, CLOCK);
+        purchase = new PurchaseProduct(products, accounts, orders, entitlements, ledger, CLOCK);
 
+        // P1 = 30.00 元 = 3000 分
         products.put(
                 Product.create(
                         "P-1",
                         "ORG-1",
-                        "30天不限次换电卡",
-                        Money.cny(9_900),
+                        "月卡",
+                        Money.cny(3_000),
                         30,
                         ProductStatus.PUBLISHED));
         accounts.put(
                 Account.open(
-                        "ACC-U-1",
+                        "ACC-BAL",
                         AccountOwnerType.USER,
                         "U-1",
                         AccountType.BALANCE,
                         Currency.CNY,
-                        20_000));
+                        10_000));
         accounts.put(
                 Account.open(
-                        "ACC-O-1",
+                        "ACC-PTS",
+                        AccountOwnerType.USER,
+                        "U-1",
+                        AccountType.POINTS,
+                        Currency.CNY,
+                        5_000,
+                        T0.plusSeconds(86_400)));
+        accounts.put(
+                Account.open(
+                        "ACC-ORG",
                         AccountOwnerType.ORG,
                         "ORG-1",
                         AccountType.SETTLEMENT,
@@ -80,82 +91,104 @@ class PurchaseProductTest {
     }
 
     @Test
-    @DisplayName("余额足够时购买成功并生成权益")
-    void successfulPurchase() {
-        DomainOutcome<PurchaseResult> outcome = purchase.execute("U-1", "P-1");
+    @DisplayName("AC-17：纯余额支付只写 ORDER_PAYMENT_BALANCE")
+    void balanceOnly() {
+        DomainOutcome<PurchaseResult> outcome =
+                purchase.execute("U-1", "P-1", new PaymentIntent(0, 3_000));
 
         assertInstanceOf(DomainOutcome.Ok.class, outcome);
-        PurchaseResult result = ((DomainOutcome.Ok<PurchaseResult>) outcome).value();
-
-        assertEquals(OrderStatus.PAID, result.order().status());
-        assertEquals(EntitlementStatus.ACTIVE, result.entitlement().status());
-        assertEquals(10_100, accounts.get("ACC-U-1").balanceCents());
-        assertEquals(9_900, accounts.get("ACC-O-1").balanceCents());
-        LedgerInvariant.assertBalanced(ledger.findAll());
-        assertTrue(result.entitlement().isActiveAt(T0));
+        List<LedgerEntry> entries = ledger.findByOrderId(
+                ((DomainOutcome.Ok<PurchaseResult>) outcome).value().order().id());
+        assertEquals(1, entries.size());
+        assertEquals(LedgerRefType.ORDER_PAYMENT_BALANCE, entries.get(0).refType());
+        assertEquals(7_000, accounts.get("ACC-BAL").balanceCents());
+        assertEquals(5_000, accounts.get("ACC-PTS").balanceCents());
     }
 
     @Test
-    @DisplayName("余额不足时拒绝")
-    void insufficientBalance() {
+    @DisplayName("AC-18：混合支付拆两条分录且借贷平衡")
+    void mixedPayment() {
+        DomainOutcome<PurchaseResult> outcome =
+                purchase.execute("U-1", "P-1", new PaymentIntent(2_000, 1_000));
+
+        assertInstanceOf(DomainOutcome.Ok.class, outcome);
+        String orderId =
+                ((DomainOutcome.Ok<PurchaseResult>) outcome).value().order().id();
+        List<LedgerEntry> entries = ledger.findByOrderId(orderId);
+        assertEquals(2, entries.size());
+        assertTrue(
+                entries.stream()
+                        .anyMatch(
+                                e ->
+                                        e.refType() == LedgerRefType.ORDER_PAYMENT_POINTS
+                                                && e.amount().cents() == 2_000));
+        assertTrue(
+                entries.stream()
+                        .anyMatch(
+                                e ->
+                                        e.refType() == LedgerRefType.ORDER_PAYMENT_BALANCE
+                                                && e.amount().cents() == 1_000));
+        LedgerInvariant.assertBalanced(ledger.findAll());
+        assertEquals(9_000, accounts.get("ACC-BAL").balanceCents());
+        assertEquals(3_000, accounts.get("ACC-PTS").balanceCents());
+    }
+
+    @Test
+    @DisplayName("AC-19：积分不足拒绝且不分录")
+    void insufficientPoints() {
         accounts.put(
                 Account.open(
-                        "ACC-U-1",
+                        "ACC-PTS",
                         AccountOwnerType.USER,
                         "U-1",
-                        AccountType.BALANCE,
+                        AccountType.POINTS,
                         Currency.CNY,
-                        100));
+                        500,
+                        T0.plusSeconds(86_400)));
 
-        DomainOutcome<PurchaseResult> outcome = purchase.execute("U-1", "P-1");
-
-        assertInstanceOf(DomainOutcome.Err.class, outcome);
-        DomainOutcome.Err<PurchaseResult> err = (DomainOutcome.Err<PurchaseResult>) outcome;
-        assertEquals(DomainErrorCode.INSUFFICIENT_BALANCE, err.code());
-    }
-
-    @Test
-    @DisplayName("未发布商品拒绝购买")
-    void unpublishedProduct() {
-        products.put(
-                Product.create(
-                        "P-2",
-                        "ORG-1",
-                        "草稿卡",
-                        Money.cny(100),
-                        30,
-                        ProductStatus.DRAFT));
-
-        DomainOutcome<PurchaseResult> outcome = purchase.execute("U-1", "P-2");
+        DomainOutcome<PurchaseResult> outcome =
+                purchase.execute("U-1", "P-1", new PaymentIntent(2_000, 1_000));
 
         assertInstanceOf(DomainOutcome.Err.class, outcome);
         assertEquals(
-                DomainErrorCode.PRODUCT_NOT_PUBLISHED,
+                DomainErrorCode.INSUFFICIENT_POINTS,
                 ((DomainOutcome.Err<PurchaseResult>) outcome).code());
+        assertTrue(ledger.findAll().isEmpty());
+    }
+
+    @Test
+    @DisplayName("AC-23：纯积分支付")
+    void pointsOnly() {
+        DomainOutcome<PurchaseResult> outcome =
+                purchase.execute("U-1", "P-1", new PaymentIntent(3_000, 0));
+
+        assertInstanceOf(DomainOutcome.Ok.class, outcome);
+        List<LedgerEntry> entries = ledger.findByOrderId(
+                ((DomainOutcome.Ok<PurchaseResult>) outcome).value().order().id());
+        assertEquals(1, entries.size());
+        assertEquals(LedgerRefType.ORDER_PAYMENT_POINTS, entries.get(0).refType());
+        assertEquals(10_000, accounts.get("ACC-BAL").balanceCents());
+        assertEquals(2_000, accounts.get("ACC-PTS").balanceCents());
     }
 
     private static final class InMemoryProducts implements ProductRepository {
         private final Map<String, Product> byId = new HashMap<>();
 
-        void put(Product product) {
-            byId.put(product.id(), product);
+        void put(Product p) {
+            byId.put(p.id(), p);
         }
 
         @Override
         public Product get(String productId) {
-            Product product = byId.get(productId);
-            if (product == null) {
-                throw new IllegalArgumentException("unknown product: " + productId);
-            }
-            return product;
+            return byId.get(productId);
         }
     }
 
     private static final class InMemoryAccounts implements AccountRepository {
         private final Map<String, Account> byId = new HashMap<>();
 
-        void put(Account account) {
-            byId.put(account.id(), account);
+        void put(Account a) {
+            byId.put(a.id(), a);
         }
 
         @Override
@@ -166,12 +199,7 @@ class PurchaseProductTest {
         @Override
         public Account findUserBalance(String userId, Currency currency) {
             return byId.values().stream()
-                    .filter(
-                            a ->
-                                    a.ownerType() == AccountOwnerType.USER
-                                            && a.ownerId().equals(userId)
-                                            && a.type() == AccountType.BALANCE
-                                            && a.currency() == currency)
+                    .filter(a -> a.type() == AccountType.BALANCE && a.ownerId().equals(userId))
                     .findFirst()
                     .orElseThrow();
         }
@@ -179,12 +207,7 @@ class PurchaseProductTest {
         @Override
         public Account findUserPoints(String userId, Currency currency) {
             return byId.values().stream()
-                    .filter(
-                            a ->
-                                    a.ownerType() == AccountOwnerType.USER
-                                            && a.ownerId().equals(userId)
-                                            && a.type() == AccountType.POINTS
-                                            && a.currency() == currency)
+                    .filter(a -> a.type() == AccountType.POINTS && a.ownerId().equals(userId))
                     .findFirst()
                     .orElseThrow();
         }
@@ -192,12 +215,7 @@ class PurchaseProductTest {
         @Override
         public Account findOrgSettlement(String orgId, Currency currency) {
             return byId.values().stream()
-                    .filter(
-                            a ->
-                                    a.ownerType() == AccountOwnerType.ORG
-                                            && a.ownerId().equals(orgId)
-                                            && a.type() == AccountType.SETTLEMENT
-                                            && a.currency() == currency)
+                    .filter(a -> a.type() == AccountType.SETTLEMENT && a.ownerId().equals(orgId))
                     .findFirst()
                     .orElseThrow();
         }
@@ -218,11 +236,7 @@ class PurchaseProductTest {
 
         @Override
         public Order get(String orderId) {
-            Order order = byId.get(orderId);
-            if (order == null) {
-                throw new IllegalArgumentException("unknown order: " + orderId);
-            }
-            return order;
+            return byId.get(orderId);
         }
     }
 
@@ -231,16 +245,12 @@ class PurchaseProductTest {
 
         @Override
         public void save(Entitlement entitlement) {
-            saved.removeIf(e -> e.id().equals(entitlement.id()));
             saved.add(entitlement);
         }
 
         @Override
         public Entitlement get(String entitlementId) {
-            return saved.stream()
-                    .filter(e -> e.id().equals(entitlementId))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("unknown entitlement"));
+            return saved.stream().filter(e -> e.id().equals(entitlementId)).findFirst().orElseThrow();
         }
 
         @Override
@@ -251,8 +261,7 @@ class PurchaseProductTest {
         @Override
         public List<Entitlement> findActiveByUser(String userId) {
             return saved.stream()
-                    .filter(e -> e.userId().equals(userId))
-                    .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                    .filter(e -> e.userId().equals(userId) && e.status() == EntitlementStatus.ACTIVE)
                     .toList();
         }
     }

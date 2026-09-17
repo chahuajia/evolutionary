@@ -31,6 +31,7 @@ public final class LedgerEntry {
         this.createdAt = createdAt;
     }
 
+    /** 纯余额支付（AC-17）；refType = ORDER_PAYMENT_BALANCE。 */
     public static LedgerEntry orderPayment(
             String id,
             String userBalanceAccountId,
@@ -38,18 +39,57 @@ public final class LedgerEntry {
             Money amount,
             String orderId,
             Instant createdAt) {
+        return orderPaymentBalance(
+                id, userBalanceAccountId, orgSettlementAccountId, amount, orderId, createdAt);
+    }
+
+    public static LedgerEntry orderPaymentBalance(
+            String id,
+            String userBalanceAccountId,
+            String orgSettlementAccountId,
+            Money amount,
+            String orderId,
+            Instant createdAt) {
         return new LedgerEntry(
                 requireId(id),
                 requireId(userBalanceAccountId),
                 requireId(orgSettlementAccountId),
                 Objects.requireNonNull(amount, "amount"),
-                LedgerRefType.ORDER_PAYMENT,
+                LedgerRefType.ORDER_PAYMENT_BALANCE,
                 requireId(orderId),
                 Objects.requireNonNull(createdAt, "createdAt"));
     }
 
-    /** 退款反向分录：debit Org.SETTLEMENT，credit User.BALANCE；refId 同 orderId。 */
+    public static LedgerEntry orderPaymentPoints(
+            String id,
+            String userPointsAccountId,
+            String orgSettlementAccountId,
+            Money amount,
+            String orderId,
+            Instant createdAt) {
+        return new LedgerEntry(
+                requireId(id),
+                requireId(userPointsAccountId),
+                requireId(orgSettlementAccountId),
+                Objects.requireNonNull(amount, "amount"),
+                LedgerRefType.ORDER_PAYMENT_POINTS,
+                requireId(orderId),
+                Objects.requireNonNull(createdAt, "createdAt"));
+    }
+
+    /** 退款反向：优先用于纯余额；phase-2 请用 orderRefundBalance。 */
     public static LedgerEntry orderRefund(
+            String id,
+            String orgSettlementAccountId,
+            String userBalanceAccountId,
+            Money amount,
+            String orderId,
+            Instant createdAt) {
+        return orderRefundBalance(
+                id, orgSettlementAccountId, userBalanceAccountId, amount, orderId, createdAt);
+    }
+
+    public static LedgerEntry orderRefundBalance(
             String id,
             String orgSettlementAccountId,
             String userBalanceAccountId,
@@ -61,7 +101,24 @@ public final class LedgerEntry {
                 requireId(orgSettlementAccountId),
                 requireId(userBalanceAccountId),
                 Objects.requireNonNull(amount, "amount"),
-                LedgerRefType.ORDER_REFUND,
+                LedgerRefType.ORDER_REFUND_BALANCE,
+                requireId(orderId),
+                Objects.requireNonNull(createdAt, "createdAt"));
+    }
+
+    public static LedgerEntry orderRefundPoints(
+            String id,
+            String orgSettlementAccountId,
+            String userPointsAccountId,
+            Money amount,
+            String orderId,
+            Instant createdAt) {
+        return new LedgerEntry(
+                requireId(id),
+                requireId(orgSettlementAccountId),
+                requireId(userPointsAccountId),
+                Objects.requireNonNull(amount, "amount"),
+                LedgerRefType.ORDER_REFUND_POINTS,
                 requireId(orderId),
                 Objects.requireNonNull(createdAt, "createdAt"));
     }

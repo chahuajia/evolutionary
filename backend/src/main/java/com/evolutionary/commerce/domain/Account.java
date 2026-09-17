@@ -1,7 +1,9 @@
 package com.evolutionary.commerce.domain;
 
+import java.time.Instant;
 import java.util.Objects;
 
+/** 账户。POINTS 类型可带过期时间（阶段 2 简化：整户一个 expiresAt）。 */
 public final class Account {
 
     private final String id;
@@ -10,6 +12,7 @@ public final class Account {
     private final AccountType type;
     private final Currency currency;
     private final long balanceCents;
+    private final Instant pointsExpiresAt;
 
     private Account(
             String id,
@@ -17,13 +20,15 @@ public final class Account {
             String ownerId,
             AccountType type,
             Currency currency,
-            long balanceCents) {
+            long balanceCents,
+            Instant pointsExpiresAt) {
         this.id = id;
         this.ownerType = ownerType;
         this.ownerId = ownerId;
         this.type = type;
         this.currency = currency;
         this.balanceCents = balanceCents;
+        this.pointsExpiresAt = pointsExpiresAt;
     }
 
     public static Account open(
@@ -33,8 +38,22 @@ public final class Account {
             AccountType type,
             Currency currency,
             long openingBalanceCents) {
+        return open(id, ownerType, ownerId, type, currency, openingBalanceCents, null);
+    }
+
+    public static Account open(
+            String id,
+            AccountOwnerType ownerType,
+            String ownerId,
+            AccountType type,
+            Currency currency,
+            long openingBalanceCents,
+            Instant pointsExpiresAt) {
         if (openingBalanceCents < 0) {
             throw new IllegalArgumentException("opening balance must not be negative");
+        }
+        if (type != AccountType.POINTS && pointsExpiresAt != null) {
+            throw new IllegalArgumentException("只有 POINTS 账户可以设置过期时间");
         }
         return new Account(
                 requireId(id),
@@ -42,7 +61,8 @@ public final class Account {
                 requireId(ownerId),
                 Objects.requireNonNull(type, "type"),
                 Objects.requireNonNull(currency, "currency"),
-                openingBalanceCents);
+                openingBalanceCents,
+                pointsExpiresAt);
     }
 
     public Account debit(long amount) {
@@ -52,18 +72,33 @@ public final class Account {
         if (balanceCents < amount) {
             throw new InsufficientBalanceException();
         }
-        return new Account(id, ownerType, ownerId, type, currency, balanceCents - amount);
+        return new Account(id, ownerType, ownerId, type, currency, balanceCents - amount, pointsExpiresAt);
     }
 
     public Account credit(long amount) {
         if (amount < 0) {
             throw new IllegalArgumentException("amount must not be negative");
         }
-        return new Account(id, ownerType, ownerId, type, currency, balanceCents + amount);
+        return new Account(id, ownerType, ownerId, type, currency, balanceCents + amount, pointsExpiresAt);
     }
 
     public boolean canCover(Money price) {
         return currency == price.currency() && balanceCents >= price.cents();
+    }
+
+    public boolean canCoverCents(long cents) {
+        return balanceCents >= cents;
+    }
+
+    /** 积分在 at 时刻是否仍可用（未过期）。非 POINTS 恒为 true。 */
+    public boolean pointsUsableAt(Instant at) {
+        if (type != AccountType.POINTS) {
+            return true;
+        }
+        if (pointsExpiresAt == null) {
+            return true;
+        }
+        return at.isBefore(pointsExpiresAt);
     }
 
     public String id() {
@@ -88,6 +123,10 @@ public final class Account {
 
     public long balanceCents() {
         return balanceCents;
+    }
+
+    public Instant pointsExpiresAt() {
+        return pointsExpiresAt;
     }
 
     private static String requireId(String id) {

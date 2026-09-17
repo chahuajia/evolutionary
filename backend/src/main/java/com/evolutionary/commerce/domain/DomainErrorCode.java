@@ -2,6 +2,8 @@ package com.evolutionary.commerce.domain;
 
 public enum DomainErrorCode {
     INSUFFICIENT_BALANCE,
+    INSUFFICIENT_POINTS,
+    POINTS_EXPIRED,
     PRODUCT_NOT_PUBLISHED,
     ENTITLEMENT_INACTIVE,
     ENTITLEMENT_EXPIRED,
