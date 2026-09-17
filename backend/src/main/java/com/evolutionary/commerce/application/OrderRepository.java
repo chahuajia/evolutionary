@@ -4,4 +4,6 @@ import com.evolutionary.commerce.domain.Order;
 
 public interface OrderRepository {
     void save(Order order);
+
+    Order get(String orderId);
 }

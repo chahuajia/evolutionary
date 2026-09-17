@@ -1,5 +1,7 @@
 package com.evolutionary.commerce.domain;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,5 +47,25 @@ class EntitlementTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> Entitlement.createActive("E-1", created, product, T0));
+    }
+
+    @Test
+    @DisplayName("revoke 后状态 REVOKED 且不再 active（INV-5）")
+    void revokeMarksRevoked() {
+        Product product =
+                Product.create(
+                        "P-1",
+                        "ORG-1",
+                        "30天卡",
+                        Money.cny(9_900),
+                        30,
+                        ProductStatus.PUBLISHED);
+        Order paid = Order.create("O-1", "U-1", "P-1", "ORG-1", Money.cny(9_900), T0).pay(T0);
+        Entitlement active = Entitlement.createActive("E-1", paid, product, T0);
+
+        Entitlement revoked = active.revoke();
+
+        assertEquals(EntitlementStatus.REVOKED, revoked.status());
+        assertFalse(revoked.isActiveAt(T0.plusSeconds(1)));
     }
 }

@@ -30,4 +30,16 @@ class LedgerInvariantTest {
 
         assertDoesNotThrow(() -> LedgerInvariant.assertBalanced(List.of(a, b)));
     }
+
+    @Test
+    @DisplayName("支付 + 退款反向分录仍借贷平衡")
+    void paymentAndRefundStayBalanced() {
+        Money amount = Money.cny(9_900);
+        LedgerEntry payment =
+                LedgerEntry.orderPayment("L-1", "ACC-U", "ACC-O", amount, "O-1", T0);
+        LedgerEntry refund =
+                LedgerEntry.orderRefund("L-2", "ACC-O", "ACC-U", amount, "O-1", T0);
+
+        assertDoesNotThrow(() -> LedgerInvariant.assertBalanced(List.of(payment, refund)));
+    }
 }

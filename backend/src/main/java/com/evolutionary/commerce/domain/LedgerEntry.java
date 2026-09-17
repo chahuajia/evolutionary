@@ -48,6 +48,24 @@ public final class LedgerEntry {
                 Objects.requireNonNull(createdAt, "createdAt"));
     }
 
+    /** 退款反向分录：debit Org.SETTLEMENT，credit User.BALANCE；refId 同 orderId。 */
+    public static LedgerEntry orderRefund(
+            String id,
+            String orgSettlementAccountId,
+            String userBalanceAccountId,
+            Money amount,
+            String orderId,
+            Instant createdAt) {
+        return new LedgerEntry(
+                requireId(id),
+                requireId(orgSettlementAccountId),
+                requireId(userBalanceAccountId),
+                Objects.requireNonNull(amount, "amount"),
+                LedgerRefType.ORDER_REFUND,
+                requireId(orderId),
+                Objects.requireNonNull(createdAt, "createdAt"));
+    }
+
     public String id() {
         return id;
     }

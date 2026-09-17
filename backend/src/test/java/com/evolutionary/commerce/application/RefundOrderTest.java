@@ -2,7 +2,6 @@ package com.evolutionary.commerce.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.evolutionary.commerce.domain.Account;
 import com.evolutionary.commerce.domain.AccountOwnerType;
@@ -14,11 +13,13 @@ import com.evolutionary.commerce.domain.Entitlement;
 import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerInvariant;
+import com.evolutionary.commerce.domain.LedgerRefType;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Order;
 import com.evolutionary.commerce.domain.OrderStatus;
 import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
+import com.evolutionary.commerce.domain.UsageEvent;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -31,7 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class PurchaseProductTest {
+class RefundOrderTest {
 
     private static final Instant T0 = Instant.parse("2026-09-17T00:00:00Z");
     private static final Clock CLOCK = Clock.fixed(T0, ZoneOffset.UTC);
@@ -40,8 +41,10 @@ class PurchaseProductTest {
     private InMemoryAccounts accounts;
     private InMemoryOrders orders;
     private InMemoryEntitlements entitlements;
+    private InMemoryUsages usages;
     private InMemoryLedger ledger;
     private PurchaseProduct purchase;
+    private RefundOrder refund;
 
     @BeforeEach
     void setUp() {
@@ -49,9 +52,11 @@ class PurchaseProductTest {
         accounts = new InMemoryAccounts();
         orders = new InMemoryOrders();
         entitlements = new InMemoryEntitlements();
+        usages = new InMemoryUsages();
         ledger = new InMemoryLedger();
         purchase =
                 new PurchaseProduct(products, accounts, orders, entitlements, ledger, CLOCK);
+        refund = new RefundOrder(orders, entitlements, usages, accounts, ledger, CLOCK);
 
         products.put(
                 Product.create(
@@ -80,58 +85,73 @@ class PurchaseProductTest {
     }
 
     @Test
-    @DisplayName("余额足够时购买成功并生成权益")
-    void successfulPurchase() {
-        DomainOutcome<PurchaseResult> outcome = purchase.execute("U-1", "P-1");
+    @DisplayName("PAID 订单退款成功：Order REFUNDED、权益 REVOKED、反向分录")
+    void successfulRefund() {
+        PurchaseResult bought =
+                ((DomainOutcome.Ok<PurchaseResult>) purchase.execute("U-1", "P-1")).value();
+
+        DomainOutcome<RefundResult> outcome = refund.execute(bought.order().id());
 
         assertInstanceOf(DomainOutcome.Ok.class, outcome);
-        PurchaseResult result = ((DomainOutcome.Ok<PurchaseResult>) outcome).value();
-
-        assertEquals(OrderStatus.PAID, result.order().status());
-        assertEquals(EntitlementStatus.ACTIVE, result.entitlement().status());
-        assertEquals(10_100, accounts.get("ACC-U-1").balanceCents());
-        assertEquals(9_900, accounts.get("ACC-O-1").balanceCents());
+        RefundResult result = ((DomainOutcome.Ok<RefundResult>) outcome).value();
+        assertEquals(OrderStatus.REFUNDED, result.order().status());
+        assertEquals(EntitlementStatus.REVOKED, result.entitlement().status());
+        assertEquals(20_000, accounts.get("ACC-U-1").balanceCents());
+        assertEquals(0, accounts.get("ACC-O-1").balanceCents());
         LedgerInvariant.assertBalanced(ledger.findAll());
-        assertTrue(result.entitlement().isActiveAt(T0));
+        assertEquals(
+                1,
+                ledger.findAll().stream()
+                        .filter(e -> e.refType() == LedgerRefType.ORDER_REFUND)
+                        .count());
     }
 
     @Test
-    @DisplayName("余额不足时拒绝")
-    void insufficientBalance() {
-        accounts.put(
-                Account.open(
-                        "ACC-U-1",
-                        AccountOwnerType.USER,
+    @DisplayName("有 STARTED 换电时拒绝退款（Q1）")
+    void blocksWhenSwapInProgress() {
+        PurchaseResult bought =
+                ((DomainOutcome.Ok<PurchaseResult>) purchase.execute("U-1", "P-1")).value();
+        usages.save(
+                UsageEvent.start(
+                        "UE-1",
                         "U-1",
-                        AccountType.BALANCE,
-                        Currency.CNY,
-                        100));
+                        bought.entitlement().id(),
+                        "BAT-1",
+                        "CAB-1",
+                        T0));
 
-        DomainOutcome<PurchaseResult> outcome = purchase.execute("U-1", "P-1");
-
-        assertInstanceOf(DomainOutcome.Err.class, outcome);
-        DomainOutcome.Err<PurchaseResult> err = (DomainOutcome.Err<PurchaseResult>) outcome;
-        assertEquals(DomainErrorCode.INSUFFICIENT_BALANCE, err.code());
-    }
-
-    @Test
-    @DisplayName("未发布商品拒绝购买")
-    void unpublishedProduct() {
-        products.put(
-                Product.create(
-                        "P-2",
-                        "ORG-1",
-                        "草稿卡",
-                        Money.cny(100),
-                        30,
-                        ProductStatus.DRAFT));
-
-        DomainOutcome<PurchaseResult> outcome = purchase.execute("U-1", "P-2");
+        DomainOutcome<RefundResult> outcome = refund.execute(bought.order().id());
 
         assertInstanceOf(DomainOutcome.Err.class, outcome);
         assertEquals(
-                DomainErrorCode.PRODUCT_NOT_PUBLISHED,
-                ((DomainOutcome.Err<PurchaseResult>) outcome).code());
+                DomainErrorCode.REFUND_BLOCKED_IN_PROGRESS_SWAP,
+                ((DomainOutcome.Err<RefundResult>) outcome).code());
+        assertEquals(OrderStatus.PAID, orders.get(bought.order().id()).status());
+        assertEquals(EntitlementStatus.ACTIVE, entitlements.get(bought.entitlement().id()).status());
+    }
+
+    @Test
+    @DisplayName("非 PAID 订单拒绝退款")
+    void rejectsNonPaidOrder() {
+        Order created =
+                Order.create("O-x", "U-1", "P-1", "ORG-1", Money.cny(9_900), T0);
+        orders.save(created);
+        entitlements.save(
+                Entitlement.rehydrate(
+                        "E-x",
+                        "O-x",
+                        "U-1",
+                        "P-1",
+                        T0,
+                        T0.plusSeconds(86_400),
+                        EntitlementStatus.ACTIVE));
+
+        DomainOutcome<RefundResult> outcome = refund.execute("O-x");
+
+        assertInstanceOf(DomainOutcome.Err.class, outcome);
+        assertEquals(
+                DomainErrorCode.ORDER_NOT_REFUNDABLE,
+                ((DomainOutcome.Err<RefundResult>) outcome).code());
     }
 
     private static final class InMemoryProducts implements ProductRepository {
@@ -214,25 +234,56 @@ class PurchaseProductTest {
     }
 
     private static final class InMemoryEntitlements implements EntitlementRepository {
-        private final List<Entitlement> saved = new ArrayList<>();
+        private final Map<String, Entitlement> byId = new HashMap<>();
 
         @Override
         public void save(Entitlement entitlement) {
-            saved.removeIf(e -> e.id().equals(entitlement.id()));
-            saved.add(entitlement);
+            byId.put(entitlement.id(), entitlement);
         }
 
         @Override
         public Entitlement get(String entitlementId) {
-            return saved.stream()
-                    .filter(e -> e.id().equals(entitlementId))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalArgumentException("unknown entitlement"));
+            Entitlement e = byId.get(entitlementId);
+            if (e == null) {
+                throw new IllegalArgumentException("unknown entitlement");
+            }
+            return e;
         }
 
         @Override
         public Optional<Entitlement> findByOrderId(String orderId) {
-            return saved.stream().filter(e -> e.orderId().equals(orderId)).findFirst();
+            return byId.values().stream().filter(e -> e.orderId().equals(orderId)).findFirst();
+        }
+    }
+
+    private static final class InMemoryUsages implements UsageEventRepository {
+        private final List<UsageEvent> events = new ArrayList<>();
+
+        @Override
+        public void save(UsageEvent event) {
+            events.removeIf(e -> e.id().equals(event.id()));
+            events.add(event);
+        }
+
+        @Override
+        public Optional<UsageEvent> findStartedByBattery(String batteryId) {
+            return events.stream()
+                    .filter(e -> e.batteryId().equals(batteryId) && e.isStarted())
+                    .findFirst();
+        }
+
+        @Override
+        public List<UsageEvent> findStartedByUser(String userId) {
+            return events.stream()
+                    .filter(e -> e.userId().equals(userId) && e.isStarted())
+                    .toList();
+        }
+
+        @Override
+        public Optional<UsageEvent> findStartedByEntitlement(String entitlementId) {
+            return events.stream()
+                    .filter(e -> e.entitlementId().equals(entitlementId) && e.isStarted())
+                    .findFirst();
         }
     }
 

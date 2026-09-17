@@ -1,6 +1,6 @@
 # 换电 phase-0 实现（L2）— 垂直切片
 
-**更新**：2026-09-17 12:06 ｜ **压力层**：**L2**｜ **状态**：🔄 切片 3 ✅ · 切片 4 集群并行中
+**更新**：2026-09-17 12:10 ｜ **压力层**：**L2**｜ **状态**：✅ 切片 1–4 完成
 
 ## 门禁（每 tick）
 
@@ -19,7 +19,7 @@
 | 1 | Product + Order 领域 + 支付分录（INV-1/2） | ✅ `slice-1-report.md` |
 | 2 | Entitlement 生成 + 过期校验（INV-2） | ✅ 生成+换电入口过期校验 |
 | 3 | UsageEvent + BatteryAsset 状态机（INV-3/4） | ✅ `slice-3-report.md` |
-| 4 | 退款链 + REFUND_BLOCKED（INV-5） | 🔄 集群并行 |
+| 4 | 退款链 + REFUND_BLOCKED（INV-5） | ✅ `slice-4-report.md` |
 
 ## 停止
 

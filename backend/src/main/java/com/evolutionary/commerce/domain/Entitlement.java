@@ -57,6 +57,17 @@ public final class Entitlement {
                 && at.isBefore(validUntil);
     }
 
+    /** INV-5：退款时撤销权益，阻止后续 COMPLETED 履约。 */
+    public Entitlement revoke() {
+        if (status == EntitlementStatus.REVOKED) {
+            return this;
+        }
+        if (status != EntitlementStatus.ACTIVE && status != EntitlementStatus.EXPIRED) {
+            throw new IllegalStateException("cannot revoke entitlement in status " + status);
+        }
+        return new Entitlement(id, orderId, userId, productId, validFrom, validUntil, EntitlementStatus.REVOKED);
+    }
+
     public String id() {
         return id;
     }

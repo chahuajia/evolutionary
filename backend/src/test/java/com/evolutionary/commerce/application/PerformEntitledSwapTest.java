@@ -131,6 +131,11 @@ class PerformEntitledSwapTest {
             }
             return e;
         }
+
+        @Override
+        public Optional<Entitlement> findByOrderId(String orderId) {
+            return byId.values().stream().filter(e -> e.orderId().equals(orderId)).findFirst();
+        }
     }
 
     private static final class InMemoryBatteries implements BatteryAssetRepository {
@@ -181,6 +186,13 @@ class PerformEntitledSwapTest {
             return events.stream()
                     .filter(e -> e.userId().equals(userId) && e.isStarted())
                     .toList();
+        }
+
+        @Override
+        public Optional<UsageEvent> findStartedByEntitlement(String entitlementId) {
+            return events.stream()
+                    .filter(e -> e.entitlementId().equals(entitlementId) && e.isStarted())
+                    .findFirst();
         }
     }
 }

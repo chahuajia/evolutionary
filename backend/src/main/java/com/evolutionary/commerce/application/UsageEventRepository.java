@@ -10,4 +10,6 @@ public interface UsageEventRepository {
     Optional<UsageEvent> findStartedByBattery(String batteryId);
 
     List<UsageEvent> findStartedByUser(String userId);
+
+    Optional<UsageEvent> findStartedByEntitlement(String entitlementId);
 }
