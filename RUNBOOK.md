@@ -8,7 +8,9 @@
 | :--- | :--- | :--- |
 | `GET /stations` | S1 东门站 / S2 西门站 / S3 南站 | `DevSeedConfig` |
 | `GET /credit/profiles/U1` | U1 limit=10000 used=3000（分）| `CreditConfig` |
+| `POST /credit/purchases` | P-CREDIT-1 FIXED 3000¢（非计量）+ U1 good | `CreditConfig` |
 | `POST /entitled-swaps` | E-1 ACTIVE（U1）+ BAT-1 idle；计量 E-M1 / P-M1 / BAT-M1 | `CommerceConfig` |
+| `POST /iot/.../detect-comm-lost` | BAT-IOT-1 shadow lastSeen 过期（>5min） | `IotConfig` |
 
 ## 已接通（正式可跑）
 
@@ -17,6 +19,7 @@
 | 站列表 / 详情 / 换电 | `/` → `/api/stations…` | `SwapController` :8080 |
 | 信用档案 + 账单 | `/credit` → `/api/credit/profiles/U1…` | `CreditController` + CreditConfig U1 |
 | 权益换电（非计量 / 计量） | （新建岛）→ `/api/entitled-swaps` | `EntitledSwapController` + CommerceConfig |
+| IoT 影子 / COMM_LOST | （诊断岛）→ `/api/iot/...` | `IotController` + IotConfig |
 
 ## 启动
 
@@ -38,7 +41,7 @@ cd frontend && npm run dev
 
 - 信用购 HTTP
 - 默认选卡 HTTP
-- IoT 遥测入影 / 影子查询 / COMM_LOST 的 HTTP 与 UI
+- IoT 遥测入影 HTTP / UI（影子查询与 COMM_LOST HTTP 已接通）
 - 登录与多用户
 
 ## 新接通（权益换电）
@@ -73,6 +76,16 @@ curl -s -X POST http://localhost:8080/credit/profiles/U1/mark-overdue \
 curl -s -X POST http://localhost:8080/credit/profiles/U1/repay \
   -H "Content-Type: application/json" \
   -d '{"statementId":"STMT-2026-02","amountCents":3000}'
+```
+
+## 新接通（IoT COMM_LOST）
+
+```bash
+# 影子只读；BAT-IOT-1 lastSeen 过期
+curl -s http://localhost:8080/iot/batteries/BAT-IOT-1/shadow
+
+# stale → COMM_LOST + OPEN ticket；再跑同 ticketId（不重复开单）
+curl -s -X POST http://localhost:8080/iot/batteries/BAT-IOT-1/detect-comm-lost
 ```
 
 ## 正式验收（两枪）

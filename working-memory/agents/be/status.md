@@ -1,25 +1,24 @@
 # BE agent status（S36）
 
 **分支**：`topic/fe-ddd-rsc`  
-**日期**：2026-09-17 · evo-collab-extreme 切片7 · 计量权益换电 HTTP  
-**HEAD**：`ba54212`（计量 HTTP；status `b053b76`）
+**日期**：2026-09-17 · evo-collab-extreme 切片8a · IoT COMM_LOST HTTP  
+**HEAD**：（本提交后见 git log）
 
 ## 完成
 
-- `InMemoryProductRepository` + `@Bean ProductRepository`
-- `PerformEntitledSwap` bean 改 7 参（products/accounts/ledger）
-- `POST /entitled-swaps`：可选 `socBefore`/`socAfter`（都有→计量；都无→非计量；只给一个→400）
-- 响应可含 `chargedAmountCents`（可 null）
-- `EntitledSwapApiErrorTranslator` 补 `INSUFFICIENT_BALANCE` suggestion
-- 种子：P-M1 / E-M1 PAY_AS_YOU_GO / BAT-M1 + ORG-1 SETTLEMENT（保留 E-1/BAT-1）
-- `MeteredEntitledSwapHttpIT`：200 charged=1000；422 INSUFFICIENT_BALANCE
-- RUNBOOK：计量 curl 一行
+- InMemory：`DeviceShadowRepository` / `AlertStore` / `MaintenanceTicketRepository`
+- `IotConfig`：beans + 种子 `BAT-IOT-1`（lastSeen > STALE_AFTER）
+- `POST /iot/batteries/{id}/detect-comm-lost` → stale/raised/alertType/ticketId
+- `GET /iot/batteries/{id}/shadow` → 200 / 404
+- `IotApiErrorTranslator`（S34 按码，不嗅探 message）
+- `CommLostHttpIT`：detect → COMM_LOST；再 detect 同 ticketId
+- RUNBOOK：IoT curl 段
 
 ## Tests run
 
 ```text
-mvn -B "-Dtest=MeteredEntitledSwapHttpIT,EntitledSwapControllerTest,CreditRepayHttpIT" test
-Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+mvn -B "-Dtest=CommLostHttpIT" test
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 ## 阻塞
@@ -28,5 +27,4 @@ Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
 
 ## 备注
 
-- 未改 frontend；未 merge `version/v0`；未 push
-- U1 余额仍由 CreditConfig `ACC-U1-BAL` 5000；计量结算户 `ACC-ORG1-SETTLE`
+- 未改 frontend / commerce entitled-swaps / credit；未 push
