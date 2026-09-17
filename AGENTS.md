@@ -18,6 +18,15 @@
 
 跑一遍看看 = 无效。每一轮**先声明暴露点**，跑完**按暴露点验收**。
 
+## 协作偏好（读 Profile）
+
+进入本仓后读 knowledge 库 `profiles/heiniao.yaml`：
+- 本地 commit / 注释 / WM → **中文**
+- 回答从 **H2** 开始（S1）
+- 长任务：无人值守 + 集群
+
+分支策略见 `working-memory/git-branching.md`。
+
 ## 依赖的外部知识库
 
 本项目的协作规范**不在本仓库内** —— 它在独立的 COLLABORATION 知识库：
