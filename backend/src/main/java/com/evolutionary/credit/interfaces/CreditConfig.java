@@ -27,7 +27,11 @@ public class CreditConfig {
         return new InMemoryBillingStatementRepository();
     }
 
-    /** 与 FE 原 fixture 对齐：U1 limit 100 / used 30（分）。 */
+    /**
+     * 正式本地种子：与 FE RSC /credit 对齐。
+     *
+     * <p>U1 limit=10000 / used=3000（分）；与 {@code DevSeedConfig} S1/S2/S3 同启动面。
+     */
     @Bean
     ApplicationRunner seedCredit(
             CreditProfileRepository profiles, BillingStatementRepository statements) {
