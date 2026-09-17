@@ -1,6 +1,6 @@
-# Working Memory — evolutionary（换电平台）
+﻿# Working Memory — evolutionary（换电平台）
 
-**更新**：2026-09-17 ｜ HEAD `ee60116`
+**更新**：2026-09-17 ｜ HEAD `b30c103`
 
 ## 仓库归属
 
@@ -12,6 +12,7 @@
 
 | 任务 | 状态 | 文件 |
 | :--- | :--- | :--- |
+| **battery-phase-5 实现** | ✅ 已合入 `version/v0` · phase 分支已删 | `tasks/battery-phase-5/retro.md` |
 | **battery-phase-4 实现** | ✅ 已合入 `version/v0` · phase 分支已删 | `tasks/battery-phase-4/retro.md` |
 | **battery-phase-3 实现** | ✅ 切片 1–3 收口 · 停 wake | `tasks/battery-phase-3/retro.md` |
 | **battery-phase-2 实现** | ✅ 切片 1–3 收口 · 停 wake | `tasks/battery-phase-2/retro.md` |
