@@ -1,19 +1,19 @@
 # BE agent status（S36）
 
 **分支**：`topic/fe-ddd-rsc`  
-**日期**：2026-09-17 · heartbeat slice-1 formal live contract  
-**HEAD**：`a9d5dce`
+**日期**：2026-09-17 · heartbeat slice-2 FormalLive 加固  
+**HEAD**：（commit 后回填）
 
 ## 完成
 
-- 确认正式种子对齐：`DevSeedConfig` S1/S2/S3 + `CreditConfig` U1（limit 10000 / used 3000 分）
-- 新增 `FormalLiveContractTest`：GET `/stations` ≥1 + GET `/credit/profiles/U1` 200
-- RUNBOOK 正式验收两枪：站列表 + 信用档案
+- 加固 `FormalLiveContractTest`：`/stations` 断言 length≥3 且含 S1/S2；保留 U1 credit 断言
+- RUNBOOK：注明 FormalLive 钉死 S1/S2/S3 + U1
+- 未改 frontend / collaboration
 
 ## 阻塞
 
-- 无。未改 frontend / collaboration。
+- 无
 
 ## 备注
 
-- 种子本已存在；本轮交付是跨端点契约测试 + RUNBOOK 对齐文档。
+- Slice-2 仅契约测试收紧；种子面未变（DevSeed S1/S2/S3 + CreditConfig U1）

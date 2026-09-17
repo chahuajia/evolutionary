@@ -1,6 +1,7 @@
 package com.evolutionary;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,11 +25,12 @@ class FormalLiveContractTest {
     @Autowired private MockMvc mvc;
 
     @Test
-    @DisplayName("GET /stations → ≥1 概览（DevSeed S1/S2/S3）")
+    @DisplayName("GET /stations → ≥3 且含 S1/S2（DevSeed）")
     void stationsListHasSummaries() throws Exception {
         mvc.perform(get("/stations"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.length()", greaterThanOrEqualTo(3)))
+                .andExpect(jsonPath("$[*].id", hasItems("S1", "S2")))
                 .andExpect(jsonPath("$[0].id").exists())
                 .andExpect(jsonPath("$[0].name").exists());
     }

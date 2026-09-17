@@ -44,7 +44,7 @@ cd frontend && npm run dev
 - 站列表：`curl -s http://localhost:8080/stations` → JSON 数组长度 ≥1（含 S1/S2/S3）
 - 信用档案：`curl -s http://localhost:8080/credit/profiles/U1` → HTTP 200（userId=U1）
 
-契约测试：`FormalLiveContractTest`（MockMvc）。
+契约测试：`FormalLiveContractTest` 钉死 S1/S2/S3 + U1（MockMvc）。
 
 ## 验收速查
 
