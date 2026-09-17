@@ -2,7 +2,7 @@
 
 **分支**：`topic/fe-ddd-rsc`  
 **日期**：2026-09-17 · evo-collab-extreme 切片4 · POST /entitled-swaps  
-**HEAD**：待 commit 后回填
+**HEAD**：`90b4e89`
 
 ## 完成
 
