@@ -10,8 +10,11 @@ import {
   type CreditProfile,
   type ScoreTier,
 } from "@/lib/credit/types";
+import { fetchJson } from "@/shared/http/fetch-json";
 
 export const DEFAULT_CREDIT_USER = "U1";
+
+const TIMEOUT_MS = 8000;
 
 /**
  * Server Component 无相对 URL host；直连 BACKEND_ORIGIN。
@@ -28,18 +31,22 @@ export async function fetchCreditProfile(
   userId: string = DEFAULT_CREDIT_USER,
 ): Promise<CreditProfile> {
   const base = resolveCreditApiBase();
-  const res = await fetch(
-    `${base}/credit/profiles/${encodeURIComponent(userId)}`,
-    { cache: "no-store" },
-  );
-  if (!res.ok) {
-    throw new Error(
-      res.status === 404
-        ? `信用档案不存在：${userId}`
-        : `信用档案拉取失败（HTTP ${res.status}）`,
+  let raw: Record<string, unknown>;
+  try {
+    raw = await fetchJson<Record<string, unknown>>(
+      `${base}/credit/profiles/${encodeURIComponent(userId)}`,
+      { cache: "no-store", timeoutMs: TIMEOUT_MS },
     );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg === "HTTP 404") {
+      throw new Error(`信用档案不存在：${userId}`);
+    }
+    if (msg.startsWith("HTTP ")) {
+      throw new Error(`信用档案拉取失败（${msg}）`);
+    }
+    throw e instanceof Error ? e : new Error(msg);
   }
-  const raw = (await res.json()) as Record<string, unknown>;
   return parseProfile(raw);
 }
 
@@ -47,14 +54,19 @@ export async function fetchCreditStatements(
   userId: string = DEFAULT_CREDIT_USER,
 ): Promise<readonly BillingStatement[]> {
   const base = resolveCreditApiBase();
-  const res = await fetch(
-    `${base}/credit/profiles/${encodeURIComponent(userId)}/statements`,
-    { cache: "no-store" },
-  );
-  if (!res.ok) {
-    throw new Error(`账单列表拉取失败（HTTP ${res.status}）`);
+  let raw: unknown[];
+  try {
+    raw = await fetchJson<unknown[]>(
+      `${base}/credit/profiles/${encodeURIComponent(userId)}/statements`,
+      { cache: "no-store", timeoutMs: TIMEOUT_MS },
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.startsWith("HTTP ")) {
+      throw new Error(`账单列表拉取失败（${msg}）`);
+    }
+    throw e instanceof Error ? e : new Error(msg);
   }
-  const raw = (await res.json()) as unknown[];
   return raw.map((row) => parseStatement(row as Record<string, unknown>));
 }
 

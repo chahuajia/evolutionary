@@ -3,12 +3,16 @@
  * RSC 直连 Spring；浏览器经 Next `/api` rewrite。
  */
 
+import { fetchJson } from "@/shared/http/fetch-json";
+
 export type StationSummary = {
   id: string;
   name: string;
   canSwapOut: boolean;
   batteryCount: number;
 };
+
+const TIMEOUT_MS = 8000;
 
 /**
  * Server Component 无相对 URL host；直连 BACKEND_ORIGIN。
@@ -28,6 +32,9 @@ function triageListError(e: unknown): Error {
       "站列表拉取失败（W1）：请确认 Spring 已启动 :8080，且 Next rewrite /api 生效。",
     );
   }
+  if (msg.startsWith("HTTP ")) {
+    return new Error(`站列表拉取失败（${msg}）`);
+  }
   return e instanceof Error ? e : new Error(msg);
 }
 
@@ -46,11 +53,10 @@ export async function fetchStationSummaries(): Promise<
 > {
   const base = resolveApiBase();
   try {
-    const res = await fetch(`${base}/stations`, { cache: "no-store" });
-    if (!res.ok) {
-      throw new Error(`站列表拉取失败（HTTP ${res.status}）`);
-    }
-    const raw = (await res.json()) as unknown[];
+    const raw = await fetchJson<unknown[]>(`${base}/stations`, {
+      cache: "no-store",
+      timeoutMs: TIMEOUT_MS,
+    });
     if (!Array.isArray(raw)) {
       throw new Error("站列表响应格式无效");
     }

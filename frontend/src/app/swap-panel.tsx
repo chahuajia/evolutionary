@@ -9,7 +9,10 @@ import { FormEvent, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StationSummary } from "@/domains/swap/infrastructure/station-gateway";
 import { resolveApiBase } from "@/domains/swap/infrastructure/station-gateway";
+import { fetchJson } from "@/shared/http/fetch-json";
 import styles from "./page.module.css";
+
+const TIMEOUT_MS = 8000;
 
 type BatteryView = { id: string; status: string };
 type StationView = { id: string; name: string; batteries: BatteryView[] };
@@ -48,16 +51,11 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(
+      const body = await fetchJson<StationView>(
         `${apiBase}/stations/${encodeURIComponent(stationId)}`,
+        { timeoutMs: TIMEOUT_MS },
       );
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(
-          (body as { error?: string }).error ?? `HTTP ${res.status}`,
-        );
-      }
-      setStation(body as StationView);
+      setStation(body);
     } catch (e) {
       setError(triageFetchError(e));
     } finally {
@@ -71,27 +69,24 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
     setError(null);
     setLastSwap(null);
     try {
-      const res = await fetch(
+      const swap = await fetchJson<SwapResult>(
         `${apiBase}/stations/${encodeURIComponent(stationId)}/swaps`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ incomingBatteryId }),
+          timeoutMs: TIMEOUT_MS,
         },
       );
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(
-          (body as { error?: string }).error ?? `HTTP ${res.status}`,
-        );
-      }
-      const swap = body as SwapResult;
       setLastSwap(swap);
-      const stationRes = await fetch(
-        `${apiBase}/stations/${encodeURIComponent(stationId)}`,
-      );
-      if (stationRes.ok) {
-        setStation((await stationRes.json()) as StationView);
+      try {
+        const next = await fetchJson<StationView>(
+          `${apiBase}/stations/${encodeURIComponent(stationId)}`,
+          { timeoutMs: TIMEOUT_MS },
+        );
+        setStation(next);
+      } catch {
+        /* 换电已成功；详情刷新失败不阻断，列表仍 refresh */
       }
       router.refresh();
     } catch (err) {
