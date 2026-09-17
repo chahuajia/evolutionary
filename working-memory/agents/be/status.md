@@ -1,24 +1,24 @@
 # BE agent status（S36）
 
 **分支**：`topic/fe-ddd-rsc`  
-**日期**：2026-09-17 · evo-collab-extreme 切片9a · 信用购 HTTP  
-**HEAD**：`c2f0096`
+**日期**：2026-09-18 · evo-collab-extreme 切片10a · 商城领券 HTTP  
+**HEAD**：`249b137`
 
 ## 完成
 
-- `InMemoryOrderRepository` + `@Bean OrderRepository`（CreditConfig）
-- `PurchaseWithCredit` Spring bean
-- `POST /credit/purchases`：body `{userId,productId}` → 200（orderId/entitlementId/debtId/…）；额度不足 → 409 `CREDIT_LIMIT_EXCEEDED`
-- 种子：`P-CREDIT-1` FIXED 3000¢（非计量）写入 ProductRepository；U1 good 可用 7000¢
-- `CreditPurchaseHttpIT`：200 + 409
-- RUNBOOK：信用购 curl 段
-- 未改 `EntitledSwapController` / 计量换电种子
+- `InMemoryCampaignRepository` / `InMemoryCouponTemplateRepository` / `InMemoryUserCouponRepository`
+- `MallConfig`：beans + 种子 CAMP-OK / CAMP-EMPTY + T-C1（预算 5000¢ / 0）
+- `POST /mall/campaigns/{campaignId}/claims`：body `{userId,templateId}` → 200（id/userId/templateId/status）；预算耗尽 → 409 `CAMPAIGN_BUDGET_EXHAUSTED`
+- `MallApiErrorTranslator`：S34 按码映射，不嗅探 message
+- `ClaimCouponHttpIT`：200 + 409
+- RUNBOOK：商城领券 curl 段
+- 未改 frontend / iot / credit / commerce entitled-swaps
 
 ## Tests run
 
 ```text
-mvn -B "-Dtest=CreditPurchaseHttpIT,CreditControllerTest,PurchaseWithCreditTest,CreditRepayHttpIT" test
-Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
+mvn -B "-Dtest=ClaimCouponHttpIT,ClaimCouponFromCampaignTest" test
+Tests run: 4, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 ## 阻塞
@@ -28,4 +28,4 @@ Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
 ## 备注
 
 - 未改 frontend；未 merge `version/v0`；未 push
-- FE 9b 已对接同路径 `/credit/purchases`
+- FE 10b 可对接同路径 `/mall/campaigns/{campaignId}/claims`

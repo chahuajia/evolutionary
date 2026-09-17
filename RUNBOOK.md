@@ -11,6 +11,7 @@
 | `POST /credit/purchases` | P-CREDIT-1 FIXED 3000¢（非计量）+ U1 good | `CreditConfig` |
 | `POST /entitled-swaps` | E-1 ACTIVE（U1）+ BAT-1 idle；计量 E-M1 / P-M1 / BAT-M1 | `CommerceConfig` |
 | `POST /iot/.../detect-comm-lost` | BAT-IOT-1 shadow lastSeen 过期（>5min） | `IotConfig` |
+| `POST /mall/campaigns/CAMP-OK/claims` | CAMP-OK 预算 5000¢ + T-C1 | `MallConfig` |
 
 ## 已接通（正式可跑）
 
@@ -20,7 +21,7 @@
 | 信用档案 + 账单 | `/credit` → `/api/credit/profiles/U1…` | `CreditController` + CreditConfig U1 |
 | 信用购 | `/credit` → `/api/credit/purchases` | `CreditController` + PurchaseWithCredit |
 | 权益换电（非计量 / 计量） | （新建岛）→ `/api/entitled-swaps` | `EntitledSwapController` + CommerceConfig |
-| IoT 影子 / COMM_LOST | （诊断岛）→ `/api/iot/...` | `IotController` + IotConfig |
+| IoT 影子 / COMM_LOST / 遥测入影 | （诊断岛）→ `/api/iot/...` | `IotController` + IotConfig |
 
 ## 启动
 
@@ -41,7 +42,7 @@ cd frontend && npm run dev
 ## 尚未接通（非正式完整场景）
 
 - 默认选卡 HTTP
-- IoT 遥测入影 HTTP / UI（影子查询与 COMM_LOST HTTP 已接通）
+- IoT 遥测入影 UI（HTTP 已接通）
 - 登录与多用户
 
 ## 新接通（权益换电）
@@ -95,6 +96,18 @@ curl -s http://localhost:8080/iot/batteries/BAT-IOT-1/shadow
 
 # stale → COMM_LOST + OPEN ticket；再跑同 ticketId（不重复开单）
 curl -s -X POST http://localhost:8080/iot/batteries/BAT-IOT-1/detect-comm-lost
+```
+
+## 新接通（IoT 遥测入影）
+
+```bash
+# 入影刷新 soc/lastSeenAt，清除 stale；200 返回影子摘要
+curl -s -X POST http://localhost:8080/iot/batteries/BAT-IOT-1/telemetry \
+  -H "Content-Type: application/json" \
+  -d '{"vendorId":"vendorA","soc":75,"voltageMilli":4150}'
+
+# 验证：GET shadow soc=75 stale=false
+curl -s http://localhost:8080/iot/batteries/BAT-IOT-1/shadow
 ```
 
 ## 正式验收（两枪）
