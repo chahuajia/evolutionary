@@ -15,3 +15,4 @@
 
 - collaboration：不变
 - interceptions：0
+- 切片2/3 候选（探路，暂不入库）：隐式随便扣卡；Order 子类；领域内解析 SOC；购买时扣 METERED
