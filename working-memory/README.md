@@ -12,6 +12,7 @@
 
 | 任务 | 状态 | 文件 |
 | :--- | :--- | :--- |
+| **battery-phase-4 实现** | 🔄 `phase/4-profit-sharing` · 切片1 ✅ | `tasks/battery-phase-4/loop.md` |
 | **battery-phase-3 实现** | ✅ 切片 1–3 收口 · 停 wake | `tasks/battery-phase-3/retro.md` |
 | **battery-phase-2 实现** | ✅ 切片 1–3 收口 · 停 wake | `tasks/battery-phase-2/retro.md` |
 | **battery-phase-1 实现** | ✅ 切片 1–3 收口 · 停 wake | `tasks/battery-phase-1/retro.md` |
