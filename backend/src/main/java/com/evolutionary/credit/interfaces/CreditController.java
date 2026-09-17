@@ -2,19 +2,24 @@ package com.evolutionary.credit.interfaces;
 
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.application.CreditProfileRepository;
+import com.evolutionary.credit.application.MarkCreditOverdue;
 import com.evolutionary.credit.domain.BillingStatement;
+import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditProfile;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 信用只读 HTTP（正式联调第一步）。
+ * 信用 HTTP（只读档案/账单 + 逾期冻权益）。
  *
  * <p>JSON 字段对齐 phase-6 IDL / 前端 types（status 小写 good|overdue|frozen）。
  */
@@ -27,11 +32,15 @@ public class CreditController {
 
     private final CreditProfileRepository profiles;
     private final BillingStatementRepository statements;
+    private final MarkCreditOverdue markCreditOverdue;
 
     public CreditController(
-            CreditProfileRepository profiles, BillingStatementRepository statements) {
+            CreditProfileRepository profiles,
+            BillingStatementRepository statements,
+            MarkCreditOverdue markCreditOverdue) {
         this.profiles = profiles;
         this.statements = statements;
+        this.markCreditOverdue = markCreditOverdue;
     }
 
     @GetMapping("/profiles/{userId}")
@@ -51,6 +60,30 @@ public class CreditController {
         List<BillingStatementView> views =
                 statements.findByUserId(userId).stream().map(CreditController::toStatement).toList();
         return ResponseEntity.ok(views);
+    }
+
+    @PostMapping("/profiles/{userId}/mark-overdue")
+    public ResponseEntity<?> markOverdue(
+            @PathVariable String userId, @RequestBody MarkOverdueRequest body) {
+        if (body == null || body.statementId() == null || body.statementId().isBlank()) {
+            throw new IllegalArgumentException("statementId required");
+        }
+        CreditOutcome<CreditProfile> outcome =
+                markCreditOverdue.execute(userId, body.statementId().trim());
+        if (outcome instanceof CreditOutcome.Ok<CreditProfile> ok) {
+            return ResponseEntity.ok(toProfile(ok.value()));
+        }
+        CreditOutcome.Err<CreditProfile> err = (CreditOutcome.Err<CreditProfile>) outcome;
+        CreditApiErrorTranslator.Translated translated = CreditApiErrorTranslator.translate(err);
+        return ResponseEntity.status(translated.status()).body(translated.body());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<CreditApiErrorTranslator.ApiError> handleBadRequest(
+            IllegalArgumentException ex) {
+        String msg = ex.getMessage() == null ? "bad request" : ex.getMessage();
+        return ResponseEntity.badRequest()
+                .body(new CreditApiErrorTranslator.ApiError(msg, null));
     }
 
     private static CreditProfileView toProfile(CreditProfile p) {
@@ -75,6 +108,8 @@ public class CreditController {
                 s.createdAt().toString(),
                 s.paidAt() == null ? null : s.paidAt().toString());
     }
+
+    public record MarkOverdueRequest(String statementId) {}
 
     public record CreditProfileView(
             String userId,

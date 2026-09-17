@@ -1,17 +1,16 @@
 # BE agent status（S36）
 
 **分支**：`topic/fe-ddd-rsc`  
-**日期**：2026-09-17 · evo-collab-extreme 切片4 · POST /entitled-swaps  
-**HEAD**：`90b4e89`
+**日期**：2026-09-17 · evo-collab-extreme 切片5 · MarkCreditOverdue HTTP  
+**HEAD**：见本 commit（提交后填）
 
 ## 完成
 
-- `commerce/infrastructure`：InMemory Entitlement / BatteryAsset / UsageEvent（非计量最小面）
-- `CommerceConfig`：仓储 + `PerformEntitledSwap(Clock.systemUTC())`；种子 E-1 ACTIVE（U1）+ BAT-1 idle
-- `EntitledSwapController`：`POST /entitled-swaps`；边界 parse→400；`DomainOutcome`→200 / 409|422（S34，`EntitledSwapApiErrorTranslator`）
-- `EntitledSwapControllerTest`：200 / 400 / 422 绿；`FormalLiveContractTest` 仍绿
-- RUNBOOK：权益换电 curl（U1 / E-1 / CAB-1）
-- 未改 frontend / collaboration（FE 岛由并行 agent 负责）
+- `CreditConfig`：`@Bean MarkCreditOverdue`（statements/profiles + **同一** `EntitlementRepository` + `Clock.systemUTC()`）
+- `CreditController`：`POST /credit/profiles/{userId}/mark-overdue` body `{"statementId"}` → 200 profile / Err→`CreditApiErrorTranslator`（S34 按码）
+- `CreditOverdueHttpIT`：U1/STMT-2026-02 → overdue；再 `POST /entitled-swaps` U1/E-1/CAB-1 → **409** `CREDIT_OVERDUE_BLOCKED` + suggestion
+- RUNBOOK：逾期冻权益 curl 一行
+- 测绿：`mvn -B "-Dtest=CreditOverdueHttpIT,CreditControllerTest,EntitledSwapControllerTest,FormalLiveContractTest" test` → Tests run: 8, Failures: 0
 
 ## 阻塞
 
@@ -19,4 +18,5 @@
 
 ## 备注
 
-- 种子用户为 **U1**（对齐信用 FormalLive）；单元测 `PerformEntitledSwapTest` 仍用 U-1，互不影响
+- 未改 frontend；未 merge `version/v0`；未 push
+- `CreditOverdueHttpIT` 带 `@DirtiesContext(AFTER_CLASS)`，避免冻 E-1 污染同上下文换电/档案测

@@ -1,14 +1,17 @@
 package com.evolutionary.credit.interfaces;
 
+import com.evolutionary.commerce.application.EntitlementRepository;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.application.CreditProfileRepository;
+import com.evolutionary.credit.application.MarkCreditOverdue;
 import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditProfile;
 import com.evolutionary.credit.domain.ScoreTier;
 import com.evolutionary.credit.infrastructure.InMemoryBillingStatementRepository;
 import com.evolutionary.credit.infrastructure.InMemoryCreditProfileRepository;
+import java.time.Clock;
 import java.time.Instant;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +28,17 @@ public class CreditConfig {
     @Bean
     BillingStatementRepository billingStatementRepository() {
         return new InMemoryBillingStatementRepository();
+    }
+
+    /**
+     * 逾期冻权益；注入与 {@code CommerceConfig} 同一 {@link EntitlementRepository} bean。
+     */
+    @Bean
+    MarkCreditOverdue markCreditOverdue(
+            BillingStatementRepository statements,
+            CreditProfileRepository profiles,
+            EntitlementRepository entitlements) {
+        return new MarkCreditOverdue(statements, profiles, entitlements, Clock.systemUTC());
     }
 
     /**
