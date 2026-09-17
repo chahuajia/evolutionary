@@ -61,8 +61,8 @@ export function CommLostPanel() {
 }
 
 function DetectResultView({ result }: { result: DetectCommLostResult }) {
-  const alertType = result.alert?.alertType ?? (result.raised ? "COMM_LOST" : "—");
-  const ticket = result.ticket;
+  const alertLabel =
+    result.alertType ?? (result.raised ? "COMM_LOST" : null);
 
   return (
     <dl className={styles.dl}>
@@ -78,35 +78,22 @@ function DetectResultView({ result }: { result: DetectCommLostResult }) {
         >
           {result.stale ? "stale" : "fresh"}
         </span>
-        {result.shadow.lastSeenAt
-          ? ` · lastSeen ${result.shadow.lastSeenAt}`
-          : ""}
       </dd>
 
       <dt>告警</dt>
       <dd>
-        {result.raised || result.alert ? (
+        {alertLabel ? (
           <span className={`${styles.badge} ${styles.badgeLost}`}>
-            {alertType}
+            {alertLabel}
           </span>
         ) : (
           "未触发"
         )}
-        {result.alert?.severity ? ` · ${result.alert.severity}` : ""}
-        {result.alert?.raisedAt ? ` · ${result.alert.raisedAt}` : ""}
+        {result.raised ? " · raised" : ""}
       </dd>
 
       <dt>ticket</dt>
-      <dd>
-        {ticket ? (
-          <>
-            {ticket.id} · {ticket.status} · {ticket.alertType}
-            {ticket.createdAt ? ` · ${ticket.createdAt}` : ""}
-          </>
-        ) : (
-          "无"
-        )}
-      </dd>
+      <dd>{result.ticketId ?? "无"}</dd>
     </dl>
   );
 }
