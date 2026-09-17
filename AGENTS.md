@@ -62,12 +62,18 @@ node <collab-cli>/dist/cli/index.js --dir <知识库> validate
 
 （`collab` 也已作为 MCP server 注册，工具名 `collab_*`。）
 
+## 工作记忆
+
+跨对话进度在 **`working-memory/`**（见 `W10`）。业务压测规格：
+
+`working-memory/tasks/battery-pressure/`（阶段 0–7 已收口，待 backend 实现）
+
 ## 本文件待补
 
 - [x] `项目是什么`
 - [x] 技术栈与运行方式（见下）
 - [x] 本项目的**局部约定**（见下）
-- [ ] 若本项目也要维护自己的知识库：它的路径与范围（**待定** —— 第一轮先只消费全局知识库）
+- [x] 工作记忆路径：`working-memory/README.md`
 
 ## 技术栈（用户已定）
 
