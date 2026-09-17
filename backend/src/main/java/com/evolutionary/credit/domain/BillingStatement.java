@@ -1,0 +1,134 @@
+package com.evolutionary.credit.domain;
+
+import com.evolutionary.commerce.domain.Money;
+import java.time.Instant;
+import java.util.Objects;
+
+/** 周期账单（P6-3）。 */
+public final class BillingStatement {
+
+    private final String id;
+    private final String userId;
+    private final Instant periodStart;
+    private final Instant periodEnd;
+    private final Money totalDue;
+    private final StatementStatus status;
+    private final Instant dueDate;
+    private final Instant createdAt;
+    private final Instant paidAt;
+
+    private BillingStatement(
+            String id,
+            String userId,
+            Instant periodStart,
+            Instant periodEnd,
+            Money totalDue,
+            StatementStatus status,
+            Instant dueDate,
+            Instant createdAt,
+            Instant paidAt) {
+        this.id = id;
+        this.userId = userId;
+        this.periodStart = periodStart;
+        this.periodEnd = periodEnd;
+        this.totalDue = totalDue;
+        this.status = status;
+        this.dueDate = dueDate;
+        this.createdAt = createdAt;
+        this.paidAt = paidAt;
+    }
+
+    /** 出账：宽限期 7 天。 */
+    public static BillingStatement issueDue(
+            String id,
+            String userId,
+            Instant periodStart,
+            Instant periodEnd,
+            Money totalDue,
+            Instant createdAt) {
+        Instant due = Objects.requireNonNull(periodEnd, "periodEnd").plusSeconds(7L * 86_400);
+        return new BillingStatement(
+                Objects.requireNonNull(id, "id"),
+                Objects.requireNonNull(userId, "userId"),
+                Objects.requireNonNull(periodStart, "periodStart"),
+                periodEnd,
+                Objects.requireNonNull(totalDue, "totalDue"),
+                StatementStatus.DUE,
+                due,
+                Objects.requireNonNull(createdAt, "createdAt"),
+                null);
+    }
+
+    public BillingStatement markPaid(Instant at) {
+        if (status != StatementStatus.DUE && status != StatementStatus.OVERDUE) {
+            throw new IllegalStateException("仅 DUE/OVERDUE 可还款");
+        }
+        return new BillingStatement(
+                id,
+                userId,
+                periodStart,
+                periodEnd,
+                totalDue,
+                StatementStatus.PAID,
+                dueDate,
+                createdAt,
+                Objects.requireNonNull(at, "paidAt"));
+    }
+
+    public BillingStatement markOverdue() {
+        if (status != StatementStatus.DUE) {
+            throw new IllegalStateException("仅 DUE 可逾期");
+        }
+        return new BillingStatement(
+                id,
+                userId,
+                periodStart,
+                periodEnd,
+                totalDue,
+                StatementStatus.OVERDUE,
+                dueDate,
+                createdAt,
+                null);
+    }
+
+    public boolean isPastDue(Instant at) {
+        return (status == StatementStatus.DUE || status == StatementStatus.OVERDUE)
+                && at.isAfter(dueDate);
+    }
+
+    public String id() {
+        return id;
+    }
+
+    public String userId() {
+        return userId;
+    }
+
+    public Instant periodStart() {
+        return periodStart;
+    }
+
+    public Instant periodEnd() {
+        return periodEnd;
+    }
+
+    public Money totalDue() {
+        return totalDue;
+    }
+
+    public StatementStatus status() {
+        return status;
+    }
+
+    public Instant dueDate() {
+        return dueDate;
+    }
+
+    public Instant createdAt() {
+        return createdAt;
+    }
+
+    public Instant paidAt() {
+        return paidAt;
+    }
+}

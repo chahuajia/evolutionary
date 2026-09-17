@@ -217,6 +217,18 @@ class PurchaseWithCreditTest {
         }
 
         @Override
+        public List<CreditLedgerDebt> findByStatus(DebtStatus status) {
+            return byId.values().stream().filter(d -> d.status() == status).toList();
+        }
+
+        @Override
+        public List<CreditLedgerDebt> findByBilledStatementId(String statementId) {
+            return byId.values().stream()
+                    .filter(d -> statementId.equals(d.billedStatementId()))
+                    .toList();
+        }
+
+        @Override
         public List<CreditLedgerDebt> findByOrderId(String orderId) {
             return byId.values().stream().filter(d -> d.orderId().equals(orderId)).toList();
         }

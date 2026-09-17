@@ -12,6 +12,10 @@ public interface CreditLedgerDebtRepository {
 
     List<CreditLedgerDebt> findByUserIdAndStatus(String userId, DebtStatus status);
 
+    List<CreditLedgerDebt> findByStatus(DebtStatus status);
+
+    List<CreditLedgerDebt> findByBilledStatementId(String statementId);
+
     List<CreditLedgerDebt> findByOrderId(String orderId);
 
     default CreditLedgerDebt get(String id) {
