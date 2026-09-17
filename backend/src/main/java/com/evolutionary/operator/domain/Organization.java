@@ -72,6 +72,21 @@ public final class Organization {
         return capabilities.contains(capability);
     }
 
+    /** 授予能力（不可变拷贝）。 */
+    public Organization grant(OrgCapability capability) {
+        if (capabilities.contains(capability)) {
+            return this;
+        }
+        java.util.ArrayList<OrgCapability> next = new java.util.ArrayList<>(capabilities);
+        next.add(capability);
+        return new Organization(id, name, parentId, next, regionScope, status);
+    }
+
+    /** 仅 MERCHANT、无 OPERATOR 时不可发套餐模板。 */
+    public boolean canPublishPackageTemplate() {
+        return hasCapability(OrgCapability.OPERATOR);
+    }
+
     public boolean coversRegion(String region) {
         return regionScope.contains(region);
     }

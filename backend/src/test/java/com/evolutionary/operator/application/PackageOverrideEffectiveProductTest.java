@@ -38,6 +38,7 @@ class PackageOverrideEffectiveProductTest {
     private InMemoryTemplateRepo templates;
     private InMemoryOverrideRepo overrides;
     private InMemoryAuditRepo audits;
+    private InMemoryOrgRepo orgs;
     private ActivatePackageOverride activate;
     private RevokePackageOverride revoke;
     private ResolveEffectiveProduct resolve;
@@ -50,12 +51,15 @@ class PackageOverrideEffectiveProductTest {
         templates = new InMemoryTemplateRepo();
         overrides = new InMemoryOverrideRepo();
         audits = new InMemoryAuditRepo();
+        orgs = new InMemoryOrgRepo();
+        orgs.save(l1);
+        orgs.save(l2);
         Clock clock = Clock.fixed(FIXED, ZoneOffset.UTC);
         OrgAuthorization auth = new OrgAuthorization(OrgAuthorization.index(l1, l2));
         activate = new ActivatePackageOverride(templates, overrides, audits, auth, clock);
         revoke = new RevokePackageOverride(overrides, audits, clock);
         resolve = new ResolveEffectiveProduct(templates, overrides);
-        publish = new PublishPackageTemplate(templates, audits, clock);
+        publish = new PublishPackageTemplate(templates, audits, orgs, clock);
 
         TemplateBaseProduct base = TemplateBaseProduct.of("30天卡", 3000, 30);
         templates.save(
@@ -186,6 +190,20 @@ class PackageOverrideEffectiveProductTest {
         @Override
         public List<AuditLog> findByResourceId(String resourceId) {
             return store.stream().filter(l -> l.resourceId().equals(resourceId)).toList();
+        }
+    }
+
+    private static final class InMemoryOrgRepo implements OrganizationRepository {
+        private final Map<String, Organization> store = new HashMap<>();
+
+        @Override
+        public void save(Organization org) {
+            store.put(org.id(), org);
+        }
+
+        @Override
+        public Optional<Organization> findById(String id) {
+            return Optional.ofNullable(store.get(id));
         }
     }
 }

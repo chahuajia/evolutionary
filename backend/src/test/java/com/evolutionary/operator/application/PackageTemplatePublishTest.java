@@ -34,6 +34,7 @@ class PackageTemplatePublishTest {
     private Organization l1;
     private InMemoryTemplateRepo templates;
     private InMemoryAuditRepo audits;
+    private InMemoryOrgRepo orgs;
     private PublishPackageTemplate publish;
     private MutatePackageTemplateBaseProduct mutate;
 
@@ -42,8 +43,10 @@ class PackageTemplatePublishTest {
         l1 = Organization.createRoot("ORG-L1", "华南", List.of("GD", "SZ"));
         templates = new InMemoryTemplateRepo();
         audits = new InMemoryAuditRepo();
+        orgs = new InMemoryOrgRepo();
+        orgs.save(l1);
         Clock clock = Clock.fixed(FIXED, ZoneOffset.UTC);
-        publish = new PublishPackageTemplate(templates, audits, clock);
+        publish = new PublishPackageTemplate(templates, audits, orgs, clock);
         mutate = new MutatePackageTemplateBaseProduct(templates);
     }
 
@@ -135,6 +138,20 @@ class PackageTemplatePublishTest {
         @Override
         public List<AuditLog> findByResourceId(String resourceId) {
             return store.stream().filter(l -> l.resourceId().equals(resourceId)).toList();
+        }
+    }
+
+    private static final class InMemoryOrgRepo implements OrganizationRepository {
+        private final Map<String, Organization> store = new HashMap<>();
+
+        @Override
+        public void save(Organization org) {
+            store.put(org.id(), org);
+        }
+
+        @Override
+        public Optional<Organization> findById(String id) {
+            return Optional.ofNullable(store.get(id));
         }
     }
 }

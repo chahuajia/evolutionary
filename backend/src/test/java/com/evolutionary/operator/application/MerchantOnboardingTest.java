@@ -1,0 +1,172 @@
+package com.evolutionary.operator.application;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.evolutionary.mall.application.MerchantProfileRepository;
+import com.evolutionary.mall.domain.MerchantProfile;
+import com.evolutionary.mall.domain.MerchantStatus;
+import com.evolutionary.operator.domain.AuditLog;
+import com.evolutionary.operator.domain.OnboardingApplication;
+import com.evolutionary.operator.domain.OperatorErrorCode;
+import com.evolutionary.operator.domain.OperatorOutcome;
+import com.evolutionary.operator.domain.OrgCapability;
+import com.evolutionary.operator.domain.Organization;
+import com.evolutionary.operator.domain.OverridableField;
+import com.evolutionary.operator.domain.PackageTemplate;
+import com.evolutionary.operator.domain.TemplateBaseProduct;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/** AC-40：商家入驻授予 MERCHANT，且不可发布 PackageTemplate。 */
+class MerchantOnboardingTest {
+
+    private static final Instant FIXED = Instant.parse("2026-09-17T06:00:00Z");
+
+    private InMemoryOrgRepo orgs;
+    private InMemoryOnboardingRepo applications;
+    private InMemoryMerchantRepo merchants;
+    private InMemoryTemplateRepo templates;
+    private InMemoryAuditRepo audits;
+    private ApproveMerchantOnboarding approve;
+    private PublishPackageTemplate publish;
+    private Clock clock;
+
+    @BeforeEach
+    void setUp() {
+        orgs = new InMemoryOrgRepo();
+        applications = new InMemoryOnboardingRepo();
+        merchants = new InMemoryMerchantRepo();
+        templates = new InMemoryTemplateRepo();
+        audits = new InMemoryAuditRepo();
+        clock = Clock.fixed(FIXED, ZoneOffset.UTC);
+        approve = new ApproveMerchantOnboarding(applications, orgs, merchants, clock);
+        publish = new PublishPackageTemplate(templates, audits, orgs, clock);
+    }
+
+    @Test
+    @DisplayName("AC-40：批准 MERCHANT 入驻 → MerchantProfile.active，且禁发 PackageTemplate")
+    void approveMerchantCannotPublishTemplate() {
+        Organization merchantOnly =
+                Organization.create(
+                        "ORG-M1",
+                        "小店",
+                        null,
+                        List.of(),
+                        List.of("SZ"),
+                        com.evolutionary.operator.domain.OrgStatus.ACTIVE);
+        orgs.save(merchantOnly);
+
+        OnboardingApplication app =
+                OnboardingApplication.submit(
+                        "ONB-1", merchantOnly.id(), OrgCapability.MERCHANT, FIXED.minusSeconds(60));
+        applications.save(app);
+
+        OperatorOutcome<MerchantProfile> outcome = approve.execute("ONB-1", "黑鸟旗舰店");
+        assertInstanceOf(OperatorOutcome.Ok.class, outcome);
+        MerchantProfile profile = ((OperatorOutcome.Ok<MerchantProfile>) outcome).value();
+        assertEquals(MerchantStatus.ACTIVE, profile.status());
+        assertTrue(profile.isActive());
+        assertEquals("ORG-M1", profile.orgId());
+
+        Organization after = orgs.get("ORG-M1");
+        assertTrue(after.hasCapability(OrgCapability.MERCHANT));
+        assertFalse(after.hasCapability(OrgCapability.OPERATOR));
+        assertFalse(after.canPublishPackageTemplate());
+
+        TemplateBaseProduct base = TemplateBaseProduct.of("30天卡", 3000, 30);
+        templates.save(
+                PackageTemplate.createDraft(
+                        "T-M",
+                        "ORG-M1",
+                        base,
+                        List.of(OverridableField.PRICE)));
+
+        OperatorOutcome<PackageTemplate> rejected = publish.execute("U-M", "ORG-M1", "T-M");
+        assertInstanceOf(OperatorOutcome.Err.class, rejected);
+        assertEquals(
+                OperatorErrorCode.CAPABILITY_DENIED,
+                ((OperatorOutcome.Err<PackageTemplate>) rejected).code());
+    }
+
+    private static final class InMemoryOrgRepo implements OrganizationRepository {
+        private final Map<String, Organization> store = new HashMap<>();
+
+        @Override
+        public void save(Organization org) {
+            store.put(org.id(), org);
+        }
+
+        @Override
+        public Optional<Organization> findById(String id) {
+            return Optional.ofNullable(store.get(id));
+        }
+    }
+
+    private static final class InMemoryOnboardingRepo implements OnboardingApplicationRepository {
+        private final Map<String, OnboardingApplication> store = new HashMap<>();
+
+        @Override
+        public void save(OnboardingApplication application) {
+            store.put(application.id(), application);
+        }
+
+        @Override
+        public Optional<OnboardingApplication> findById(String id) {
+            return Optional.ofNullable(store.get(id));
+        }
+    }
+
+    private static final class InMemoryMerchantRepo implements MerchantProfileRepository {
+        private final Map<String, MerchantProfile> store = new HashMap<>();
+
+        @Override
+        public void save(MerchantProfile profile) {
+            store.put(profile.orgId(), profile);
+        }
+
+        @Override
+        public Optional<MerchantProfile> findByOrgId(String orgId) {
+            return Optional.ofNullable(store.get(orgId));
+        }
+    }
+
+    private static final class InMemoryTemplateRepo implements PackageTemplateRepository {
+        private final Map<String, PackageTemplate> store = new HashMap<>();
+
+        @Override
+        public void save(PackageTemplate template) {
+            store.put(template.id(), template);
+        }
+
+        @Override
+        public Optional<PackageTemplate> findById(String id) {
+            return Optional.ofNullable(store.get(id));
+        }
+    }
+
+    private static final class InMemoryAuditRepo implements AuditLogRepository {
+        private final List<AuditLog> store = new ArrayList<>();
+
+        @Override
+        public void append(AuditLog log) {
+            store.add(log);
+        }
+
+        @Override
+        public List<AuditLog> findByResourceId(String resourceId) {
+            return store.stream().filter(l -> l.resourceId().equals(resourceId)).toList();
+        }
+    }
+}
