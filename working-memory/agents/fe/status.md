@@ -3,7 +3,7 @@
 **分支**：`topic/fe-ddd-rsc`  
 **日期**：2026-09-17  
 **心跳**：slice 8b IoT COMM_LOST 诊断客户端岛  
-**HEAD**：*(commit 后回填)*
+**HEAD**：`86c2bf2`
 
 ## 完成
 
