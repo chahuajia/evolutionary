@@ -18,7 +18,7 @@
 
 ## 未纳入本轮
 
-AC-60/61（COMM_LOST / 诊断路径）→ 可 `topic/iot-comm-lost`。
+AC-60/61 → 已在 `topic/iot-comm-lost`（`30245df`），待合入 `version/v0`。
 
 ## 拦截（本 phase）
 
