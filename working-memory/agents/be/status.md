@@ -2,7 +2,7 @@
 
 **分支**：`topic/fe-ddd-rsc`  
 **日期**：2026-09-17 · heartbeat slice-1 formal live contract  
-**HEAD**：待 commit 后刷新
+**HEAD**：`a9d5dce`
 
 ## 完成
 
