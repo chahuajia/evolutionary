@@ -12,6 +12,8 @@ public final class Entitlement {
     private final Instant validFrom;
     private final Instant validUntil;
     private final EntitlementStatus status;
+    /** null = UNLIMITED；非 null = FINITE 剩余次数（INV-6/7）。 */
+    private final Integer remainingSwaps;
 
     private Entitlement(
             String id,
@@ -20,7 +22,8 @@ public final class Entitlement {
             String productId,
             Instant validFrom,
             Instant validUntil,
-            EntitlementStatus status) {
+            EntitlementStatus status,
+            Integer remainingSwaps) {
         this.id = id;
         this.orderId = orderId;
         this.userId = userId;
@@ -28,12 +31,14 @@ public final class Entitlement {
         this.validFrom = validFrom;
         this.validUntil = validUntil;
         this.status = status;
+        this.remainingSwaps = remainingSwaps;
     }
 
     /** INV-2：仅对已支付订单生成 ACTIVE 权益。 */
     public static Entitlement createActive(
             String id, Order paidOrder, Product product, Instant now) {
         Objects.requireNonNull(paidOrder, "paidOrder");
+        Objects.requireNonNull(product, "product");
         if (!paidOrder.isPaid()) {
             throw new IllegalArgumentException("entitlement requires paid order");
         }
@@ -41,6 +46,7 @@ public final class Entitlement {
             throw new IllegalArgumentException("product mismatch");
         }
         Instant validUntil = now.plusSeconds(product.durationDays() * 86_400L);
+        Integer remaining = product.swapLimit().finiteOrNull();
         return new Entitlement(
                 requireId(id),
                 paidOrder.id(),
@@ -48,13 +54,41 @@ public final class Entitlement {
                 product.id(),
                 now,
                 validUntil,
-                EntitlementStatus.ACTIVE);
+                EntitlementStatus.ACTIVE,
+                remaining);
     }
 
     public boolean isActiveAt(Instant at) {
         return status == EntitlementStatus.ACTIVE
                 && !at.isBefore(validFrom)
                 && at.isBefore(validUntil);
+    }
+
+    public boolean isFinite() {
+        return remainingSwaps != null;
+    }
+
+    public boolean isExhausted() {
+        return remainingSwaps != null && remainingSwaps == 0;
+    }
+
+    /** INV-6：COMPLETED 后 remainingSwaps -= 1。 */
+    public Entitlement consumeSwap() {
+        if (remainingSwaps == null) {
+            return this;
+        }
+        if (remainingSwaps <= 0) {
+            throw new IllegalStateException("cannot consume exhausted entitlement");
+        }
+        return new Entitlement(
+                id,
+                orderId,
+                userId,
+                productId,
+                validFrom,
+                validUntil,
+                status,
+                remainingSwaps - 1);
     }
 
     /** INV-5：退款时撤销权益，阻止后续 COMPLETED 履约。 */
@@ -65,7 +99,15 @@ public final class Entitlement {
         if (status != EntitlementStatus.ACTIVE && status != EntitlementStatus.EXPIRED) {
             throw new IllegalStateException("cannot revoke entitlement in status " + status);
         }
-        return new Entitlement(id, orderId, userId, productId, validFrom, validUntil, EntitlementStatus.REVOKED);
+        return new Entitlement(
+                id,
+                orderId,
+                userId,
+                productId,
+                validFrom,
+                validUntil,
+                EntitlementStatus.REVOKED,
+                remainingSwaps);
     }
 
     public String id() {
@@ -96,6 +138,10 @@ public final class Entitlement {
         return status;
     }
 
+    public Integer remainingSwaps() {
+        return remainingSwaps;
+    }
+
     public static Entitlement rehydrate(
             String id,
             String orderId,
@@ -104,6 +150,21 @@ public final class Entitlement {
             Instant validFrom,
             Instant validUntil,
             EntitlementStatus status) {
+        return rehydrate(id, orderId, userId, productId, validFrom, validUntil, status, null);
+    }
+
+    public static Entitlement rehydrate(
+            String id,
+            String orderId,
+            String userId,
+            String productId,
+            Instant validFrom,
+            Instant validUntil,
+            EntitlementStatus status,
+            Integer remainingSwaps) {
+        if (remainingSwaps != null && remainingSwaps < 0) {
+            throw new IllegalArgumentException("remainingSwaps must not be negative");
+        }
         return new Entitlement(
                 requireId(id),
                 requireId(orderId),
@@ -111,7 +172,8 @@ public final class Entitlement {
                 requireId(productId),
                 Objects.requireNonNull(validFrom, "validFrom"),
                 Objects.requireNonNull(validUntil, "validUntil"),
-                Objects.requireNonNull(status, "status"));
+                Objects.requireNonNull(status, "status"),
+                remainingSwaps);
     }
 
     private static String requireId(String id) {

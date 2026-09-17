@@ -82,6 +82,9 @@ public final class PerformEntitledSwap {
         if (!entitlement.userId().equals(userId)) {
             return DomainOutcome.err(DomainErrorCode.ENTITLEMENT_INACTIVE, "entitlement user mismatch");
         }
+        if (entitlement.isExhausted()) {
+            return DomainOutcome.err(DomainErrorCode.ENTITLEMENT_EXHAUSTED, "no remaining swaps");
+        }
         return DomainOutcome.ok(null);
     }
 
@@ -95,6 +98,8 @@ public final class PerformEntitledSwap {
             return DomainOutcome.err(
                     DomainErrorCode.BATTERY_ALREADY_RENTED, "battery already has started usage");
         }
+
+        Entitlement entitlement = entitlements.get(entitlementId);
 
         UsageEvent started =
                 UsageEvent.start(
@@ -112,6 +117,10 @@ public final class PerformEntitledSwap {
         BatteryAsset returned = rented.returnToIdle();
         batteries.save(returned);
         usages.save(completed);
+
+        // INV-6：COMPLETED 后扣次
+        Entitlement consumed = entitlement.consumeSwap();
+        entitlements.save(consumed);
 
         return DomainOutcome.ok(completed);
     }

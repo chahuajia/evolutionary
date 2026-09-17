@@ -9,6 +9,7 @@ public final class Product {
     private final String name;
     private final Money price;
     private final int durationDays;
+    private final SwapLimit swapLimit;
     private final ProductStatus status;
 
     private Product(
@@ -17,13 +18,26 @@ public final class Product {
             String name,
             Money price,
             int durationDays,
+            SwapLimit swapLimit,
             ProductStatus status) {
         this.id = id;
         this.orgId = orgId;
         this.name = name;
         this.price = price;
         this.durationDays = durationDays;
+        this.swapLimit = swapLimit;
         this.status = status;
+    }
+
+    /** phase-0 兼容：UNLIMITED 次卡。 */
+    public static Product create(
+            String id,
+            String orgId,
+            String name,
+            Money price,
+            int durationDays,
+            ProductStatus status) {
+        return create(id, orgId, name, price, durationDays, SwapLimit.unlimited(), status);
     }
 
     public static Product create(
@@ -32,6 +46,7 @@ public final class Product {
             String name,
             Money price,
             int durationDays,
+            SwapLimit swapLimit,
             ProductStatus status) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("product id must not be blank");
@@ -48,6 +63,7 @@ public final class Product {
                 name,
                 Objects.requireNonNull(price, "price"),
                 durationDays,
+                Objects.requireNonNull(swapLimit, "swapLimit"),
                 Objects.requireNonNull(status, "status"));
     }
 
@@ -73,6 +89,10 @@ public final class Product {
 
     public int durationDays() {
         return durationDays;
+    }
+
+    public SwapLimit swapLimit() {
+        return swapLimit;
     }
 
     public ProductStatus status() {
