@@ -66,6 +66,24 @@ public final class LedgerEntry {
                 Objects.requireNonNull(createdAt, "createdAt"));
     }
 
+    /** INV-8：UsageEvent COMPLETED 后按电量扣款；refId = usageEventId。 */
+    public static LedgerEntry meteredCharge(
+            String id,
+            String userBalanceAccountId,
+            String orgSettlementAccountId,
+            Money amount,
+            String usageEventId,
+            Instant createdAt) {
+        return new LedgerEntry(
+                requireId(id),
+                requireId(userBalanceAccountId),
+                requireId(orgSettlementAccountId),
+                Objects.requireNonNull(amount, "amount"),
+                LedgerRefType.METERED_CHARGE,
+                requireId(usageEventId),
+                Objects.requireNonNull(createdAt, "createdAt"));
+    }
+
     public String id() {
         return id;
     }

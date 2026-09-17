@@ -10,10 +10,13 @@ public final class Entitlement {
     private final String userId;
     private final String productId;
     private final Instant validFrom;
+    /** null = 无窗口截止（PAY_AS_YOU_GO）；TIME_WINDOW 必有值。 */
     private final Instant validUntil;
     private final EntitlementStatus status;
     /** null = UNLIMITED；非 null = FINITE 剩余次数（INV-6/7）。 */
     private final Integer remainingSwaps;
+    /** null = 非计量；PAY_AS_YOU_GO = 后付计量。 */
+    private final MeteringMode meteringMode;
 
     private Entitlement(
             String id,
@@ -23,7 +26,8 @@ public final class Entitlement {
             Instant validFrom,
             Instant validUntil,
             EntitlementStatus status,
-            Integer remainingSwaps) {
+            Integer remainingSwaps,
+            MeteringMode meteringMode) {
         this.id = id;
         this.orderId = orderId;
         this.userId = userId;
@@ -32,9 +36,10 @@ public final class Entitlement {
         this.validUntil = validUntil;
         this.status = status;
         this.remainingSwaps = remainingSwaps;
+        this.meteringMode = meteringMode;
     }
 
-    /** INV-2：仅对已支付订单生成 ACTIVE 权益。 */
+    /** INV-2：仅对已支付订单生成 ACTIVE 权益（TIME_WINDOW）。 */
     public static Entitlement createActive(
             String id, Order paidOrder, Product product, Instant now) {
         Objects.requireNonNull(paidOrder, "paidOrder");
@@ -44,6 +49,9 @@ public final class Entitlement {
         }
         if (!paidOrder.productId().equals(product.id())) {
             throw new IllegalArgumentException("product mismatch");
+        }
+        if (product.isMetered()) {
+            throw new IllegalArgumentException("use createPayAsYouGo for METERED product");
         }
         Instant validUntil = now.plusSeconds(product.durationDays() * 86_400L);
         Integer remaining = product.swapLimit().finiteOrNull();
@@ -55,17 +63,42 @@ public final class Entitlement {
                 now,
                 validUntil,
                 EntitlementStatus.ACTIVE,
-                remaining);
+                remaining,
+                null);
+    }
+
+    /** P3：PAY_AS_YOU_GO，无 validUntil，每次 swap 后结算。 */
+    public static Entitlement createPayAsYouGo(
+            String id, String orderId, String userId, String productId, Instant now) {
+        return new Entitlement(
+                requireId(id),
+                requireId(orderId),
+                requireId(userId),
+                requireId(productId),
+                Objects.requireNonNull(now, "now"),
+                null,
+                EntitlementStatus.ACTIVE,
+                null,
+                MeteringMode.PAY_AS_YOU_GO);
     }
 
     public boolean isActiveAt(Instant at) {
-        return status == EntitlementStatus.ACTIVE
-                && !at.isBefore(validFrom)
-                && at.isBefore(validUntil);
+        if (status != EntitlementStatus.ACTIVE || at.isBefore(validFrom)) {
+            return false;
+        }
+        // PAY_AS_YOU_GO：validUntil 为 null，不因窗口误杀
+        if (validUntil == null) {
+            return true;
+        }
+        return at.isBefore(validUntil);
     }
 
     public boolean isFinite() {
         return remainingSwaps != null;
+    }
+
+    public boolean isPayAsYouGo() {
+        return meteringMode == MeteringMode.PAY_AS_YOU_GO;
     }
 
     public boolean isExhausted() {
@@ -88,7 +121,8 @@ public final class Entitlement {
                 validFrom,
                 validUntil,
                 status,
-                remainingSwaps - 1);
+                remainingSwaps - 1,
+                meteringMode);
     }
 
     /** INV-5：退款时撤销权益，阻止后续 COMPLETED 履约。 */
@@ -107,7 +141,8 @@ public final class Entitlement {
                 validFrom,
                 validUntil,
                 EntitlementStatus.REVOKED,
-                remainingSwaps);
+                remainingSwaps,
+                meteringMode);
     }
 
     public String id() {
@@ -142,6 +177,10 @@ public final class Entitlement {
         return remainingSwaps;
     }
 
+    public MeteringMode meteringMode() {
+        return meteringMode;
+    }
+
     public static Entitlement rehydrate(
             String id,
             String orderId,
@@ -150,7 +189,7 @@ public final class Entitlement {
             Instant validFrom,
             Instant validUntil,
             EntitlementStatus status) {
-        return rehydrate(id, orderId, userId, productId, validFrom, validUntil, status, null);
+        return rehydrate(id, orderId, userId, productId, validFrom, validUntil, status, null, null);
     }
 
     public static Entitlement rehydrate(
@@ -162,8 +201,25 @@ public final class Entitlement {
             Instant validUntil,
             EntitlementStatus status,
             Integer remainingSwaps) {
+        return rehydrate(
+                id, orderId, userId, productId, validFrom, validUntil, status, remainingSwaps, null);
+    }
+
+    public static Entitlement rehydrate(
+            String id,
+            String orderId,
+            String userId,
+            String productId,
+            Instant validFrom,
+            Instant validUntil,
+            EntitlementStatus status,
+            Integer remainingSwaps,
+            MeteringMode meteringMode) {
         if (remainingSwaps != null && remainingSwaps < 0) {
             throw new IllegalArgumentException("remainingSwaps must not be negative");
+        }
+        if (meteringMode != MeteringMode.PAY_AS_YOU_GO) {
+            Objects.requireNonNull(validUntil, "validUntil");
         }
         return new Entitlement(
                 requireId(id),
@@ -171,9 +227,10 @@ public final class Entitlement {
                 requireId(userId),
                 requireId(productId),
                 Objects.requireNonNull(validFrom, "validFrom"),
-                Objects.requireNonNull(validUntil, "validUntil"),
+                validUntil,
                 Objects.requireNonNull(status, "status"),
-                remainingSwaps);
+                remainingSwaps,
+                meteringMode);
     }
 
     private static String requireId(String id) {

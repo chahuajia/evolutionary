@@ -13,6 +13,8 @@ public final class UsageEvent {
     private final UsageEventStatus status;
     private final Instant startedAt;
     private final Instant completedAt;
+    private final MeterReading meterReading;
+    private final Money chargedAmount;
 
     private UsageEvent(
             String id,
@@ -22,7 +24,9 @@ public final class UsageEvent {
             String cabinetId,
             UsageEventStatus status,
             Instant startedAt,
-            Instant completedAt) {
+            Instant completedAt,
+            MeterReading meterReading,
+            Money chargedAmount) {
         this.id = id;
         this.userId = userId;
         this.entitlementId = entitlementId;
@@ -31,6 +35,8 @@ public final class UsageEvent {
         this.status = status;
         this.startedAt = startedAt;
         this.completedAt = completedAt;
+        this.meterReading = meterReading;
+        this.chargedAmount = chargedAmount;
     }
 
     public static UsageEvent start(
@@ -48,16 +54,31 @@ public final class UsageEvent {
                 requireId(cabinetId),
                 UsageEventStatus.STARTED,
                 Objects.requireNonNull(startedAt, "startedAt"),
+                null,
+                null,
                 null);
     }
 
     public UsageEvent complete(Instant at) {
+        return complete(at, null, null);
+    }
+
+    public UsageEvent complete(Instant at, MeterReading meterReading, Money chargedAmount) {
         if (status != UsageEventStatus.STARTED) {
             throw new IllegalTransitionException(UsageEventStatus.COMPLETED);
         }
         Objects.requireNonNull(at, "completedAt");
         return new UsageEvent(
-                id, userId, entitlementId, batteryId, cabinetId, UsageEventStatus.COMPLETED, startedAt, at);
+                id,
+                userId,
+                entitlementId,
+                batteryId,
+                cabinetId,
+                UsageEventStatus.COMPLETED,
+                startedAt,
+                at,
+                meterReading,
+                chargedAmount);
     }
 
     public UsageEvent fail(Instant at) {
@@ -66,7 +87,7 @@ public final class UsageEvent {
         }
         Objects.requireNonNull(at, "failedAt");
         return new UsageEvent(
-                id, userId, entitlementId, batteryId, cabinetId, UsageEventStatus.FAILED, startedAt, at);
+                id, userId, entitlementId, batteryId, cabinetId, UsageEventStatus.FAILED, startedAt, at, null, null);
     }
 
     public boolean isStarted() {
@@ -103,6 +124,14 @@ public final class UsageEvent {
 
     public Instant completedAt() {
         return completedAt;
+    }
+
+    public MeterReading meterReading() {
+        return meterReading;
+    }
+
+    public Money chargedAmount() {
+        return chargedAmount;
     }
 
     public static final class IllegalTransitionException extends RuntimeException {
