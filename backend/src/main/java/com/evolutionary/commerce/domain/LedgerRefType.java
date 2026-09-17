@@ -14,5 +14,7 @@ public enum LedgerRefType {
     ORDER_REFUND,
     ORDER_REFUND_BALANCE,
     ORDER_REFUND_POINTS,
-    METERED_CHARGE
+    METERED_CHARGE,
+    /** 分润结算批入账；refId = SettlementBatchId（phase-4）。 */
+    PROFIT_SHARING_SETTLEMENT
 }

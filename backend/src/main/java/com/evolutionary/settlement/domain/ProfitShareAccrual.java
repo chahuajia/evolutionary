@@ -6,7 +6,8 @@ import java.util.Objects;
 /**
  * 分润意向（追加-only）。
  *
- * <p>ORDER_COMPLETED 时写 PENDING；结算 / 退款 reversal 见后续切片（规格 §4）。
+ * <p>ORDER_COMPLETED 时写 PENDING；结算写 SETTLED；退款未结算写 REVERSED（规格 §4）。
+ * <p><b>禁止</b>在创建 PENDING 时写账本——入账仅发生在 SettlementBatch。
  */
 public final class ProfitShareAccrual {
 
@@ -47,7 +48,7 @@ public final class ProfitShareAccrual {
         this.reversalOf = reversalOf;
     }
 
-    /** 订单完成后记一笔 PENDING 意向。 */
+    /** 订单完成后记一笔 PENDING 意向（不写账）。 */
     public static ProfitShareAccrual pending(
             String id,
             String orderId,
@@ -68,6 +69,72 @@ public final class ProfitShareAccrual {
                 ruleVersion,
                 AccrualStatus.PENDING,
                 Objects.requireNonNull(createdAt, "createdAt"),
+                null,
+                null,
+                null);
+    }
+
+    /**
+     * 退款冲销审计行：指向被冲销的 PENDING Accrual（追加-only）。
+     *
+     * <p>金额与原单一致；status=REVERSED；reversalOf=原 id。
+     */
+    public static ProfitShareAccrual reversalRecord(
+            String id, ProfitShareAccrual original, Instant createdAt) {
+        Objects.requireNonNull(original, "original");
+        if (original.status != AccrualStatus.PENDING && original.status != AccrualStatus.REVERSED) {
+            throw new SettlementException(
+                    SettlementErrorCode.ACCRUAL_ALREADY_SETTLED, "仅未结算意向可写 reversal 记录");
+        }
+        return new ProfitShareAccrual(
+                requireId(id),
+                original.orderId,
+                original.orgId,
+                original.amountCents,
+                original.currency,
+                original.ruleVersion,
+                AccrualStatus.REVERSED,
+                Objects.requireNonNull(createdAt, "createdAt"),
+                null,
+                null,
+                original.id);
+    }
+
+    /** 批结算：PENDING → SETTLED，关联 batchId。 */
+    public ProfitShareAccrual settle(String batchId, Instant settledAt) {
+        if (status != AccrualStatus.PENDING) {
+            throw new IllegalStateException("仅 PENDING 可结算: " + id);
+        }
+        return new ProfitShareAccrual(
+                id,
+                orderId,
+                orgId,
+                amountCents,
+                currency,
+                ruleVersion,
+                AccrualStatus.SETTLED,
+                createdAt,
+                Objects.requireNonNull(settledAt, "settledAt"),
+                requireId(batchId),
+                null);
+    }
+
+    /** 结算前退款：PENDING → REVERSED（不进 Batch，INV-15）。 */
+    public ProfitShareAccrual reverse() {
+        if (status != AccrualStatus.PENDING) {
+            throw new SettlementException(
+                    SettlementErrorCode.ORDER_NOT_REFUNDABLE_SETTLED,
+                    "已结算分润不可退款: " + id);
+        }
+        return new ProfitShareAccrual(
+                id,
+                orderId,
+                orgId,
+                amountCents,
+                currency,
+                ruleVersion,
+                AccrualStatus.REVERSED,
+                createdAt,
                 null,
                 null,
                 null);

@@ -141,6 +141,28 @@ public final class LedgerEntry {
                 Objects.requireNonNull(createdAt, "createdAt"));
     }
 
+    /**
+     * 分润结算：SETTLEMENT 户间划转；refId = SettlementBatchId。
+     *
+     * <p>借：清算户；贷：受益组织 SETTLEMENT。
+     */
+    public static LedgerEntry profitSharingSettlement(
+            String id,
+            String clearingAccountId,
+            String orgSettlementAccountId,
+            Money amount,
+            String batchId,
+            Instant createdAt) {
+        return new LedgerEntry(
+                requireId(id),
+                requireId(clearingAccountId),
+                requireId(orgSettlementAccountId),
+                Objects.requireNonNull(amount, "amount"),
+                LedgerRefType.PROFIT_SHARING_SETTLEMENT,
+                requireId(batchId),
+                Objects.requireNonNull(createdAt, "createdAt"));
+    }
+
     public String id() {
         return id;
     }

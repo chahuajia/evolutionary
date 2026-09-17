@@ -9,7 +9,6 @@ import com.evolutionary.settlement.domain.ProfitSharingRule;
 import com.evolutionary.settlement.domain.ProfitSplit;
 import com.evolutionary.settlement.domain.ReferralBinding;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -158,21 +157,38 @@ class AccrueOnOrderCompletedTest {
     }
 
     private static final class InMemoryAccrualRepo implements ProfitShareAccrualRepository {
-        private final List<ProfitShareAccrual> all = new ArrayList<>();
+        private final Map<String, ProfitShareAccrual> byId = new HashMap<>();
+
+        @Override
+        public void save(ProfitShareAccrual accrual) {
+            byId.put(accrual.id(), accrual);
+        }
 
         @Override
         public void saveAll(List<ProfitShareAccrual> items) {
-            all.addAll(items);
+            items.forEach(this::save);
         }
 
         @Override
         public List<ProfitShareAccrual> findByOrderId(String orderId) {
-            return all.stream().filter(a -> a.orderId().equals(orderId)).toList();
+            return byId.values().stream().filter(a -> a.orderId().equals(orderId)).toList();
+        }
+
+        @Override
+        public List<ProfitShareAccrual> findPendingCreatedBetween(
+                Instant periodStart, Instant periodEnd) {
+            return byId.values().stream()
+                    .filter(a -> a.status() == AccrualStatus.PENDING)
+                    .filter(
+                            a ->
+                                    !a.createdAt().isBefore(periodStart)
+                                            && a.createdAt().isBefore(periodEnd))
+                    .toList();
         }
 
         @Override
         public List<ProfitShareAccrual> findAll() {
-            return List.copyOf(all);
+            return List.copyOf(byId.values());
         }
     }
 }
