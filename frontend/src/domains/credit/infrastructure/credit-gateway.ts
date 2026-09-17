@@ -70,6 +70,29 @@ export async function fetchCreditStatements(
   return raw.map((row) => parseStatement(row as Record<string, unknown>));
 }
 
+export type CreditRepayRequest = {
+  userId: string;
+  statementId: string;
+  amountCents: number;
+};
+
+/** POST /credit/profiles/{userId}/repay — 错误经 fetchJson 已拼 suggestion */
+export async function postCreditRepay(
+  req: CreditRepayRequest,
+): Promise<unknown> {
+  const base = resolveCreditApiBase();
+  const { userId, statementId, amountCents } = req;
+  return fetchJson(
+    `${base}/credit/profiles/${encodeURIComponent(userId)}/repay`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ statementId, amountCents }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+}
+
 function parseProfile(raw: Record<string, unknown>): CreditProfile {
   const status = String(raw.status ?? "");
   if (!isCreditStatus(status)) {

@@ -6,4 +6,6 @@ export {
   DEFAULT_CREDIT_USER,
   fetchCreditProfile,
   fetchCreditStatements,
+  postCreditRepay,
 } from "@/domains/credit/infrastructure/credit-gateway";
+export type { CreditRepayRequest } from "@/domains/credit/infrastructure/credit-gateway";

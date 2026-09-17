@@ -17,6 +17,7 @@ import {
   type StatementStatus,
 } from "@/lib/credit/types";
 import { CreditRefreshButton } from "./credit-refresh";
+import { CreditRepayPanel } from "./credit-repay-panel";
 import styles from "./page.module.css";
 
 function statusBadgeClass(status: StatementStatus): string {
@@ -112,6 +113,8 @@ export default async function CreditPage() {
           </section>
         </>
       )}
+
+      <CreditRepayPanel />
     </main>
   );
 }
