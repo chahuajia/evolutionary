@@ -11,37 +11,68 @@
 | **Monorepo**（现状） | FE/BE 同版本演进、共享 WM/契约、一人+多 agent 协作 |
 | **拆仓** | 发布节奏独立、权限/CI 独立、≥2 团队分别拥有 |
 
-拆仓后「全局工作区」通常是：
-- **聚合根目录**（本身可无业务代码，或用 git submodule / 多 root workspace），或
-- Cursor / IDE **multi-root workspace** 同时打开两个仓 —— **不必**再套一层 Git，除非要统一版本标签。
+拆仓后「全局工作区」通常是 IDE multi-root 或聚合目录，**不必**再套一层 Git。
 
-跨仓共享协议仍遵守：≥2 消费者才上提（见 collab-cli `decisions.md` 仓库纯度）。
+## 2. 命名：要 id，也要语义
 
-## 2. 版本分支 × 阶段分支（推荐，已采纳）
+分支名 = **稳定 id** + **可读 slug**。id 方便脚本/agent 对齐规格；slug 方便人扫一眼。
+
+### 版本分支
 
 ```text
-main（或 release 线）
-  └── version/v0          ← 产品版本线（可长期活）
-        ├── phase/4-profit-sharing   ← 阶段任务（短命）
-        └── phase/5-mall             ← 另一阶段
+version/v{MAJOR}              # 例：version/v0、version/v1
+version/v{MAJOR}.{MINOR}      # 例：version/v0.1（同大版本内里程碑，可选）
 ```
 
-### 规则
+| 部分 | 含义 |
+| :--- | :--- |
+| `v{MAJOR}` | **版本 id**（语义化主号；破坏性产品线升级才 +1） |
+| `.{MINOR}` | 可选；同主线下的里程碑，不是每次 phase 都涨 |
 
-1. **版本分支** `version/<名>`：该产品大版本的稳定线；阶段确认后才合并进来。
-2. **阶段分支** `phase/<N>-<slug>`：从对应 version 检出；只做本阶段增量。
-3. 阶段 **验收绿 + W4** → merge 回 version → **删除** phase 分支。
-4. 事后修 bug：从 version（或旧 phase tag）再 `phase/<N>-fix-<简述>`，修完合回 version。
-5. Agent：**只在当前 phase 分支上 commit**；不 push 除非人要求。
-6. 允许大胆重构/回滚 —— 烂在 phase 分支里，不污染 version。
+合入后可打 tag：`v0.1.0`（完整 semver 留给「可发布快照」；日常分支不必三段）。
+
+### 阶段分支
+
+```text
+phase/p{N}-{slug}             # 例：phase/p4-profit-sharing
+phase/p{N}-fix-{slug}        # 例：phase/p4-fix-batch-reversal
+```
+
+| 部分 | 含义 |
+| :--- | :--- |
+| `p{N}` | **阶段 id**，与 `battery-pressure/phase-N-*` **同一数字**，永不复用错位 |
+| `{slug}` | **语义化**英文短横线（领域词，非日期/人名） |
+| `fix` | 从已合入 version 再叉出修该阶段 |
+
+**旧名兼容**：现有 `phase/4-profit-sharing`、`version/v0` 视为合法；**新开分支**起用 `phase/p{N}-*` 前缀（显式 `p`，避免与纯数字路径混淆）。
+
+### 反面
+
+- 不要用 `phase/张三-临时`、`phase/2026-09-17`
+- 不要阶段号与规格 phase-N 错位（规格是 4，分支却叫 p5）
+- 不要在 version 分支上直接堆未验收大改
+
+## 3. 版本 × 阶段流程
+
+```text
+main（可选镜像）
+  └── version/v0
+        ├── phase/p4-profit-sharing   （短命）
+        └── phase/p5-mall
+```
+
+1. 从 `version/v*` 检出 `phase/p{N}-{slug}`
+2. 阶段验收绿 + W4 → **merge 回 version** → **删除** phase 分支
+3. 事后修：`phase/p{N}-fix-{slug}` → 再合回 version
+4. Agent 只在当前 phase 分支 commit；不 push 除非人要求
 
 ### 当前线
 
-| 分支 | 用途 |
+| 分支 | 状态 |
 | :--- | :--- |
-| `version/v0` | phase-0～3 已收口基线 |
-| `phase/4-profit-sharing` | phase-4 分润结算（进行中） |
+| `version/v0` | 稳定线（含已合入阶段） |
+| `phase/4-profit-sharing` | 合入后删除（命名过渡期） |
 
-## 3. 与 User Profile
+## 4. 与 User Profile
 
-协作偏好见 collaboration `profiles/heiniao.yaml`（中文 commit、H2 开头等）。
+协作偏好见 collaboration `profiles/heiniao.yaml`。
