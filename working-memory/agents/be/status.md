@@ -2,7 +2,7 @@
 
 **分支**：`topic/fe-ddd-rsc`  
 **日期**：2026-09-17 · heartbeat slice-2 FormalLive 加固  
-**HEAD**：（commit 后回填）
+**HEAD**：`85aa8df`
 
 ## 完成
 
