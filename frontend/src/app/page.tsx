@@ -1,5 +1,6 @@
 /**
  * 换电首页 — RSC 首屏拉站列表；表单/详情/换电为客户端岛。
+ * 权益换电岛自包含，RSC 无需传参。
  */
 
 import Link from "next/link";
@@ -7,6 +8,7 @@ import {
   fetchStationSummaries,
   type StationSummary,
 } from "@/domains/swap/infrastructure/station-gateway";
+import { EntitledSwapPanel } from "./entitled-swap-panel";
 import { SwapPanel } from "./swap-panel";
 import styles from "./page.module.css";
 
@@ -38,6 +40,8 @@ export default async function Home() {
         initialStationId={initialStationId}
         listError={listError}
       />
+
+      <EntitledSwapPanel />
     </main>
   );
 }
