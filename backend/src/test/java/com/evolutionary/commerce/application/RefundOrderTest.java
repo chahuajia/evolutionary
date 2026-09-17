@@ -108,6 +108,69 @@ class RefundOrderTest {
     }
 
     @Test
+    @DisplayName("AC-20 混合退款逆序：先 ORDER_REFUND_BALANCE 再 ORDER_REFUND_POINTS（INV-9）")
+    void mixedRefundRestoresByPaymentType() {
+        products.put(
+                Product.create(
+                        "P-mix",
+                        "ORG-1",
+                        "混合支付卡",
+                        Money.cny(3_000),
+                        30,
+                        ProductStatus.PUBLISHED));
+        accounts.put(
+                Account.open(
+                        "ACC-U-1",
+                        AccountOwnerType.USER,
+                        "U-1",
+                        AccountType.BALANCE,
+                        Currency.CNY,
+                        10_000));
+        accounts.put(
+                Account.open(
+                        "ACC-U-P",
+                        AccountOwnerType.USER,
+                        "U-1",
+                        AccountType.POINTS,
+                        Currency.CNY,
+                        5_000,
+                        T0.plusSeconds(86_400)));
+
+        PurchaseResult bought =
+                ((DomainOutcome.Ok<PurchaseResult>)
+                                purchase.execute("U-1", "P-mix", new PaymentIntent(2_000, 1_000)))
+                        .value();
+
+        assertEquals(9_000, accounts.get("ACC-U-1").balanceCents());
+        assertEquals(3_000, accounts.get("ACC-U-P").balanceCents());
+        assertEquals(3_000, accounts.get("ACC-O-1").balanceCents());
+
+        DomainOutcome<RefundResult> outcome = refund.execute(bought.order().id());
+
+        assertInstanceOf(DomainOutcome.Ok.class, outcome);
+        RefundResult result = ((DomainOutcome.Ok<RefundResult>) outcome).value();
+        assertEquals(OrderStatus.REFUNDED, result.order().status());
+        assertEquals(EntitlementStatus.REVOKED, result.entitlement().status());
+        assertEquals(10_000, accounts.get("ACC-U-1").balanceCents());
+        assertEquals(5_000, accounts.get("ACC-U-P").balanceCents());
+        assertEquals(0, accounts.get("ACC-O-1").balanceCents());
+
+        List<LedgerEntry> refunds =
+                ledger.findByOrderId(bought.order().id()).stream()
+                        .filter(
+                                e ->
+                                        e.refType() == LedgerRefType.ORDER_REFUND_BALANCE
+                                                || e.refType() == LedgerRefType.ORDER_REFUND_POINTS)
+                        .toList();
+        assertEquals(2, refunds.size());
+        assertEquals(LedgerRefType.ORDER_REFUND_BALANCE, refunds.get(0).refType());
+        assertEquals(1_000, refunds.get(0).amount().cents());
+        assertEquals(LedgerRefType.ORDER_REFUND_POINTS, refunds.get(1).refType());
+        assertEquals(2_000, refunds.get(1).amount().cents());
+        LedgerInvariant.assertBalanced(ledger.findAll());
+    }
+
+    @Test
     @DisplayName("有 STARTED 换电时拒绝退款（Q1）")
     void blocksWhenSwapInProgress() {
         PurchaseResult bought =
