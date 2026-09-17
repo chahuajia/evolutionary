@@ -52,7 +52,27 @@ phase/p{N}-fix-{slug}        # 例：phase/p4-fix-batch-reversal
 - 不要阶段号与规格 phase-N 错位（规格是 4，分支却叫 p5）
 - 不要在 version 分支上直接堆未验收大改
 
-## 3. 版本 × 阶段流程
+## 3. 粒度：只要 version × phase 够不够？
+
+**结论：日常两层够用；不默认增加第三层常驻分支（如 `feat/` /「注入」线）。**
+
+| 层 | 职责 | 寿命 |
+| :--- | :--- | :--- |
+| `version/v*` | 已验收产品线 | 长 |
+| `phase/p{N}-*` | 对齐规格 phase-N 的一整段交付 | 短（合入即删） |
+| **切片** | 阶段内步进（AC 批） | **commit / WM 表**，不是分支 |
+
+更细粒度优先落在：
+
+1. **phase 内顺序 commit**（切片1→2→3）+ `loop.md` 状态表  
+2. **并行冲突时**才临时加：`phase/p{N}-wip-{slug}`（从 phase 叉出 → 合回 **phase** → 再合 version）  
+3. 已合入后的修补：已有 `phase/p{N}-fix-{slug}`
+
+**不要**为「功能注入 / 热插拔能力」单独开常驻分支族——那是领域设计（模块边界），用 phase 规格与包路径表达即可。
+
+反面：三层常驻（version / phase / feat）→ agent 对齐成本上升，合入路径变长，易半成品滞留。
+
+## 4. 版本 × 阶段流程
 
 ```text
 main（可选镜像）
@@ -71,8 +91,8 @@ main（可选镜像）
 | 分支 | 状态 |
 | :--- | :--- |
 | `version/v0` | 稳定线（含已合入阶段） |
-| `phase/4-profit-sharing` | 合入后删除（命名过渡期） |
+| `phase/p5-mall` | 合入后删除 |
 
-## 4. 与 User Profile
+## 5. 与 User Profile
 
 协作偏好见 collaboration `profiles/heiniao.yaml`。
