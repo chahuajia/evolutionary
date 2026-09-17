@@ -3,7 +3,7 @@
 **分支**：`topic/fe-ddd-rsc`  
 **日期**：2026-09-17  
 **心跳**：slice 5 HTTP 错误展示 suggestion  
-**HEAD**：*(commit 后回填)*
+**HEAD**：`80c249f`
 
 ## 完成
 
