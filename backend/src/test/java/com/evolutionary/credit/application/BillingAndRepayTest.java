@@ -4,11 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import com.evolutionary.commerce.application.AccountRepository;
+import com.evolutionary.commerce.application.EntitlementRepository;
 import com.evolutionary.commerce.application.LedgerRepository;
 import com.evolutionary.commerce.domain.Account;
 import com.evolutionary.commerce.domain.AccountOwnerType;
 import com.evolutionary.commerce.domain.AccountType;
 import com.evolutionary.commerce.domain.Currency;
+import com.evolutionary.commerce.domain.Entitlement;
+import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerRefType;
 import com.evolutionary.commerce.domain.Money;
@@ -58,7 +61,13 @@ class BillingAndRepayTest {
         billing = new RunMonthlyBilling(debts, statements, CLOCK);
         repay =
                 new RepayBillingStatement(
-                        statements, debts, profiles, accounts, ledger, CLOCK);
+                        statements,
+                        debts,
+                        profiles,
+                        accounts,
+                        ledger,
+                        new NoopEntitlements(),
+                        CLOCK);
 
         CreditProfile base = CreditProfile.open("U1", Money.cny(10_000), ScoreTier.A, 1);
         CreditOutcome<CreditProfile> charged = base.charge(Money.cny(3_000));
@@ -125,6 +134,26 @@ class BillingAndRepayTest {
                 ledger.findAll().stream()
                         .filter(e -> e.refType() == LedgerRefType.CREDIT_STATEMENT_REPAYMENT)
                         .count());
+    }
+
+    private static final class NoopEntitlements implements EntitlementRepository {
+        @Override
+        public void save(Entitlement entitlement) {}
+
+        @Override
+        public Entitlement get(String entitlementId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Optional<Entitlement> findByOrderId(String orderId) {
+            return Optional.empty();
+        }
+
+        @Override
+        public List<Entitlement> findActiveByUser(String userId) {
+            return List.of();
+        }
     }
 
     private static final class InMemoryDebts implements CreditLedgerDebtRepository {

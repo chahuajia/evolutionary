@@ -1,8 +1,11 @@
 package com.evolutionary.credit.application;
 
 import com.evolutionary.commerce.application.AccountRepository;
+import com.evolutionary.commerce.application.EntitlementRepository;
 import com.evolutionary.commerce.application.LedgerRepository;
 import com.evolutionary.commerce.domain.Account;
+import com.evolutionary.commerce.domain.Entitlement;
+import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerInvariant;
 import com.evolutionary.commerce.domain.Money;
@@ -29,6 +32,7 @@ public final class RepayBillingStatement {
     private final CreditProfileRepository profiles;
     private final AccountRepository accounts;
     private final LedgerRepository ledger;
+    private final EntitlementRepository entitlements;
     private final Clock clock;
 
     public RepayBillingStatement(
@@ -37,12 +41,14 @@ public final class RepayBillingStatement {
             CreditProfileRepository profiles,
             AccountRepository accounts,
             LedgerRepository ledger,
+            EntitlementRepository entitlements,
             Clock clock) {
         this.statements = Objects.requireNonNull(statements, "statements");
         this.debts = Objects.requireNonNull(debts, "debts");
         this.profiles = Objects.requireNonNull(profiles, "profiles");
         this.accounts = Objects.requireNonNull(accounts, "accounts");
         this.ledger = Objects.requireNonNull(ledger, "ledger");
+        this.entitlements = Objects.requireNonNull(entitlements, "entitlements");
         this.clock = Objects.requireNonNull(clock, "clock");
     }
 
@@ -99,6 +105,11 @@ public final class RepayBillingStatement {
 
         CreditProfile profile = profiles.get(userId).repay(statement.totalDue());
         profiles.save(profile);
+
+        for (Entitlement e :
+                entitlements.findByUserIdAndStatus(userId, EntitlementStatus.FROZEN)) {
+            entitlements.save(e.unfreeze());
+        }
 
         BillingStatement paid = statement.markPaid(now);
         statements.save(paid);
