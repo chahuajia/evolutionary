@@ -108,6 +108,9 @@ curl -s -X POST http://localhost:8080/iot/batteries/BAT-IOT-1/telemetry \
 
 # 验证：GET shadow soc=75 stale=false
 curl -s http://localhost:8080/iot/batteries/BAT-IOT-1/shadow
+
+# SOC 过时诊断：先 shadow.stale → SHADOW_STALE；遥测刷新后 → CHECK_ADAPTER
+curl -s -X POST http://localhost:8080/iot/batteries/BAT-IOT-1/triage-outdated-soc
 ```
 
 ## 正式验收（两枪）
