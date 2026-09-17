@@ -12,7 +12,7 @@
 
 | 任务 | 状态 | 文件 |
 | :--- | :--- | :--- |
-| **battery-phase-0 实现** | 🔄 切片 1 ✅ · 切片 3 待 | `tasks/battery-phase-0/loop.md` |
+| **battery-phase-0 实现** | 🔄 切片 3 ✅ · 切片 4 集群中 | `tasks/battery-phase-0/loop.md` |
 | **battery-pressure** | ✅ 规格 0–7 收口 | `tasks/battery-pressure/retro.md` |
 | evolutionary KB 压测 | ✅ 4–15 轮 | `../specs/pressure-test-retro.md` |
 
