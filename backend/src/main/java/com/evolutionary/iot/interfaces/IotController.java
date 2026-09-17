@@ -1,13 +1,17 @@
 package com.evolutionary.iot.interfaces;
 
+import com.evolutionary.iot.application.ApplyTelemetryToShadow;
 import com.evolutionary.iot.application.DetectCommLost;
 import com.evolutionary.iot.application.DeviceShadowRepository;
+import com.evolutionary.iot.domain.BatteryTelemetryReported;
 import com.evolutionary.iot.domain.DeviceShadow;
+import java.time.Instant;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,10 +26,15 @@ public class IotController {
 
     private final DeviceShadowRepository shadows;
     private final DetectCommLost detectCommLost;
+    private final ApplyTelemetryToShadow applyTelemetryToShadow;
 
-    public IotController(DeviceShadowRepository shadows, DetectCommLost detectCommLost) {
+    public IotController(
+            DeviceShadowRepository shadows,
+            DetectCommLost detectCommLost,
+            ApplyTelemetryToShadow applyTelemetryToShadow) {
         this.shadows = shadows;
         this.detectCommLost = detectCommLost;
+        this.applyTelemetryToShadow = applyTelemetryToShadow;
     }
 
     @GetMapping("/batteries/{batteryId}/shadow")
@@ -35,6 +44,23 @@ public class IotController {
                 .map(IotController::toShadow)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/batteries/{batteryId}/telemetry")
+    public ResponseEntity<ShadowView> applyTelemetry(
+            @PathVariable String batteryId, @RequestBody TelemetryRequest body) {
+        if (shadows.findByBatteryId(batteryId).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        BatteryTelemetryReported event =
+                BatteryTelemetryReported.of(
+                        batteryId,
+                        body.vendorId(),
+                        body.soc(),
+                        body.voltageMilli(),
+                        Instant.now());
+        DeviceShadow updated = applyTelemetryToShadow.execute(event);
+        return ResponseEntity.ok(toShadow(updated));
     }
 
     @PostMapping("/batteries/{batteryId}/detect-comm-lost")
@@ -80,6 +106,8 @@ public class IotController {
                 s.stale(),
                 s.updatedAt().toString());
     }
+
+    public record TelemetryRequest(String vendorId, int soc, long voltageMilli) {}
 
     public record DetectCommLostView(
             String batteryId,
