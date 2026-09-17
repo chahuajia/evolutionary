@@ -1,15 +1,13 @@
 # topic/iot-comm-lost
 
-**压力层**：L2｜**分支**：`topic/iot-comm-lost` ← 合回 `version/v0` 需人确认  
-**范围**：AC-60 COMM_LOST + MaintenanceTicket；AC-61 W1 诊断路径
+**更新**：2026-09-17 ｜ **状态**：✅ 已合入 `version/v0`（`07bdfab`）· topic 已删  
+**压力层**：L2
 
-## 状态
+## 交付
 
-| 项 | 状态 |
+| AC | 状态 |
 | :-- | :--- |
-| AC-60 | ✅ `DetectCommLost` |
-| AC-61 | ✅ `TriageOutdatedSoc` |
+| AC-60 | ✅ |
+| AC-61 | ✅ |
 
-## 停
-
-绿 → 中文 commit → **停 wake**；等人合入 `version/v0`；不 push。
+见 `report.md`。

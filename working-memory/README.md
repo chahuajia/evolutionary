@@ -1,6 +1,6 @@
 ﻿# Working Memory — evolutionary（换电平台）
 
-**更新**：2026-09-17 ｜ HEAD `topic/iot-comm-lost`（AC-60/61 待合入）
+**更新**：2026-09-17 ｜ HEAD `07bdfab`（`version/v0`；phase-0..7 + AC-60/61）
 
 ## 仓库归属
 
@@ -12,10 +12,9 @@
 
 | 任务 | 状态 | 文件 |
 | :--- | :--- | :--- |
-| **topic/iot-comm-lost** | ✅ AC-60/61 绿 · **停** · 待合入 `version/v0` | `tasks/topic-iot-comm-lost/loop.md` |
-| **W5 harvest（选择性压力）** | ✅ collaboration v4.8.0 · agents 沙箱已建 | `tasks/_archive/2026-09-17-selective-pressure-retro.md` |
-| **battery-phase-7 IoT** | ✅ 已合入 `version/v0` · phase 已删 | `tasks/battery-phase-7/retro.md` |
-| **battery-pressure** | ✅ 规格 0–7 · 见 INDEX | `tasks/battery-pressure/INDEX.md` |
+| **换电 L2（0–7）** | ✅ 规格+实现已合入 `version/v0` · **停** | `tasks/battery-pressure/INDEX.md` |
+| **topic/iot-comm-lost** | ✅ 已合入 `version/v0` · topic 已删 | `tasks/topic-iot-comm-lost/report.md` |
+| **W5 harvest（选择性压力）** | ✅ collaboration v4.8.0 | `tasks/_archive/2026-09-17-selective-pressure-retro.md` |
 
 ## 知识库
 
@@ -23,4 +22,4 @@
 
 ## 陷阱
 
-AI 不 push · 合入 version 需人确认 · FE∥BE 用 `wip/pN-*`
+AI 不 push · 合入 version 需人确认 · FE∥BE 用 `wip/pN-*` · agent 沙箱见 `agents/`
