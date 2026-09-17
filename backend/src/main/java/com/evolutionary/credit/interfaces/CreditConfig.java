@@ -3,15 +3,22 @@ package com.evolutionary.credit.interfaces;
 import com.evolutionary.commerce.application.AccountRepository;
 import com.evolutionary.commerce.application.EntitlementRepository;
 import com.evolutionary.commerce.application.LedgerRepository;
+import com.evolutionary.commerce.application.OrderRepository;
+import com.evolutionary.commerce.application.ProductRepository;
 import com.evolutionary.commerce.domain.Account;
 import com.evolutionary.commerce.domain.AccountOwnerType;
 import com.evolutionary.commerce.domain.AccountType;
 import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.Money;
+import com.evolutionary.commerce.domain.Product;
+import com.evolutionary.commerce.domain.ProductStatus;
+import com.evolutionary.commerce.infrastructure.InMemoryOrderRepository;
+import com.evolutionary.commerce.infrastructure.InMemoryProductRepository;
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.application.CreditLedgerDebtRepository;
 import com.evolutionary.credit.application.CreditProfileRepository;
 import com.evolutionary.credit.application.MarkCreditOverdue;
+import com.evolutionary.credit.application.PurchaseWithCredit;
 import com.evolutionary.credit.application.RepayBillingStatement;
 import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditOutcome;
@@ -44,6 +51,12 @@ public class CreditConfig {
         return new InMemoryCreditLedgerDebtRepository();
     }
 
+    /** 与 Commerce 共用写单面；bean 放 Credit 以免改 CommerceConfig 种子。 */
+    @Bean
+    OrderRepository orderRepository() {
+        return new InMemoryOrderRepository();
+    }
+
     /**
      * 逾期冻权益；注入与 {@code CommerceConfig} 同一 {@link EntitlementRepository} bean。
      */
@@ -67,16 +80,31 @@ public class CreditConfig {
                 statements, debts, profiles, accounts, ledger, entitlements, Clock.systemUTC());
     }
 
+    @Bean
+    PurchaseWithCredit purchaseWithCredit(
+            ProductRepository products,
+            OrderRepository orders,
+            EntitlementRepository entitlements,
+            LedgerRepository ledger,
+            CreditProfileRepository profiles,
+            CreditLedgerDebtRepository debts) {
+        return new PurchaseWithCredit(
+                products, orders, entitlements, ledger, profiles, debts, Clock.systemUTC());
+    }
+
     /**
      * 正式本地种子：与 FE RSC /credit 对齐。
      *
      * <p>U1 limit=10000 / used=3000（分）；余额 5000 + CREDIT-CLEARING；STMT-2026-02 DUE 3000。
+     *
+     * <p>P-CREDIT-1：FIXED 非计量 3000¢（可用额度 7000，可购一次）；写入同一 {@link ProductRepository}。
      */
     @Bean
     ApplicationRunner seedCredit(
             CreditProfileRepository profiles,
             BillingStatementRepository statements,
-            AccountRepository accounts) {
+            AccountRepository accounts,
+            ProductRepository products) {
         return args -> {
             CreditProfile profile =
                     CreditProfile.open("U1", Money.cny(10_000), ScoreTier.A, 1);
@@ -122,6 +150,16 @@ public class CreditConfig {
                             AccountType.SETTLEMENT,
                             Currency.CNY,
                             0));
+
+            ((InMemoryProductRepository) products)
+                    .save(
+                            Product.create(
+                                    "P-CREDIT-1",
+                                    "ORG-1",
+                                    "信用购月卡",
+                                    Money.cny(3_000),
+                                    30,
+                                    ProductStatus.PUBLISHED));
         };
     }
 }

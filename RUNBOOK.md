@@ -18,6 +18,7 @@
 | :--- | :--- | :--- |
 | 站列表 / 详情 / 换电 | `/` → `/api/stations…` | `SwapController` :8080 |
 | 信用档案 + 账单 | `/credit` → `/api/credit/profiles/U1…` | `CreditController` + CreditConfig U1 |
+| 信用购 | `/credit` → `/api/credit/purchases` | `CreditController` + PurchaseWithCredit |
 | 权益换电（非计量 / 计量） | （新建岛）→ `/api/entitled-swaps` | `EntitledSwapController` + CommerceConfig |
 | IoT 影子 / COMM_LOST | （诊断岛）→ `/api/iot/...` | `IotController` + IotConfig |
 
@@ -39,7 +40,6 @@ cd frontend && npm run dev
 
 ## 尚未接通（非正式完整场景）
 
-- 信用购 HTTP
 - 默认选卡 HTTP
 - IoT 遥测入影 HTTP / UI（影子查询与 COMM_LOST HTTP 已接通）
 - 登录与多用户
@@ -76,6 +76,15 @@ curl -s -X POST http://localhost:8080/credit/profiles/U1/mark-overdue \
 curl -s -X POST http://localhost:8080/credit/profiles/U1/repay \
   -H "Content-Type: application/json" \
   -d '{"statementId":"STMT-2026-02","amountCents":3000}'
+```
+
+## 新接通（信用购）
+
+```bash
+# P-CREDIT-1 FIXED 3000¢；U1 可用额度 7000 → 200 orderId/entitlementId/debtId
+curl -s -X POST http://localhost:8080/credit/purchases \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"U1","productId":"P-CREDIT-1"}'
 ```
 
 ## 新接通（IoT COMM_LOST）

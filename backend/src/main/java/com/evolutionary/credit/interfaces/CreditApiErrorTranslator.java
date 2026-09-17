@@ -37,6 +37,8 @@ public final class CreditApiErrorTranslator {
             case PARTIAL_REPAY_NOT_ALLOWED -> "repay the full statement totalDue in one payment";
             case CREDIT_NOT_AVAILABLE -> "top up user balance to cover the statement totalDue";
             case INSUFFICIENT_BALANCE -> "top up user balance before repay";
+            case PRODUCT_NOT_PUBLISHED -> "publish the product before credit purchase";
+            case PRODUCT_NOT_ELIGIBLE -> "use a non-metered published product for credit purchase";
             default -> null;
         };
     }

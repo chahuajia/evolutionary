@@ -3,7 +3,9 @@ package com.evolutionary.credit.interfaces;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.application.CreditProfileRepository;
+import com.evolutionary.credit.application.CreditPurchaseResult;
 import com.evolutionary.credit.application.MarkCreditOverdue;
+import com.evolutionary.credit.application.PurchaseWithCredit;
 import com.evolutionary.credit.application.RepayBillingStatement;
 import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditOutcome;
@@ -21,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 信用 HTTP（档案/账单 + 逾期冻权益 + 还款解冻）。
+ * 信用 HTTP（档案/账单 + 信用购 + 逾期冻权益 + 还款解冻）。
  *
  * <p>JSON 字段对齐 phase-6 IDL / 前端 types（status 小写 good|overdue|frozen）。
  */
@@ -34,16 +36,19 @@ public class CreditController {
 
     private final CreditProfileRepository profiles;
     private final BillingStatementRepository statements;
+    private final PurchaseWithCredit purchaseWithCredit;
     private final MarkCreditOverdue markCreditOverdue;
     private final RepayBillingStatement repayBillingStatement;
 
     public CreditController(
             CreditProfileRepository profiles,
             BillingStatementRepository statements,
+            PurchaseWithCredit purchaseWithCredit,
             MarkCreditOverdue markCreditOverdue,
             RepayBillingStatement repayBillingStatement) {
         this.profiles = profiles;
         this.statements = statements;
+        this.purchaseWithCredit = purchaseWithCredit;
         this.markCreditOverdue = markCreditOverdue;
         this.repayBillingStatement = repayBillingStatement;
     }
@@ -65,6 +70,25 @@ public class CreditController {
         List<BillingStatementView> views =
                 statements.findByUserId(userId).stream().map(CreditController::toStatement).toList();
         return ResponseEntity.ok(views);
+    }
+
+    @PostMapping("/purchases")
+    public ResponseEntity<?> purchase(@RequestBody PurchaseRequest body) {
+        if (body == null || body.userId() == null || body.userId().isBlank()) {
+            throw new IllegalArgumentException("userId required");
+        }
+        if (body.productId() == null || body.productId().isBlank()) {
+            throw new IllegalArgumentException("productId required");
+        }
+        CreditOutcome<CreditPurchaseResult> outcome =
+                purchaseWithCredit.execute(body.userId().trim(), body.productId().trim());
+        if (outcome instanceof CreditOutcome.Ok<CreditPurchaseResult> ok) {
+            return ResponseEntity.ok(toPurchase(ok.value()));
+        }
+        CreditOutcome.Err<CreditPurchaseResult> err =
+                (CreditOutcome.Err<CreditPurchaseResult>) outcome;
+        CreditApiErrorTranslator.Translated translated = CreditApiErrorTranslator.translate(err);
+        return ResponseEntity.status(translated.status()).body(translated.body());
     }
 
     @PostMapping("/profiles/{userId}/mark-overdue")
@@ -132,6 +156,28 @@ public class CreditController {
                 s.createdAt().toString(),
                 s.paidAt() == null ? null : s.paidAt().toString());
     }
+
+    private static CreditPurchaseView toPurchase(CreditPurchaseResult r) {
+        return new CreditPurchaseView(
+                r.order().id(),
+                r.entitlement().id(),
+                r.order().productId(),
+                r.order().userId(),
+                r.order().paidAmount().cents(),
+                r.debt().id(),
+                r.profile().usedCredit().cents());
+    }
+
+    public record PurchaseRequest(String userId, String productId) {}
+
+    public record CreditPurchaseView(
+            String orderId,
+            String entitlementId,
+            String productId,
+            String userId,
+            long paidAmountCents,
+            String debtId,
+            long usedCredit) {}
 
     public record MarkOverdueRequest(String statementId) {}
 
