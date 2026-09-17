@@ -1,6 +1,6 @@
 # 换电 phase-2 实现（L2）— 混合支付
 
-**更新**：2026-09-17 12:35 ｜ **压力层**：**L2**｜ **状态**：🔄 切片1–2 ✅ · 切片3 待
+**更新**：2026-09-17 12:35 ｜ **压力层**：**L2**｜ **状态**：✅ 切片 1–3 收口 · **停 wake**
 **语言**：本地 git 提交说明、WM、Java 注释 → **中文**
 
 ## 门禁（每 tick）
@@ -11,7 +11,7 @@
 
 ## 句柄
 
-`AGENT_LOOP_WAKE_battery-phase-2`
+`AGENT_LOOP_WAKE_battery-phase-2` — **已停**
 
 ## 切片顺序
 
@@ -19,8 +19,8 @@
 | :-- | :--- | :--- |
 | 1 | POINTS 账户 + 混合购买（AC-17/18/19/23） | ✅ `slice-1-report.md` |
 | 2 | 混合退款拆账 INV-9（AC-20） | ✅ `slice-2-report.md` |
-| 3 | 积分过期 POINTS_EXPIRED（AC-21）+ refType 不混用（AC-22） | 待 |
+| 3 | 积分过期 POINTS_EXPIRED（AC-21）+ refType 不混用（AC-22） | ✅ `slice-3-report.md` |
 
 ## 停止
 
-切片全绿 → 停 wake，W4（中文 retro）
+见 `retro.md` — **不再 arm wake**
