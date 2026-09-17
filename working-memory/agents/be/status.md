@@ -2,7 +2,7 @@
 
 **分支**：`topic/fe-ddd-rsc`  
 **日期**：2026-09-17 · evo-collab-extreme 切片5 · MarkCreditOverdue HTTP  
-**HEAD**：见本 commit（提交后填）
+**HEAD**：`984841d`
 
 ## 完成
 
