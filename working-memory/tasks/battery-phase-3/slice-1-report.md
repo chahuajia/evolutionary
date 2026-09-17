@@ -9,6 +9,7 @@
 | 包 | `com.evolutionary.operator.domain`（与 commerce 交易分离） |
 | 类型 | Organization、RoleBinding、OrgAuthorization |
 | 规则 | canManage = 自身或祖先 + regionScope；**不用 level** |
+| 补齐 | `OrgCapability.OPERATOR`（探路提醒，对齐 IDL capabilities） |
 
 ## 契约对照
 
