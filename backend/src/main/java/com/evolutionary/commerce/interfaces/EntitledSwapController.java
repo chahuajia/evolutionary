@@ -2,6 +2,7 @@ package com.evolutionary.commerce.interfaces;
 
 import com.evolutionary.commerce.application.PerformEntitledSwap;
 import com.evolutionary.commerce.domain.DomainOutcome;
+import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.UsageEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -27,19 +28,32 @@ public class EntitledSwapController {
         }
         IncomingEntitledSwapRequest parsed =
                 IncomingEntitledSwapRequest.parse(
-                        body.userId(), body.entitlementId(), body.cabinetId());
+                        body.userId(),
+                        body.entitlementId(),
+                        body.cabinetId(),
+                        body.socBefore(),
+                        body.socAfter());
         DomainOutcome<UsageEvent> outcome =
-                performEntitledSwap.execute(
-                        parsed.userId(), parsed.entitlementId(), parsed.cabinetId());
+                parsed.isMetered()
+                        ? performEntitledSwap.execute(
+                                parsed.userId(),
+                                parsed.entitlementId(),
+                                parsed.cabinetId(),
+                                parsed.socBefore(),
+                                parsed.socAfter())
+                        : performEntitledSwap.execute(
+                                parsed.userId(), parsed.entitlementId(), parsed.cabinetId());
         if (outcome instanceof DomainOutcome.Ok<UsageEvent> ok) {
             UsageEvent event = ok.value();
+            Money charged = event.chargedAmount();
             return ResponseEntity.ok(
                     new EntitledSwapResponse(
                             event.id(),
                             event.status().name(),
                             event.batteryId(),
                             event.cabinetId(),
-                            event.entitlementId()));
+                            event.entitlementId(),
+                            charged == null ? null : charged.cents()));
         }
         DomainOutcome.Err<UsageEvent> err = (DomainOutcome.Err<UsageEvent>) outcome;
         EntitledSwapApiErrorTranslator.Translated translated =
@@ -55,12 +69,18 @@ public class EntitledSwapController {
                 .body(new EntitledSwapApiErrorTranslator.ApiError(msg, null));
     }
 
-    public record EntitledSwapRequest(String userId, String entitlementId, String cabinetId) {}
+    public record EntitledSwapRequest(
+            String userId,
+            String entitlementId,
+            String cabinetId,
+            Integer socBefore,
+            Integer socAfter) {}
 
     public record EntitledSwapResponse(
             String usageEventId,
             String status,
             String batteryId,
             String cabinetId,
-            String entitlementId) {}
+            String entitlementId,
+            Long chargedAmountCents) {}
 }

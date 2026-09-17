@@ -8,7 +8,7 @@
 | :--- | :--- | :--- |
 | `GET /stations` | S1 东门站 / S2 西门站 / S3 南站 | `DevSeedConfig` |
 | `GET /credit/profiles/U1` | U1 limit=10000 used=3000（分）| `CreditConfig` |
-| `POST /entitled-swaps` | E-1 ACTIVE（U1）+ BAT-1 idle | `CommerceConfig` |
+| `POST /entitled-swaps` | E-1 ACTIVE（U1）+ BAT-1 idle；计量 E-M1 / P-M1 / BAT-M1 | `CommerceConfig` |
 
 ## 已接通（正式可跑）
 
@@ -16,7 +16,7 @@
 | :--- | :--- | :--- |
 | 站列表 / 详情 / 换电 | `/` → `/api/stations…` | `SwapController` :8080 |
 | 信用档案 + 账单 | `/credit` → `/api/credit/profiles/U1…` | `CreditController` + CreditConfig U1 |
-| 权益换电（非计量） | （新建岛）→ `/api/entitled-swaps` | `EntitledSwapController` + CommerceConfig |
+| 权益换电（非计量 / 计量） | （新建岛）→ `/api/entitled-swaps` | `EntitledSwapController` + CommerceConfig |
 
 ## 启动
 
@@ -37,7 +37,7 @@ cd frontend && npm run dev
 ## 尚未接通（非正式完整场景）
 
 - 信用购 HTTP
-- 计量权益换电 / 默认选卡 HTTP
+- 默认选卡 HTTP
 - IoT 遥测入影 / 影子查询 / COMM_LOST 的 HTTP 与 UI
 - 登录与多用户
 
@@ -49,6 +49,14 @@ curl -s -X POST http://localhost:8080/entitled-swaps \
   -d '{"userId":"U1","entitlementId":"E-1","cabinetId":"CAB-1"}'
 ```
 
+## 新接通（计量权益换电）
+
+```bash
+# E-M1 PAY_AS_YOU_GO；soc 80→60 × 50¢ = 1000¢ → chargedAmountCents=1000
+curl -s -X POST http://localhost:8080/entitled-swaps \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"U1","entitlementId":"E-M1","cabinetId":"CAB-1","socBefore":80,"socAfter":60}'
+```
 ## 新接通（逾期冻权益）
 
 ```bash

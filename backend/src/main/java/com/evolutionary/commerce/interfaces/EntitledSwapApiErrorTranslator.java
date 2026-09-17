@@ -39,6 +39,7 @@ public final class EntitledSwapApiErrorTranslator {
             case ENTITLEMENT_EXPIRED -> "renew or purchase a new entitlement";
             case ENTITLEMENT_EXHAUSTED -> "purchase more swaps or another product";
             case CREDIT_OVERDUE_BLOCKED -> "settle overdue credit to unfreeze entitlement";
+            case INSUFFICIENT_BALANCE -> "top up balance before metered swap";
             default -> null;
         };
     }
