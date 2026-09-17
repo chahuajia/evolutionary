@@ -1,20 +1,23 @@
-# FE agent status（S36）
+# FE agent status（extreme pressure · slice 1）
 
-**分支**：`topic/credit-http-live`  
-**日期**：2026-09-17
+**分支**：`topic/fe-ddd-rsc`  
+**日期**：2026-09-17  
+**心跳**：slice 1 landed
 
 ## 完成
 
-- `/credit` 从全 CSR（`useEffect` fetch）改为 **async RSC** 首屏拉数
-- 新增 `domains/credit/infrastructure/credit-gateway.ts`（自 `lib/credit/api` 迁出；api 薄壳再导出）
-- RSC 服务端直连 `BACKEND_ORIGIN`；小客户端岛 `credit-refresh.tsx`（`router.refresh`）
-- 读模型仍用 `cache: 'no-store'`（信用档案/账单）
+- 首页去掉全页 `"use client"` + `useEffect` 拉站列表
+- 新增 `domains/swap/infrastructure/station-gateway.ts`（`resolveApiBase`、`fetchStationSummaries`、`cache:'no-store'`、DTO parse、W1 错误文案）
+- 可选 `shared/http/fetch-json.ts`（timeout 助手）
+- `app/page.tsx` → async RSC 首屏拉列表并传入 `initialStationId`
+- 客户端岛 `app/swap-panel.tsx`：列表选择 / 详情 GET / 换电 POST；列表刷新 `router.refresh()`
+- 样式沿用 `page.module.css`；链到 `/credit`
 
 ## 阻塞
 
-- 无。未改 backend / collaboration。
+- 无。未改 backend / collaboration。未 push。
 
 ## 备注
 
-- `domains/credit/application` / `domain` 分层未完整铺开（类型仍在 `lib/credit/types`）；本轮以 gateway + RSC 纠偏为主。
-- 是否需 collaboration 新条：**否**（目标架构已有 WM 草案；RSC 直连约定与既有 `BACKEND_ORIGIN` rewrite 一致）。
+- 列表 UI 仍在岛内渲染，但数据由 RSC 注入（无挂载时客户端 list fetch）
+- `tsc`/build 未在本切片强制跑通时以类型自检为准
