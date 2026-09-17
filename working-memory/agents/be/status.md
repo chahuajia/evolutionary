@@ -2,7 +2,7 @@
 
 **分支**：`topic/fe-ddd-rsc`  
 **日期**：2026-09-17 · evo-collab-extreme 切片7 · 计量权益换电 HTTP  
-**HEAD**：（本提交后见 git log）
+**HEAD**：`ba54212`（计量 HTTP；status `b053b76`）
 
 ## 完成
 
