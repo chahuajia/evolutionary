@@ -4,6 +4,7 @@ import com.evolutionary.battery.domain.Battery;
 import com.evolutionary.battery.domain.BatteryStatus;
 import com.evolutionary.station.domain.Station;
 import com.evolutionary.swap.application.StationRepository;
+import com.evolutionary.swap.application.UnknownStationException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public final class JpaStationRepository implements StationRepository {
     public Station get(String stationId) {
         StationJpaEntity row =
                 jpa.findById(stationId)
-                        .orElseThrow(() -> new IllegalArgumentException("unknown station: " + stationId));
+                        .orElseThrow(() -> new UnknownStationException(stationId));
         return toDomain(row);
     }
 

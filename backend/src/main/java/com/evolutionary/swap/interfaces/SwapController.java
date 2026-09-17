@@ -1,14 +1,11 @@
 package com.evolutionary.swap.interfaces;
 
 import com.evolutionary.station.domain.Station;
-import com.evolutionary.station.domain.Station.NoAvailableBatteryException;
 import com.evolutionary.swap.application.GetStation;
 import com.evolutionary.swap.application.ListStations;
 import com.evolutionary.swap.application.PerformSwap;
 import com.evolutionary.swap.domain.SwapSession;
 import java.util.List;
-import java.util.Map;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,17 +62,10 @@ public class SwapController {
                 station.id(), station.name(), station.canSwapOut(), station.batteries().size());
     }
 
-    @ExceptionHandler(NoAvailableBatteryException.class)
-    public ResponseEntity<Map<String, String>> noBattery(NoAvailableBatteryException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(Map.of("error", ex.getMessage()));
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> badRequest(IllegalArgumentException ex) {
-        String msg = ex.getMessage() == null ? "bad request" : ex.getMessage();
-        HttpStatus status = msg.startsWith("unknown station") ? HttpStatus.NOT_FOUND : HttpStatus.BAD_REQUEST;
-        return ResponseEntity.status(status).body(Map.of("error", msg));
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<SwapApiErrorTranslator.ApiError> handleRuntime(RuntimeException ex) {
+        SwapApiErrorTranslator.Translated translated = SwapApiErrorTranslator.translate(ex);
+        return ResponseEntity.status(translated.status()).body(translated.body());
     }
 
     public record SwapRequest(String incomingBatteryId) {}

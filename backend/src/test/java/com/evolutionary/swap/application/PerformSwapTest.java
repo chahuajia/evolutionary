@@ -8,6 +8,7 @@ import com.evolutionary.battery.domain.Battery;
 import com.evolutionary.battery.domain.BatteryStatus;
 import com.evolutionary.station.domain.Station;
 import com.evolutionary.station.domain.Station.NoAvailableBatteryException;
+import com.evolutionary.swap.application.UnknownStationException;
 import com.evolutionary.swap.domain.SwapSession;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +25,7 @@ class PerformSwapTest {
         public Station get(String stationId) {
             Station station = store.get(stationId);
             if (station == null) {
-                throw new IllegalArgumentException("unknown station: " + stationId);
+                throw new UnknownStationException(stationId);
             }
             return station;
         }
@@ -79,7 +80,7 @@ class PerformSwapTest {
     void unknownStation() {
         PerformSwap useCase = new PerformSwap(new InMemoryStations());
         assertThrows(
-                IllegalArgumentException.class,
+                UnknownStationException.class,
                 () -> useCase.execute("missing", Battery.create("B-in").swapOut()));
     }
 }

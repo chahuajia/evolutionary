@@ -62,14 +62,16 @@ class SwapControllerTest {
     }
 
     @Test
-    @DisplayName("无可用电池 → 409")
+    @DisplayName("无可用电池 → 409 + suggestion（S34）")
     void conflictWhenEmpty() throws Exception {
         stations.seed(Station.create("S-empty", "空站"));
         mockMvc.perform(
                         post("/stations/S-empty/swaps")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{\"incomingBatteryId\":\"B-in\"}"))
-                .andExpect(status().isConflict());
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("station S-empty has no available battery"))
+                .andExpect(jsonPath("$.suggestion").exists());
     }
 
     @Test
