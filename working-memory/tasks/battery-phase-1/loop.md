@@ -18,7 +18,7 @@
 | :-- | :--- | :--- |
 | 1 | FINITE 次卡 remainingSwaps（INV-6/7 · AC-10/11/12） | ✅ `slice-1-report.md` |
 | 2 | 多 Entitlement 默认策略优先 FINITE（AC-14） | ✅ `slice-2-report.md` |
-| 3 | METERED + PAY_AS_YOU_GO + METERED_CHARGE（INV-8 · AC-13） | 待 |
+| 3 | METERED + PAY_AS_YOU_GO + METERED_CHARGE（INV-8 · AC-13） | 🔄 集群并行 |
 
 ## 停止
 
