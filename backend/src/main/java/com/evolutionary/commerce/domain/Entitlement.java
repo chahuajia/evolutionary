@@ -85,6 +85,24 @@ public final class Entitlement {
         return status;
     }
 
+    public static Entitlement rehydrate(
+            String id,
+            String orderId,
+            String userId,
+            String productId,
+            Instant validFrom,
+            Instant validUntil,
+            EntitlementStatus status) {
+        return new Entitlement(
+                requireId(id),
+                requireId(orderId),
+                requireId(userId),
+                requireId(productId),
+                Objects.requireNonNull(validFrom, "validFrom"),
+                Objects.requireNonNull(validUntil, "validUntil"),
+                Objects.requireNonNull(status, "status"));
+    }
+
     private static String requireId(String id) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("id must not be blank");

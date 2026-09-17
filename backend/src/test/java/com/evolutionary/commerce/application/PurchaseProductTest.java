@@ -210,6 +210,14 @@ class PurchaseProductTest {
         public void save(Entitlement entitlement) {
             saved.add(entitlement);
         }
+
+        @Override
+        public Entitlement get(String entitlementId) {
+            return saved.stream()
+                    .filter(e -> e.id().equals(entitlementId))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("unknown entitlement"));
+        }
     }
 
     private static final class InMemoryLedger implements LedgerRepository {
