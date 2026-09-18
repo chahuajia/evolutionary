@@ -22,7 +22,6 @@ import com.evolutionary.mall.domain.CouponScope;
 import com.evolutionary.mall.domain.CouponTemplate;
 import com.evolutionary.mall.domain.IssuerType;
 import com.evolutionary.mall.domain.MallSku;
-import com.evolutionary.mall.infrastructure.InMemoryCampaignRepository;
 import com.evolutionary.mall.infrastructure.InMemoryCouponRedemptionRepository;
 import com.evolutionary.mall.infrastructure.InMemoryCouponTemplateRepository;
 import com.evolutionary.mall.infrastructure.InMemoryMallOrderRepository;
@@ -42,10 +41,7 @@ public class MallConfig {
     private static final Instant VALID_FROM = Instant.parse("2026-01-01T00:00:00Z");
     private static final Instant VALID_UNTIL = Instant.parse("2027-01-01T00:00:00Z");
 
-    @Bean
-    CampaignRepository campaignRepository() {
-        return new InMemoryCampaignRepository();
-    }
+    /** CampaignRepository → {@code JpaCampaignRepository}（表 campaigns）。 */
 
     @Bean
     CouponTemplateRepository couponTemplateRepository() {
