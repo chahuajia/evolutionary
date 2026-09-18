@@ -20,8 +20,8 @@ export default function OperatorPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Operator"
-        title="运营入驻"
+        eyebrow="运营商 · 配置"
+        title="运营配置"
         description={`入驻批准（${DEFAULT_ONBOARDING_APPLICATION_ID} / ${DEFAULT_SHOP_NAME}）→ 运营商发布套餐（${DEFAULT_PACKAGE_TEMPLATE_ID}）→ L2 套餐覆盖（${DEFAULT_OVERRIDE_TEMPLATE_ID}）。`}
       />
       <WorkflowTabs

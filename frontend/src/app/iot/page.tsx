@@ -9,7 +9,7 @@ export default function IotPage() {
   return (
     <>
       <PageHeader
-        eyebrow="IoT"
+        eyebrow="店主 · 设备"
         title="设备诊断"
         description="影子新鲜度影响计量换电；通信丢失与 SOC 过时走诊断工单。"
       />

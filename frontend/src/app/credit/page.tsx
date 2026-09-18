@@ -49,7 +49,7 @@ export default async function CreditPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Credit"
+        eyebrow="消费者 · 信用"
         title="信用账户"
         description={`用户 ${DEFAULT_CREDIT_USER} 的额度、账单与购退闭环。服务端 RSC 读档案；操作为客户端岛。`}
         action={<CreditRefreshButton />}

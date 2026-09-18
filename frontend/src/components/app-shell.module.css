@@ -56,6 +56,44 @@
   color: var(--ink-muted);
 }
 
+.roleSwitch {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  margin: 0 0.25rem;
+  border-radius: 10px;
+  background: rgba(16, 42, 67, 0.05);
+  border: 1px solid var(--line);
+}
+
+.roleChip,
+.roleChipActive {
+  flex: 1;
+  margin: 0;
+  padding: 0.4rem 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.roleChip:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.roleChipActive {
+  color: var(--ink);
+  background: var(--surface-raised);
+  border-color: rgba(15, 118, 110, 0.28);
+  box-shadow: 0 1px 0 rgba(16, 42, 67, 0.04);
+}
+
 .nav {
   display: flex;
   flex-direction: column;
