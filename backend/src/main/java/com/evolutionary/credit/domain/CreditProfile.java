@@ -43,6 +43,26 @@ public final class CreditProfile {
                 policyVersion);
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static CreditProfile rehydrate(
+            String userId,
+            Money creditLimit,
+            Money usedCredit,
+            CreditStatus status,
+            ScoreTier scoreTier,
+            int policyVersion) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("userId 不能为空");
+        }
+        return new CreditProfile(
+                userId,
+                Objects.requireNonNull(creditLimit, "creditLimit"),
+                Objects.requireNonNull(usedCredit, "usedCredit"),
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(scoreTier, "scoreTier"),
+                policyVersion);
+    }
+
     public Money availableCredit() {
         return Money.cny(Math.max(0, creditLimit.cents() - usedCredit.cents()));
     }

@@ -29,7 +29,6 @@ import com.evolutionary.credit.domain.ScoreTier;
 import com.evolutionary.credit.infrastructure.InMemoryBillingStatementRepository;
 import com.evolutionary.credit.infrastructure.InMemoryCreditLedgerDebtRepository;
 import com.evolutionary.credit.infrastructure.InMemoryCreditPolicyRepository;
-import com.evolutionary.credit.infrastructure.InMemoryCreditProfileRepository;
 import com.evolutionary.operator.application.AuditLogRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -41,10 +40,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class CreditConfig {
 
-    @Bean
-    CreditProfileRepository creditProfileRepository() {
-        return new InMemoryCreditProfileRepository();
-    }
+    /** CreditProfileRepository → {@code JpaCreditProfileRepository}（表 credit_profiles）。 */
 
     @Bean
     CreditPolicyRepository creditPolicyRepository() {
