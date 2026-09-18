@@ -22,7 +22,6 @@ import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.infrastructure.InMemoryBatteryAssetRepository;
-import com.evolutionary.commerce.infrastructure.InMemoryLedgerRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryProductRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -37,10 +36,7 @@ public class CommerceConfig {
 
     /** AccountRepository → {@code JpaAccountRepository}（表 accounts）。 */
 
-    @Bean
-    LedgerRepository ledgerRepository() {
-        return new InMemoryLedgerRepository();
-    }
+    /** LedgerRepository → {@code JpaLedgerRepository}（表 ledger_entries）。 */
 
     @Bean
     ProductRepository productRepository() {
