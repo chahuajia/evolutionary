@@ -23,7 +23,6 @@ import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.infrastructure.InMemoryAccountRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryBatteryAssetRepository;
-import com.evolutionary.commerce.infrastructure.InMemoryEntitlementRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryLedgerRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryProductRepository;
 import java.time.Clock;
@@ -35,10 +34,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class CommerceConfig {
 
-    @Bean
-    EntitlementRepository entitlementRepository() {
-        return new InMemoryEntitlementRepository();
-    }
+    /** EntitlementRepository → {@code JpaEntitlementRepository}（表 entitlements）。 */
 
     @Bean
     AccountRepository accountRepository() {

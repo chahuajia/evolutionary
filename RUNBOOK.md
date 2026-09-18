@@ -11,7 +11,7 @@
 | `GET /credit/profiles/U1` | U1 limit=10000 used=3000（分）| `CreditConfig` |
 | `POST /credit/purchases` | P-CREDIT-1 FIXED 3000¢（非计量）+ U1 good | `CreditConfig` |
 | `POST /credit/profiles/U1/monthly-billing` | OPEN Debt → Statement DUE（需先 purchases） | `RunMonthlyBilling` |
-| `POST /entitled-swaps` | E-1 ACTIVE（U1）+ BAT-1 idle；计量 E-M1 / P-M1 / BAT-M1；默认选卡 E-FINITE；用量落库表 `usage_events` | `CommerceConfig` + `JpaUsageEventRepository` |
+| `POST /entitled-swaps` | E-1 ACTIVE（U1）+ BAT-1 idle；计量 E-M1 / P-M1 / BAT-M1；默认选卡 E-FINITE；权益种子落库表 `entitlements`；用量落库表 `usage_events` | `CommerceConfig` + `JpaEntitlementRepository` + `JpaUsageEventRepository` |
 | `POST /iot/.../detect-comm-lost` | BAT-IOT-1 shadow lastSeen 过期（>5min） | `IotConfig` |
 | `POST /mall/campaigns/CAMP-OK/claims` | CAMP-OK 预算 5000¢ + T-C1 | `MallConfig` |
 | `POST /mall/orders` | SKU S1（M1 · 1000¢ · stock20）+ ACC-M1-SETTLE | `MallConfig` |
@@ -266,3 +266,4 @@ curl -s -X POST http://localhost:8080/entitled-swaps -H "Content-Type: applicati
 | P1 | 信用逾期/降额 | ✅ 切片32a：成功路径 `CREDIT_MARK_OVERDUE` / `CREDIT_POLICY_DOWNGRADE` |
 | P2 | 领券 / 月结跑批 | ✅ 切片33：`COUPON_CLAIM` / `CREDIT_MONTHLY_BILLING` |
 | P2 | `AuditLog` 仓储 | ✅ 切片34a：落库表 `audit_logs` |
+| P2 | `Entitlement` 仓储 | ✅ 切片35a：落库表 `entitlements` |
