@@ -1,12 +1,27 @@
 ﻿# evo-collab-extreme（双轴极端 · 无人值守完成）
 
-**更新**：2026-09-19  
+**更新**：2026-09-19 02:05
 **模式**：extreme **v9+反坍缩 v3+暂停**  
-**状态**：**⏸ 已暂停**（用户 19:17 要求跑完本轮后暂停）  
+**状态**：**⏸ 集群仍暂停**；**主进程已接手做主轴的活**（见下）
 **波次**：wave41 ✅ · wave42 ⏸ 仅 worktree  
-**HEAD**：`303dc35`（`topic/fe-ddd-rsc` 与 origin 同步；enum 内嵌已 commit）  
+**HEAD**：`56861f1`（operator JPA 切片1 已 commit）
 **idle**：2 / 3 · **lanes**：0  
 **交接**：`../../HANDOVER.md`（完整版亦在 collab-cli `working-memory/HANDOVER.md`）
+
+## 接手切片（主进程单干，**未派集群**）
+
+**2026-09-19**：用户指示「接手 evolutionary 来实测 collaboration」。
+遵守暂停约定**未派任何子代理**，主进程直接做：
+
+- operator 域 4 仓储 InMemory → JPA ✅ `56861f1`（operator JPA 清零）
+- 报告：`working-memory/tasks/operator-jpa/slice-1-report.md`
+- **实测 KB 的结果**：设计墙（种子时机/初始化顺序）→ 症状表**无行**；
+  catalog 关键词命中 `self-bootstrapping-requires-fixed-core`（**假阳性**）。
+  结论记入 KB `meta/known-gaps.md`（`ef4effd`）：**不开条目**，属项目决定。
+
+**下一刀（恢复时）**：operator 已清零 → 按 HANDOVER 顺序应是 iot 的
+AlertStore ∥ MaintenanceTicket（**需双路 Task，即需用户说「继续」**）；
+或主进程继续单干 credit 的种子顺序问题（预存在 2 红，见切片报告）。
 
 ## 反坍缩 v3+暂停
 
