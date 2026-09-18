@@ -1,21 +1,38 @@
-﻿# evo-collab-extreme（双轴极端）
+﻿# evo-collab-extreme（双轴极端 · 无人值守完成）
 
-**更新**：2026-09-18 10:30  
-**主轴**：L2 · extreme **v9**（≤2）  
-**波次**：wave21 ✅ · `dispatched=2 recovered=0`  
-**合入**：25a `df2781d` 撤销覆盖 · 25b `a0c1a07` 角色三分端壳  
+**更新**：2026-09-18 11:00  
+**模式**：extreme **v9**（≤2）  
+**波次**：wave22 ✅ · wave23 · `dispatched=2 recovered=0`  
+**合入**：26a `b266e4a` 总后台入驻 · 26b `459b03f` 四端壳  
 **idle**：0 / 3  
 **分支**：`topic/fe-ddd-rsc`
 
-## 上波交付
+## 完成判据（MVP）
 
-- `POST /operator/overrides/{id}/revoke` → REVOKED，有效价回落
-- AppShell：消费者 / 店主 / 运营商侧栏裁剪（`actto.console.role`）
+| 端 | 最小能力 | 状态 |
+| :--- | :--- | :--- |
+| 消费者 | 换电·信用·钱包·商城C | 钱包待 |
+| 商家 | 入驻进度占位 | ✅ 占位 |
+| 运营商 | 套餐/设备/分润（无商家审批） | ✅ |
+| 总后台 | 平台批商家入驻 | ✅ |
 
-## 下一波候选
+## Backlog
 
-FE 接通撤销覆盖按钮；或下一未 HTTP 化的 AC
+| # | 切片 | 状态 |
+| :--- | :--- | :--- |
+| W22 | 总后台+四端 | ✅ |
+| W23 | 27a `apiBase`去重+credit 三层试点 · 27b 钱包读 HTTP | 🔄 |
+| W24 | 商家 B 加厚 | 待 |
+| W25 | 运营商批下线 | 待 |
+| W26 | FE 撤销覆盖 | 待 |
+
+## 本波 wave23
+
+| 路 | worktree | 目标 |
+| :-- | :--- | :--- |
+| 27a FE | `../evo-wt-27a-fe` | `shared/http/api-base` + 全 gateway；credit `domain`+`application` 薄试点 |
+| 27b BE | `../evo-wt-27b-be` | `GET` 用户余额/积分读模型 |
 
 ## 停止
 
-双轴连续 3 tick 无增量 → 停
+idle≥3 或 MVP 全 ✅
