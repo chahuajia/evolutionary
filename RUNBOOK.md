@@ -167,6 +167,17 @@ curl -s -X POST http://localhost:8080/operator/onboarding/APP-M1/approve \
   -d '{"shopName":"黑鸟旗舰店"}'
 ```
 
+## 新接通（信用购自动 Accrue · wave18 / 22a）
+
+```bash
+# 购后自动 PENDING 分润意向（ORG-1 规则）；无需再 POST /settlement/accruals
+curl -s -X POST http://localhost:8080/credit/purchases \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"U1","productId":"P-CREDIT-1"}'
+# 证明意向存在：reverse → REVERSED；或 POST /settlement/batches 结掉
+curl -s -X POST http://localhost:8080/settlement/orders/<orderId>/reverse-accruals
+```
+
 ## 新接通（订单退款 · wave16 / 20a · AC-20）
 
 ```bash

@@ -38,6 +38,8 @@ public class SettlementConfig {
 
     public static final String SELLER_ORG_ID = "ORG-L2";
     public static final String PARENT_ORG_ID = "ORG-L1";
+    /** 信用购种子商品 P-CREDIT-1 的售卖方（与 Commerce/Credit 种子对齐）。 */
+    public static final String CREDIT_SELLER_ORG_ID = "ORG-1";
 
     @Bean
     ProfitShareAccrualRepository profitShareAccrualRepository() {
@@ -82,9 +84,12 @@ public class SettlementConfig {
     }
 
     /**
-     * 正式本地种子：ORG-L2 分润规则（L2 10% / L1 5% / PLATFORM 余量）+ 结算户 + 清算户。
+     * 正式本地种子：ORG-L2 分润规则（L2 10% / L1 5% / PLATFORM 余量）+ ORG-1（10% + PLATFORM 余量）+
+     * 结算户 + 清算户。
      *
      * <p>也可使用 Credit 种子 {@code ACC-CLR}；本切片用独立 {@link #CLEARING_ACCOUNT_ID} 以免余额冲突。
+     *
+     * <p>ORG-1 结算户由 CommerceConfig {@code ACC-ORG1-SETTLE} 提供，此处不重复开户。
      */
     @Bean
     ApplicationRunner seedSettlement(
@@ -98,6 +103,14 @@ public class SettlementConfig {
                             List.of(
                                     ProfitSplit.of(SELLER_ORG_ID, 10),
                                     ProfitSplit.of(PARENT_ORG_ID, 5)),
+                            effectiveFrom,
+                            1));
+            // 信用购 P-CREDIT-1 → ORG-1；与 ORG-L2 规则并存
+            rules.save(
+                    ProfitSharingRule.create(
+                            "R-ORG-1",
+                            CREDIT_SELLER_ORG_ID,
+                            List.of(ProfitSplit.of(CREDIT_SELLER_ORG_ID, 10)),
                             effectiveFrom,
                             1));
 

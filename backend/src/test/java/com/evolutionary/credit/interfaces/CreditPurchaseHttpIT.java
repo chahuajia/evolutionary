@@ -8,6 +8,9 @@ import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.credit.application.CreditProfileRepository;
 import com.evolutionary.credit.domain.CreditProfile;
 import com.evolutionary.credit.domain.ScoreTier;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +19,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * 切片9a：信用购 HTTP（P-CREDIT-1 · 200 orderId/entitlementId；额度不足 409）。
+ * 切片9a / 22a：信用购 HTTP（P-CREDIT-1 · 200；购后自动 PENDING accrual；额度不足 409）。
  *
  * <p>{@link DirtiesContext}：改写 usedCredit / 写单，按方法刷新上下文。
  */
@@ -27,6 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class CreditPurchaseHttpIT {
 
     @Autowired private MockMvc mvc;
+    @Autowired private ObjectMapper objectMapper;
 
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
@@ -44,6 +49,61 @@ class CreditPurchaseHttpIT {
                 .andExpect(jsonPath("$.userId").value("U1"))
                 .andExpect(jsonPath("$.paidAmountCents").value(3_000))
                 .andExpect(jsonPath("$.usedCredit").value(6_000));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    @DisplayName("购后自动 accrue：reverse 非空 REVERSED（证明 PENDING 已记）")
+    void creditPurchaseAutoAccruesPending() throws Exception {
+        MvcResult purchase =
+                mvc.perform(
+                                post("/credit/purchases")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                "{\"userId\":\"U1\",\"productId\":\"P-CREDIT-1\"}"))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.orderId").exists())
+                        .andReturn();
+        String orderId =
+                objectMapper
+                        .readTree(purchase.getResponse().getContentAsString())
+                        .get("orderId")
+                        .asText();
+
+        mvc.perform(post("/settlement/orders/" + orderId + "/reverse-accruals"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].orderId").value(orderId))
+                .andExpect(jsonPath("$[0].status").value("REVERSED"));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    @DisplayName("购后自动 accrue → batches CLOSED")
+    void creditPurchaseThenSettlementBatch() throws Exception {
+        Instant now = Instant.now();
+        String periodStart = now.minus(1, ChronoUnit.DAYS).toString();
+        String periodEnd = now.plus(1, ChronoUnit.DAYS).toString();
+
+        mvc.perform(
+                        post("/credit/purchases")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"userId\":\"U1\",\"productId\":\"P-CREDIT-1\"}"))
+                .andExpect(status().isOk());
+
+        mvc.perform(
+                        post("/settlement/batches")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "periodStart":"%s",
+                                          "periodEnd":"%s"
+                                        }
+                                        """
+                                                .formatted(periodStart, periodEnd)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CLOSED"))
+                .andExpect(jsonPath("$.id").exists());
     }
 
     @Test
