@@ -22,11 +22,6 @@ import com.evolutionary.mall.domain.CouponScope;
 import com.evolutionary.mall.domain.CouponTemplate;
 import com.evolutionary.mall.domain.IssuerType;
 import com.evolutionary.mall.domain.MallSku;
-<<<<<<< HEAD
-import com.evolutionary.mall.infrastructure.InMemoryMallOrderRepository;
-=======
-import com.evolutionary.mall.infrastructure.InMemoryCouponRedemptionRepository;
->>>>>>> wave38/42a-mall-order-jpa
 import com.evolutionary.operator.application.AuditLogRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -49,16 +44,9 @@ public class MallConfig {
 
     /** UserCouponRepository → {@code JpaUserCouponRepository}（表 user_coupons）。 */
 
-<<<<<<< HEAD
-    /** CouponRedemptionRepository → {@code JpaCouponRedemptionRepository}（表 coupon_redemptions）。 */
-
-    @Bean
-    MallOrderRepository mallOrderRepository() {
-        return new InMemoryMallOrderRepository();
-    }
-=======
     /** MallOrderRepository → {@code JpaMallOrderRepository}（表 mall_orders）。 */
->>>>>>> wave38/42a-mall-order-jpa
+
+    /** CouponRedemptionRepository → {@code JpaCouponRedemptionRepository}（表 coupon_redemptions）。 */
 
     @Bean
     ClaimCouponFromCampaign claimCouponFromCampaign(
