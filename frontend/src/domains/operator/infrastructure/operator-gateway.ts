@@ -14,6 +14,13 @@ export const DEFAULT_PACKAGE_TEMPLATE_ID = "T-DRAFT-1";
 export const DEFAULT_PUBLISH_ACTOR_ORG_ID = "ORG-L1";
 export const DEFAULT_PUBLISH_ACTOR_USER_ID = "U-ADMIN";
 
+/** 与 24a 覆盖契约对齐：已发布 T-PUB-1 / ORG-L2 / price=2800 */
+export const DEFAULT_OVERRIDE_TEMPLATE_ID = "T-PUB-1";
+export const DEFAULT_OVERRIDE_ACTOR_ORG_ID = "ORG-L2";
+export const DEFAULT_OVERRIDE_ACTOR_USER_ID = "U-SZ";
+export const DEFAULT_OVERRIDE_ID = "OV-1";
+export const DEFAULT_OVERRIDE_PRICE_CENTS = 2800;
+
 const TIMEOUT_MS = 8000;
 
 function resolveOperatorApiBase(): string {
@@ -130,4 +137,184 @@ function parsePublishPackageTemplate(
     throw new Error("发布模板响应缺少 templateId/status/version");
   }
   return { templateId, ownerOrgId, version, status, publishedAt };
+}
+
+/** POST /operator/templates/{templateId}/overrides 成功读模型（AC-26） */
+export type ActivatePackageOverrideResult = {
+  overrideId: string;
+  orgId: string;
+  templateId: string;
+  templateVersion: number;
+  status: string;
+  priceCents: number | null;
+};
+
+export type ActivatePackageOverrideRequest = {
+  templateId: string;
+  actorUserId: string;
+  actorOrgId: string;
+  overrideId: string;
+  patches: { price?: number; displayName?: string };
+};
+
+/**
+ * POST /operator/templates/{templateId}/overrides
+ * body `{ actorUserId, actorOrgId, overrideId, patches }`；错误经 fetchJson 已拼 suggestion。
+ */
+export async function postActivatePackageOverride(
+  req: ActivatePackageOverrideRequest,
+): Promise<ActivatePackageOverrideResult> {
+  const templateId = req.templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID;
+  const actorUserId =
+    req.actorUserId.trim() || DEFAULT_OVERRIDE_ACTOR_USER_ID;
+  const actorOrgId = req.actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID;
+  const overrideId = req.overrideId.trim() || DEFAULT_OVERRIDE_ID;
+  const patches: Record<string, string | number> = {};
+  if (req.patches.price != null && Number.isFinite(req.patches.price)) {
+    patches.price = req.patches.price;
+  }
+  if (
+    req.patches.displayName != null &&
+    req.patches.displayName.trim().length > 0
+  ) {
+    patches.displayName = req.patches.displayName.trim();
+  }
+  if (Object.keys(patches).length === 0) {
+    patches.price = DEFAULT_OVERRIDE_PRICE_CENTS;
+  }
+  const base = resolveOperatorApiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/operator/templates/${encodeURIComponent(templateId)}/overrides`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        actorUserId,
+        actorOrgId,
+        overrideId,
+        patches,
+      }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return parseActivatePackageOverride(raw, overrideId, templateId);
+}
+
+function parseActivatePackageOverride(
+  raw: Record<string, unknown>,
+  fallbackOverrideId: string,
+  fallbackTemplateId: string,
+): ActivatePackageOverrideResult {
+  const overrideId = String(raw.overrideId ?? raw.id ?? fallbackOverrideId);
+  const orgId = String(raw.orgId ?? "");
+  const templateId = String(raw.templateId ?? fallbackTemplateId);
+  const versionRaw = raw.templateVersion ?? raw.version;
+  const templateVersion =
+    typeof versionRaw === "number"
+      ? versionRaw
+      : Number.parseInt(String(versionRaw ?? ""), 10);
+  const status = String(raw.status ?? "");
+  const patches =
+    typeof raw.patches === "object" && raw.patches != null
+      ? (raw.patches as Record<string, unknown>)
+      : null;
+  const priceRaw = raw.priceCents ?? raw.price ?? patches?.price;
+  const priceCents =
+    priceRaw == null || priceRaw === ""
+      ? null
+      : typeof priceRaw === "number"
+        ? priceRaw
+        : Number.parseInt(String(priceRaw), 10);
+  if (!overrideId || !status) {
+    throw new Error("激活覆盖响应缺少 overrideId/status");
+  }
+  return {
+    overrideId,
+    orgId,
+    templateId,
+    templateVersion: Number.isFinite(templateVersion) ? templateVersion : 0,
+    status,
+    priceCents:
+      priceCents != null && Number.isFinite(priceCents) ? priceCents : null,
+  };
+}
+
+/** GET /operator/orgs/{orgId}/templates/{templateId}/effective-product 读模型（AC-26） */
+export type EffectiveProductResult = {
+  templateId: string;
+  templateVersion: number;
+  overrideId: string | null;
+  priceCents: number;
+  displayName: string;
+  durationDays: number;
+};
+
+export type GetEffectiveProductRequest = {
+  orgId: string;
+  templateId: string;
+};
+
+/**
+ * GET /operator/orgs/{orgId}/templates/{templateId}/effective-product
+ * 错误经 fetchJson 已拼 suggestion。
+ */
+export async function getEffectiveProduct(
+  req: GetEffectiveProductRequest,
+): Promise<EffectiveProductResult> {
+  const orgId = req.orgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID;
+  const templateId = req.templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID;
+  const base = resolveOperatorApiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/operator/orgs/${encodeURIComponent(orgId)}/templates/${encodeURIComponent(templateId)}/effective-product`,
+    {
+      method: "GET",
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return parseEffectiveProduct(raw, templateId);
+}
+
+function parseEffectiveProduct(
+  raw: Record<string, unknown>,
+  fallbackTemplateId: string,
+): EffectiveProductResult {
+  const templateId = String(raw.templateId ?? fallbackTemplateId);
+  const versionRaw = raw.templateVersion ?? raw.version;
+  const templateVersion =
+    typeof versionRaw === "number"
+      ? versionRaw
+      : Number.parseInt(String(versionRaw ?? ""), 10);
+  const overrideRaw = raw.overrideId;
+  const overrideId =
+    overrideRaw == null || overrideRaw === ""
+      ? null
+      : String(overrideRaw);
+  const product =
+    typeof raw.product === "object" && raw.product != null
+      ? (raw.product as Record<string, unknown>)
+      : null;
+  const priceRaw = raw.priceCents ?? raw.price ?? product?.priceCents;
+  const priceCents =
+    typeof priceRaw === "number"
+      ? priceRaw
+      : Number.parseInt(String(priceRaw ?? ""), 10);
+  const displayName = String(
+    raw.displayName ?? product?.displayName ?? "",
+  );
+  const durationRaw = raw.durationDays ?? product?.durationDays;
+  const durationDays =
+    typeof durationRaw === "number"
+      ? durationRaw
+      : Number.parseInt(String(durationRaw ?? ""), 10);
+  if (!templateId || !Number.isFinite(priceCents)) {
+    throw new Error("有效商品响应缺少 templateId/priceCents");
+  }
+  return {
+    templateId,
+    templateVersion: Number.isFinite(templateVersion) ? templateVersion : 0,
+    overrideId,
+    priceCents,
+    displayName,
+    durationDays: Number.isFinite(durationDays) ? durationDays : 0,
+  };
 }
