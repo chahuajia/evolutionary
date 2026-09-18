@@ -16,6 +16,7 @@ import {
   type CreditProfile,
   type StatementStatus,
 } from "@/lib/credit/types";
+import { CreditApplyPolicyPanel } from "./credit-apply-policy-panel";
 import { CreditMonthlyBillingPanel } from "./credit-monthly-billing-panel";
 import { CreditPurchasePanel } from "./credit-purchase-panel";
 import { CreditRefreshButton } from "./credit-refresh";
@@ -118,6 +119,7 @@ export default async function CreditPage() {
 
       <CreditPurchasePanel />
       <CreditMonthlyBillingPanel />
+      <CreditApplyPolicyPanel />
       <CreditRepayPanel />
     </main>
   );
