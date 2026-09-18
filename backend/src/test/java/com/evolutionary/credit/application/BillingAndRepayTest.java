@@ -23,6 +23,7 @@ import com.evolutionary.credit.domain.CreditStatus;
 import com.evolutionary.credit.domain.DebtStatus;
 import com.evolutionary.credit.domain.ScoreTier;
 import com.evolutionary.credit.domain.StatementStatus;
+import com.evolutionary.operator.infrastructure.InMemoryAuditLogRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -58,7 +59,9 @@ class BillingAndRepayTest {
         profiles = new InMemoryProfiles();
         accounts = new InMemoryAccounts();
         ledger = new InMemoryLedger();
-        billing = new RunMonthlyBilling(debts, statements, CLOCK);
+        billing =
+                new RunMonthlyBilling(
+                        debts, statements, new InMemoryAuditLogRepository(), CLOCK);
         repay =
                 new RepayBillingStatement(
                         statements,

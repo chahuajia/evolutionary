@@ -25,6 +25,7 @@ import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.MallSku;
 import com.evolutionary.mall.domain.UserCoupon;
 import com.evolutionary.mall.domain.UserCouponStatus;
+import com.evolutionary.operator.infrastructure.InMemoryAuditLogRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -74,7 +75,13 @@ class CouponCheckoutTest {
                         accounts,
                         ledger,
                         CLOCK);
-        claim = new ClaimCouponFromCampaign(campaigns, templates, userCoupons);
+        claim =
+                new ClaimCouponFromCampaign(
+                        campaigns,
+                        templates,
+                        userCoupons,
+                        new InMemoryAuditLogRepository(),
+                        CLOCK);
 
         skus.put(MallSku.createOnSale("S1", "M1", "配件", Money.cny(5_000), 10));
         accounts.put(

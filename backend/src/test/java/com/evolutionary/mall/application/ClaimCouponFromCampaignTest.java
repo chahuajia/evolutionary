@@ -12,7 +12,10 @@ import com.evolutionary.mall.domain.IssuerType;
 import com.evolutionary.mall.domain.MallErrorCode;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.UserCoupon;
+import com.evolutionary.operator.infrastructure.InMemoryAuditLogRepository;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +40,13 @@ class ClaimCouponFromCampaignTest {
         campaigns = new InMemoryCampaigns();
         templates = new InMemoryTemplates();
         userCoupons = new InMemoryUserCoupons();
-        claim = new ClaimCouponFromCampaign(campaigns, templates, userCoupons);
+        claim =
+                new ClaimCouponFromCampaign(
+                        campaigns,
+                        templates,
+                        userCoupons,
+                        new InMemoryAuditLogRepository(),
+                        Clock.fixed(VALID_FROM, ZoneOffset.UTC));
 
         templates.put(
                 CouponTemplate.create(

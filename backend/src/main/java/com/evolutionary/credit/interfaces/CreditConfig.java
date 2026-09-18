@@ -111,8 +111,10 @@ public class CreditConfig {
     /** 月度出账：OPEN Debt → Statement DUE（AC-50）。 */
     @Bean
     RunMonthlyBilling runMonthlyBilling(
-            CreditLedgerDebtRepository debts, BillingStatementRepository statements) {
-        return new RunMonthlyBilling(debts, statements, Clock.systemUTC());
+            CreditLedgerDebtRepository debts,
+            BillingStatementRepository statements,
+            AuditLogRepository auditLogs) {
+        return new RunMonthlyBilling(debts, statements, auditLogs, Clock.systemUTC());
     }
 
     /** 政策降额应用到档案（AC-54）；不清零 usedCredit；成功记 CREDIT_POLICY_DOWNGRADE。 */

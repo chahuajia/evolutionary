@@ -1,30 +1,25 @@
 ﻿# evo-collab-extreme（双轴极端 · 无人值守完成）
 
-**更新**：2026-09-18 13:00  
+**更新**：2026-09-18 13:55  
 **模式**：extreme **v9**（≤2）  
-**波次**：wave26 ✅ · wave27 · `dispatched=2 recovered=0`  
-**合入**：30a 撤销覆盖 FE · 30b ONBOARDING_APPROVE 审计  
+**波次**：wave27–29 ✅ · `recovered=父接管`  
+**合入**：31a/b · 32a/b · 33 领券+月结审计  
+**HEAD**：见 `git log -1`  
 **idle**：0 / 3  
 
-## MVP
+## MVP / 轨迹
 
 | 项 | 状态 |
 | :--- | :--- |
-| 四端 / 总后台 / 钱包 / 商家 / 批下线 / 换电日志 | ✅ |
-| FE 撤销覆盖 | ✅ |
-| 入驻 AuditLog | ✅ |
-| UsageEvent → JPA | 🔄 本波 |
-| IoT 命令审计 | 待 |
+| 四端 / 钱包 / 商家 / 换电日志 / FE 撤销 / 入驻审计 | ✅ |
+| UsageEvent JPA · IoT 命令审计 · 信用逾期/降额 | ✅ |
+| FE swap-logs · 领券/月结 AuditLog | ✅ |
+| 轨迹 P0–P2 | ✅ 清完 |
 
-## 本波 wave27
+## 停止条件
 
-| 路 | worktree | 目标 |
-| :-- | :--- | :--- |
-| 31a BE | `../evo-wt-31a-be` | `UsageEvent` InMemory → JPA 表 |
-| 31b BE | `../evo-wt-31b-be` | IoT 命令下发审计仓（append-only） |
+轨迹 P0/P1/P2 已清 → **本 tick 可停派**；若 wake 仍开则仅做验绿/idle 计数。
 
-路径不冲突：commerce vs iot。
+## 下一可选（非强制）
 
-## 停止
-
-idle≥3 或轨迹 P0/P1 清完
+AuditLog InMemory → JPA；或 L3 collaboration 条目。

@@ -28,6 +28,7 @@ import com.evolutionary.mall.infrastructure.InMemoryCouponTemplateRepository;
 import com.evolutionary.mall.infrastructure.InMemoryMallOrderRepository;
 import com.evolutionary.mall.infrastructure.InMemoryMallSkuRepository;
 import com.evolutionary.mall.infrastructure.InMemoryUserCouponRepository;
+import com.evolutionary.operator.application.AuditLogRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -75,8 +76,10 @@ public class MallConfig {
     ClaimCouponFromCampaign claimCouponFromCampaign(
             CampaignRepository campaigns,
             CouponTemplateRepository templates,
-            UserCouponRepository userCoupons) {
-        return new ClaimCouponFromCampaign(campaigns, templates, userCoupons);
+            UserCouponRepository userCoupons,
+            AuditLogRepository auditLogs) {
+        return new ClaimCouponFromCampaign(
+                campaigns, templates, userCoupons, auditLogs, Clock.systemUTC());
     }
 
     @Bean

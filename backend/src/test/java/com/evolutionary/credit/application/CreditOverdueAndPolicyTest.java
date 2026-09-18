@@ -91,7 +91,7 @@ class CreditOverdueAndPolicyTest {
         auditLogs = new InMemoryAuditLogs();
 
         Clock billClock = Clock.fixed(BILL_AT, ZoneOffset.UTC);
-        billing = new RunMonthlyBilling(debts, statements, billClock);
+        billing = new RunMonthlyBilling(debts, statements, auditLogs, billClock);
         markOverdue =
                 new MarkCreditOverdue(
                         statements,
@@ -172,7 +172,10 @@ class CreditOverdueAndPolicyTest {
         assertEquals(CreditStatus.OVERDUE, profiles.get("U1").status());
         assertEquals(StatementStatus.OVERDUE, statements.get(due.id()).status());
         assertEquals(EntitlementStatus.FROZEN, entitlements.get("ENT-1").status());
-        List<AuditLog> overdueAudit = auditLogs.findByResourceId(due.id());
+        List<AuditLog> overdueAudit =
+                auditLogs.findByResourceId(due.id()).stream()
+                        .filter(l -> l.action() == AuditAction.CREDIT_MARK_OVERDUE)
+                        .toList();
         assertEquals(1, overdueAudit.size());
         assertEquals(AuditAction.CREDIT_MARK_OVERDUE, overdueAudit.get(0).action());
         assertEquals("BillingStatement", overdueAudit.get(0).resourceType());

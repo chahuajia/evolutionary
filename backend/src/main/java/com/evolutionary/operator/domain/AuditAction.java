@@ -11,5 +11,9 @@ public enum AuditAction {
     /** 信用逾期标记（切片32a）。 */
     CREDIT_MARK_OVERDUE,
     /** 信用政策降额应用（切片32a）。 */
-    CREDIT_POLICY_DOWNGRADE
+    CREDIT_POLICY_DOWNGRADE,
+    /** 活动领券（切片33a）。 */
+    COUPON_CLAIM,
+    /** 月度出账（切片33b）。 */
+    CREDIT_MONTHLY_BILLING
 }
