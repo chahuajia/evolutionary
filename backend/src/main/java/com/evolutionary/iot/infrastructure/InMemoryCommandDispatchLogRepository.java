@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/** 进程内命令下发审计（半成品：重启丢；端口可换 JPA）。 */
+/** 进程内命令下发审计（单测用；生产由 {@link JpaCommandDispatchLogRepository} 接管）。 */
 public final class InMemoryCommandDispatchLogRepository implements CommandDispatchLogRepository {
 
     private final List<CommandDispatchLog> logs = new CopyOnWriteArrayList<>();

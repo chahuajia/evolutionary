@@ -40,8 +40,31 @@ public final class CommandDispatchLog {
         if (commandId == null || commandId.isBlank()) {
             throw new IllegalArgumentException("commandId 不能为空");
         }
-        return new CommandDispatchLog(
+        return rehydrate(
                 "cdl-" + UUID.randomUUID(),
+                commandId,
+                batteryId,
+                action,
+                ack,
+                occurredAt);
+    }
+
+    /** 仓储重放。 */
+    public static CommandDispatchLog rehydrate(
+            String id,
+            String commandId,
+            String batteryId,
+            BatteryCommand.Action action,
+            boolean ack,
+            Instant occurredAt) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("id 不能为空");
+        }
+        if (commandId == null || commandId.isBlank()) {
+            throw new IllegalArgumentException("commandId 不能为空");
+        }
+        return new CommandDispatchLog(
+                id,
                 commandId,
                 batteryId,
                 Objects.requireNonNull(action, "action"),
