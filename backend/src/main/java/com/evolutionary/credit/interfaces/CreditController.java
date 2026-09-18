@@ -7,11 +7,14 @@ import com.evolutionary.credit.application.CreditPurchaseResult;
 import com.evolutionary.credit.application.MarkCreditOverdue;
 import com.evolutionary.credit.application.PurchaseWithCredit;
 import com.evolutionary.credit.application.RepayBillingStatement;
+import com.evolutionary.credit.application.RunMonthlyBilling;
 import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditProfile;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -39,18 +42,21 @@ public class CreditController {
     private final PurchaseWithCredit purchaseWithCredit;
     private final MarkCreditOverdue markCreditOverdue;
     private final RepayBillingStatement repayBillingStatement;
+    private final RunMonthlyBilling runMonthlyBilling;
 
     public CreditController(
             CreditProfileRepository profiles,
             BillingStatementRepository statements,
             PurchaseWithCredit purchaseWithCredit,
             MarkCreditOverdue markCreditOverdue,
-            RepayBillingStatement repayBillingStatement) {
+            RepayBillingStatement repayBillingStatement,
+            RunMonthlyBilling runMonthlyBilling) {
         this.profiles = profiles;
         this.statements = statements;
         this.purchaseWithCredit = purchaseWithCredit;
         this.markCreditOverdue = markCreditOverdue;
         this.repayBillingStatement = repayBillingStatement;
+        this.runMonthlyBilling = runMonthlyBilling;
     }
 
     @GetMapping("/profiles/{userId}")
@@ -126,6 +132,21 @@ public class CreditController {
         return ResponseEntity.status(translated.status()).body(translated.body());
     }
 
+    @PostMapping("/profiles/{userId}/monthly-billing")
+    public ResponseEntity<?> monthlyBilling(
+            @PathVariable String userId, @RequestBody MonthlyBillingRequest body) {
+        Instant periodStart = parseInstant(body == null ? null : body.periodStart(), "periodStart");
+        Instant periodEnd = parseInstant(body == null ? null : body.periodEnd(), "periodEnd");
+        CreditOutcome<BillingStatement> outcome =
+                runMonthlyBilling.execute(userId, periodStart, periodEnd);
+        if (outcome instanceof CreditOutcome.Ok<BillingStatement> ok) {
+            return ResponseEntity.ok(toStatement(ok.value()));
+        }
+        CreditOutcome.Err<BillingStatement> err = (CreditOutcome.Err<BillingStatement>) outcome;
+        CreditApiErrorTranslator.Translated translated = CreditApiErrorTranslator.translate(err);
+        return ResponseEntity.status(translated.status()).body(translated.body());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<CreditApiErrorTranslator.ApiError> handleBadRequest(
             IllegalArgumentException ex) {
@@ -182,6 +203,19 @@ public class CreditController {
     public record MarkOverdueRequest(String statementId) {}
 
     public record RepayRequest(String statementId, Long amountCents) {}
+
+    public record MonthlyBillingRequest(String periodStart, String periodEnd) {}
+
+    private static Instant parseInstant(String raw, String field) {
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException(field + " required");
+        }
+        try {
+            return Instant.parse(raw.trim());
+        } catch (DateTimeParseException ex) {
+            throw new IllegalArgumentException(field + " must be ISO-8601 Instant");
+        }
+    }
 
     public record CreditProfileView(
             String userId,
