@@ -39,6 +39,8 @@ export default async function Home() {
         <Link href="/iot">IoT 诊断</Link>
         {" · "}
         <Link href="/mall">商城领券</Link>
+        {" · "}
+        <Link href="/operator">运维入驻</Link>
       </p>
 
       <SwapPanel
