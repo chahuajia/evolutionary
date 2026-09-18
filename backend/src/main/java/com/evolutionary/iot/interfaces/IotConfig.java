@@ -9,7 +9,6 @@ import com.evolutionary.iot.application.TelemetryStore;
 import com.evolutionary.iot.application.TriageOutdatedSoc;
 import com.evolutionary.iot.domain.DeviceShadow;
 import com.evolutionary.iot.infrastructure.InMemoryAlertStore;
-import com.evolutionary.iot.infrastructure.InMemoryDeviceShadowRepository;
 import com.evolutionary.iot.infrastructure.InMemoryMaintenanceTicketRepository;
 import com.evolutionary.iot.infrastructure.InMemoryTelemetryStore;
 import java.time.Clock;
@@ -21,10 +20,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class IotConfig {
 
-    @Bean
-    DeviceShadowRepository deviceShadowRepository() {
-        return new InMemoryDeviceShadowRepository();
-    }
+    /** DeviceShadowRepository → {@code JpaDeviceShadowRepository}（表 device_shadows）。 */
 
     @Bean
     AlertStore alertStore() {
