@@ -3,6 +3,7 @@ package com.evolutionary.operator.interfaces;
 import com.evolutionary.mall.application.MerchantProfileRepository;
 import com.evolutionary.mall.infrastructure.InMemoryMerchantProfileRepository;
 import com.evolutionary.operator.application.ActivatePackageOverride;
+import com.evolutionary.operator.application.ApproveOperatorDownline;
 import com.evolutionary.operator.application.AuditLogRepository;
 import com.evolutionary.operator.application.OnboardingApplicationRepository;
 import com.evolutionary.operator.application.OrganizationRepository;
@@ -65,6 +66,14 @@ public class OperatorConfig {
                         OrgStatus.ACTIVE));
         organizations.save(Organization.createRoot("ORG-L1", "华南", List.of("GD", "SZ")));
         organizations.save(Organization.createChild("ORG-L2", "深圳", "ORG-L1", List.of("SZ")));
+        organizations.save(
+                Organization.create(
+                        "ORG-DL1",
+                        "下线运营商待入驻",
+                        "ORG-L1",
+                        List.of(),
+                        List.of("SZ"),
+                        OrgStatus.ACTIVE));
         return organizations;
     }
 
@@ -125,8 +134,15 @@ public class OperatorConfig {
         return new ResolveEffectiveProduct(templates, overrides);
     }
 
+    @Bean
+    ApproveOperatorDownline approveOperatorDownline(
+            OnboardingApplicationRepository applications, OrganizationRepository organizations) {
+        return new ApproveOperatorDownline(applications, organizations, Clock.systemUTC());
+    }
+
     /**
-     * 正式本地种子：APP-M1（MERCHANT · SUBMITTED · ORG-NEW）；APP-OP1（OPERATOR · 负例）；
+     * 正式本地种子：APP-M1（MERCHANT · SUBMITTED · ORG-NEW）；APP-OP1（OPERATOR · 总后台负例）；
+     * APP-DL1（OPERATOR · SUBMITTED · ORG-DL1 · ORG-L1 下线正例 · 切片29a）；
      * ORG-L1 + ORG-L2（深圳，已在 organizationRepository 入仓）+ T-DRAFT-1（AC-24）+ T-PUB-1（已发布 ·
      * AC-26）；T-DRAFT-M（禁发负例）。
      */
@@ -147,6 +163,9 @@ public class OperatorConfig {
                             "ORG-OP-PENDING",
                             OrgCapability.OPERATOR,
                             submittedAt));
+            applications.save(
+                    OnboardingApplication.submit(
+                            "APP-DL1", "ORG-DL1", OrgCapability.OPERATOR, submittedAt));
 
             TemplateBaseProduct base = TemplateBaseProduct.of("30天卡", 3000, 30);
             templates.save(
