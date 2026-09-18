@@ -14,7 +14,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * 切片19a：批准商家入驻 HTTP（AC-40 · APP-M1 / ORG-NEW）。
+ * 切片26a：平台总后台批准商家入驻 HTTP（AC-40 · APP-M1 / ORG-NEW · /admin）。
  *
  * <p>{@link DirtiesContext}：批准写 APPROVED + MerchantProfile，按方法刷新上下文。
  */
@@ -28,10 +28,10 @@ class ApproveMerchantOnboardingHttpIT {
 
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
-    @DisplayName("POST /operator/onboarding/APP-M1/approve → 200 ORG-NEW ACTIVE")
+    @DisplayName("POST /admin/onboarding/APP-M1/approve → 200 ORG-NEW ACTIVE")
     void approveAppM1Ok() throws Exception {
         mvc.perform(
-                        post("/operator/onboarding/APP-M1/approve")
+                        post("/admin/onboarding/APP-M1/approve")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(SHOP_BODY))
                 .andExpect(status().isOk())
@@ -45,13 +45,13 @@ class ApproveMerchantOnboardingHttpIT {
     @DisplayName("重复批准 APP-M1 → 403 CAPABILITY_DENIED")
     void reApproveForbidden() throws Exception {
         mvc.perform(
-                        post("/operator/onboarding/APP-M1/approve")
+                        post("/admin/onboarding/APP-M1/approve")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(SHOP_BODY))
                 .andExpect(status().isOk());
 
         mvc.perform(
-                        post("/operator/onboarding/APP-M1/approve")
+                        post("/admin/onboarding/APP-M1/approve")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(SHOP_BODY))
                 .andExpect(status().isForbidden())
@@ -63,7 +63,7 @@ class ApproveMerchantOnboardingHttpIT {
     @DisplayName("OPERATOR 申请 APP-OP1 → 403 CAPABILITY_DENIED")
     void wrongCapabilityForbidden() throws Exception {
         mvc.perform(
-                        post("/operator/onboarding/APP-OP1/approve")
+                        post("/admin/onboarding/APP-OP1/approve")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(SHOP_BODY))
                 .andExpect(status().isForbidden())

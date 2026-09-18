@@ -15,7 +15,7 @@
 | `POST /mall/campaigns/CAMP-OK/claims` | CAMP-OK 预算 5000¢ + T-C1 | `MallConfig` |
 | `POST /mall/orders` | SKU S1（M1 · 1000¢ · stock20）+ ACC-M1-SETTLE | `MallConfig` |
 | `POST /mall/orders/checkout-with-coupons` | claim CAMP-OK + T-C1 FIXED_OFF 500（minSpend 3000¢ → qty≥3） | `MallConfig` |
-| `POST /operator/onboarding/{id}/approve` | APP-M1（MERCHANT · SUBMITTED · ORG-NEW） | `OperatorConfig` |
+| `POST /admin/onboarding/{id}/approve` | APP-M1（MERCHANT · SUBMITTED · ORG-NEW） | `AdminConfig` + `OperatorConfig` 种子 |
 | `POST /operator/templates/{id}/publish` | ORG-L1 + T-DRAFT-1（OPERATOR）；T-DRAFT-M（ORG-NEW 负例） | `OperatorConfig` |
 | `POST /operator/templates/{id}/overrides` | ORG-L2 + T-PUB-1（已发布）；非后代 ORG-NEW → 422 | `OperatorConfig` |
 | `POST /operator/overrides/{overrideId}/revoke` | 先激活 OV-1；所属 ORG-L2 → REVOKED；非所属 → 422 | `OperatorConfig` |
@@ -33,7 +33,7 @@
 | 权益换电（非计量 / 计量 / 默认选卡） | `/` 岛 → `/api/entitled-swaps` | `EntitledSwapController` |
 | IoT 影子 / COMM_LOST / 遥测 / triage / 工单 | `/iot` → `/api/iot/...` | `IotController` |
 | 商城领券 / 下单 / 带券结账 | `/mall` → `/api/mall/...` | `MallController` |
-| 商家入驻批准 | — | `OperatorController` + OperatorConfig APP-M1 |
+| 商家入驻批准 | — | `AdminController` + AdminConfig + OperatorConfig APP-M1 |
 | 套餐模板发布 | — | `OperatorController` + PublishPackageTemplate T-DRAFT-1 |
 | 套餐覆盖 / 有效价 / 撤销 | — | `OperatorController` + Activate / RevokePackageOverride / ResolveEffectiveProduct |
 | 订单退款 | — | `POST /commerce/orders/{orderId}/refund` · `CommerceOrderController` |
@@ -164,11 +164,11 @@ curl -s -X POST http://localhost:8080/mall/orders/checkout-with-coupons \
   -d '{"userId":"U1","merchantOrgId":"M1","skuId":"S1","qty":3,"userCouponIds":["<couponId>"]}'
 ```
 
-## 新接通（商家入驻批准 · wave15 / 19a · AC-40）
+## 新接通（商家入驻批准 · wave22 / 26a · AC-40 · 平台总后台）
 
 ```bash
 # APP-M1 → ORG-NEW MerchantProfile ACTIVE；重复批准 / APP-OP1 → 403 CAPABILITY_DENIED
-curl -s -X POST http://localhost:8080/operator/onboarding/APP-M1/approve \
+curl -s -X POST http://localhost:8080/admin/onboarding/APP-M1/approve \
   -H "Content-Type: application/json" \
   -d '{"shopName":"黑鸟旗舰店"}'
 ```
