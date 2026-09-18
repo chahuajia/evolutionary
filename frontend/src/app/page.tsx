@@ -36,6 +36,8 @@ export default async function Home() {
         站列表 RSC 单次 REST 读取；详情/换电仍按站 ID（客户端岛）。不移植领域聚合。{" "}
         <Link href="/credit">信用账单</Link>
         {" · "}
+        <Link href="/settlement">结算批</Link>
+        {" · "}
         <Link href="/iot">IoT 诊断</Link>
         {" · "}
         <Link href="/mall">商城领券</Link>
