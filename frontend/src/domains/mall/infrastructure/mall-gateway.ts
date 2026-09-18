@@ -125,3 +125,40 @@ function parsePurchase(raw: Record<string, unknown>): PurchaseMallOrderResult {
     qty: Number(raw.qty ?? 0),
   };
 }
+
+/** POST /mall/orders/checkout-with-coupons 成功读模型（AC-42+ · 切片16b） */
+export type CheckoutWithCouponsResult = PurchaseMallOrderResult;
+
+export type CheckoutWithCouponsRequest = {
+  userId: string;
+  merchantOrgId?: string;
+  skuId?: string;
+  qty?: number;
+  /** 用户券 id；可空（等价无券结账） */
+  userCouponIds?: string[];
+};
+
+/**
+ * POST /mall/orders/checkout-with-coupons — 余额购 SKU（可带券核销）
+ */
+export async function postCheckoutWithCoupons(
+  req: CheckoutWithCouponsRequest,
+): Promise<CheckoutWithCouponsResult> {
+  const base = resolveMallApiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/mall/orders/checkout-with-coupons`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: req.userId,
+        merchantOrgId: req.merchantOrgId ?? DEFAULT_MALL_MERCHANT,
+        skuId: req.skuId ?? DEFAULT_MALL_SKU,
+        qty: req.qty ?? 1,
+        userCouponIds: req.userCouponIds ?? [],
+      }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return parsePurchase(raw);
+}
