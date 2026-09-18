@@ -165,6 +165,28 @@ export async function postMonthlyBilling(
   return parseStatement(raw);
 }
 
+export type ApplyCreditPolicyRequest = {
+  userId: string;
+  policyVersion: number;
+};
+
+/** POST /credit/profiles/{userId}/apply-policy — 返回更新后档案读模型 */
+export async function postApplyCreditPolicy(
+  req: ApplyCreditPolicyRequest,
+): Promise<CreditProfile> {
+  const base = resolveCreditApiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/credit/profiles/${encodeURIComponent(req.userId)}/apply-policy`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ policyVersion: req.policyVersion }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return parseProfile(raw);
+}
+
 function parsePurchaseResult(raw: Record<string, unknown>): CreditPurchaseResult {
   const order =
     raw.order != null && typeof raw.order === "object"
