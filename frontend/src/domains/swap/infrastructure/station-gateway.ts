@@ -13,6 +13,14 @@ export type StationSummary = {
   batteryCount: number;
 };
 
+export type SwapLog = {
+  id: string;
+  stationId: string;
+  outgoingBatteryId: string;
+  incomingBatteryId: string;
+  occurredAt: string;
+};
+
 const TIMEOUT_MS = 8000;
 
 /** @deprecated 请用 `@/shared/http/api-base`；保留别名供 swap-panel 兼容 */
@@ -59,4 +67,29 @@ export async function fetchStationSummaries(): Promise<
   } catch (e) {
     throw triageListError(e);
   }
+}
+
+function parseSwapLog(raw: Record<string, unknown>): SwapLog {
+  return {
+    id: String(raw.id ?? ""),
+    stationId: String(raw.stationId ?? ""),
+    outgoingBatteryId: String(raw.outgoingBatteryId ?? ""),
+    incomingBatteryId: String(raw.incomingBatteryId ?? ""),
+    occurredAt: String(raw.occurredAt ?? ""),
+  };
+}
+
+/** 站换电日志；GET /stations/{id}/swap-logs。 */
+export async function fetchSwapLogs(
+  stationId: string,
+): Promise<readonly SwapLog[]> {
+  const base = apiBase();
+  const raw = await fetchJson<unknown[]>(
+    `${base}/stations/${encodeURIComponent(stationId)}/swap-logs`,
+    { cache: "no-store", timeoutMs: TIMEOUT_MS },
+  );
+  if (!Array.isArray(raw)) {
+    throw new Error("换电日志响应格式无效");
+  }
+  return raw.map((row) => parseSwapLog(row as Record<string, unknown>));
 }
