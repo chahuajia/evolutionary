@@ -26,6 +26,21 @@ public final class CouponRedemption {
         this.redeemedAt = redeemedAt;
     }
 
+    /** JPA 回放；不做业务校验。 */
+    public static CouponRedemption rehydrate(
+            String id,
+            String userCouponId,
+            String orderId,
+            Money discountAmount,
+            Instant redeemedAt) {
+        return new CouponRedemption(
+                id,
+                userCouponId,
+                orderId,
+                Objects.requireNonNull(discountAmount, "discountAmount"),
+                Objects.requireNonNull(redeemedAt, "redeemedAt"));
+    }
+
     public static CouponRedemption record(
             String id,
             String userCouponId,
