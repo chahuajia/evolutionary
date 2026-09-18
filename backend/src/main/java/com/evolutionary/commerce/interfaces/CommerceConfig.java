@@ -22,7 +22,11 @@ import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.infrastructure.InMemoryBatteryAssetRepository;
+<<<<<<< HEAD
 import com.evolutionary.commerce.infrastructure.InMemoryLedgerRepository;
+=======
+import com.evolutionary.commerce.infrastructure.InMemoryProductRepository;
+>>>>>>> wave32/36b-ledger-jpa
 import java.time.Clock;
 import java.time.Instant;
 import org.springframework.boot.ApplicationRunner;
@@ -36,10 +40,7 @@ public class CommerceConfig {
 
     /** AccountRepository → {@code JpaAccountRepository}（表 accounts）。 */
 
-    @Bean
-    LedgerRepository ledgerRepository() {
-        return new InMemoryLedgerRepository();
-    }
+    /** LedgerRepository → {@code JpaLedgerRepository}（表 ledger_entries）。 */
 
     /** ProductRepository → {@code JpaProductRepository}（表 products）。 */
 

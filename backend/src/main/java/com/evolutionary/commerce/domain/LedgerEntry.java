@@ -211,6 +211,25 @@ public final class LedgerEntry {
         return createdAt;
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static LedgerEntry rehydrate(
+            String id,
+            String debitAccountId,
+            String creditAccountId,
+            Money amount,
+            LedgerRefType refType,
+            String refId,
+            Instant createdAt) {
+        return new LedgerEntry(
+                requireId(id),
+                requireId(debitAccountId),
+                requireId(creditAccountId),
+                Objects.requireNonNull(amount, "amount"),
+                Objects.requireNonNull(refType, "refType"),
+                requireId(refId),
+                Objects.requireNonNull(createdAt, "createdAt"));
+    }
+
     private static String requireId(String id) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("id must not be blank");
