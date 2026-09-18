@@ -133,6 +133,11 @@ class PointsExpiryAndRefTypeTest {
         }
 
         @Override
+        public void save(Product product) {
+            put(product);
+        }
+
+        @Override
         public Product get(String productId) {
             return byId.get(productId);
         }

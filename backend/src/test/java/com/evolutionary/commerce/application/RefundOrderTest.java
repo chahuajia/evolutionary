@@ -226,6 +226,11 @@ class RefundOrderTest {
         }
 
         @Override
+        public void save(Product product) {
+            put(product);
+        }
+
+        @Override
         public Product get(String productId) {
             Product product = byId.get(productId);
             if (product == null) {

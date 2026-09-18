@@ -23,7 +23,6 @@ import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.infrastructure.InMemoryBatteryAssetRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryLedgerRepository;
-import com.evolutionary.commerce.infrastructure.InMemoryProductRepository;
 import java.time.Clock;
 import java.time.Instant;
 import org.springframework.boot.ApplicationRunner;
@@ -42,10 +41,7 @@ public class CommerceConfig {
         return new InMemoryLedgerRepository();
     }
 
-    @Bean
-    ProductRepository productRepository() {
-        return new InMemoryProductRepository();
-    }
+    /** ProductRepository → {@code JpaProductRepository}（表 products）。 */
 
     @Bean
     BatteryAssetRepository batteryAssetRepository() {
@@ -121,8 +117,7 @@ public class CommerceConfig {
                             5));
             batteries.save(BatteryAsset.createIdle("BAT-1", "ORG-1", "vendor", "model"));
 
-            InMemoryProductRepository productStore = (InMemoryProductRepository) products;
-            productStore.save(
+            products.save(
                     Product.createMetered(
                             "P-M1", "ORG-1", "计量按电量", Money.cny(50), ProductStatus.PUBLISHED));
             entitlements.save(

@@ -13,7 +13,6 @@ import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.infrastructure.InMemoryOrderRepository;
-import com.evolutionary.commerce.infrastructure.InMemoryProductRepository;
 import com.evolutionary.credit.application.ApplyCreditPolicyDowngrade;
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.application.CreditLedgerDebtRepository;
@@ -198,15 +197,14 @@ public class CreditConfig {
                             Currency.CNY,
                             0));
 
-            ((InMemoryProductRepository) products)
-                    .save(
-                            Product.create(
-                                    "P-CREDIT-1",
-                                    "ORG-1",
-                                    "信用购月卡",
-                                    Money.cny(3_000),
-                                    30,
-                                    ProductStatus.PUBLISHED));
+            products.save(
+                    Product.create(
+                            "P-CREDIT-1",
+                            "ORG-1",
+                            "信用购月卡",
+                            Money.cny(3_000),
+                            30,
+                            ProductStatus.PUBLISHED));
         };
     }
 }
