@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** 进程内权益仓储（非计量换电路径最小实现）。 */
+/** 进程内权益仓储（单测用；生产由 {@link JpaEntitlementRepository} 接管）。 */
 public final class InMemoryEntitlementRepository implements EntitlementRepository {
 
     private final Map<String, Entitlement> byId = new ConcurrentHashMap<>();
