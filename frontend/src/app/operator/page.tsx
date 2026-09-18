@@ -1,5 +1,5 @@
 /**
- * 运营入驻工作台 — 批准入驻 + 发布套餐 + 套餐覆盖。
+ * 运营商工作台 — 发布套餐 + 套餐覆盖。
  */
 
 "use client";
@@ -7,12 +7,9 @@
 import { PageHeader } from "@/components/page-header";
 import { WorkflowTabs } from "@/components/workflow-tabs";
 import {
-  DEFAULT_ONBOARDING_APPLICATION_ID,
   DEFAULT_OVERRIDE_TEMPLATE_ID,
   DEFAULT_PACKAGE_TEMPLATE_ID,
-  DEFAULT_SHOP_NAME,
 } from "@/domains/operator/infrastructure/operator-gateway";
-import { OnboardingApprovePanel } from "./onboarding-approve-panel";
 import { PackageOverridePanel } from "./package-override-panel";
 import { PublishPackageTemplatePanel } from "./publish-package-template-panel";
 
@@ -22,17 +19,11 @@ export default function OperatorPage() {
       <PageHeader
         eyebrow="运营商 · 配置"
         title="运营配置"
-        description={`入驻批准（${DEFAULT_ONBOARDING_APPLICATION_ID} / ${DEFAULT_SHOP_NAME}）→ 运营商发布套餐（${DEFAULT_PACKAGE_TEMPLATE_ID}）→ L2 套餐覆盖（${DEFAULT_OVERRIDE_TEMPLATE_ID}）。`}
+        description={`运营商发布套餐（${DEFAULT_PACKAGE_TEMPLATE_ID}）→ L2 套餐覆盖（${DEFAULT_OVERRIDE_TEMPLATE_ID}）。商家入驻由总后台审批。`}
       />
       <WorkflowTabs
-        defaultId="onboard"
+        defaultId="publish"
         tabs={[
-          {
-            id: "onboard",
-            label: "批准入驻",
-            description: "MERCHANT 申请 → MerchantProfile.active。",
-            content: <OnboardingApprovePanel />,
-          },
           {
             id: "publish",
             label: "发布套餐",

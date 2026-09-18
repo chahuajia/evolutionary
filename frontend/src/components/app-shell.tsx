@@ -1,5 +1,5 @@
 /**
- * 产品壳 — 角色三分端侧栏 + 主区（演示级，无真登录）。
+ * 产品壳 — 四端角色侧栏 + 主区（演示级，无真登录）。
  */
 
 "use client";
@@ -9,14 +9,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "./app-shell.module.css";
 
-export type ConsoleRole = "consumer" | "shop" | "operator";
+export type ConsoleRole = "consumer" | "merchant" | "operator" | "admin";
 
 const ROLE_STORAGE_KEY = "actto.console.role";
 
 const ROLES: { id: ConsoleRole; label: string }[] = [
   { id: "consumer", label: "消费者" },
-  { id: "shop", label: "店主" },
+  { id: "merchant", label: "商家" },
   { id: "operator", label: "运营商" },
+  { id: "admin", label: "总后台" },
 ];
 
 type NavItem = { href: string; label: string; hint: string };
@@ -27,13 +28,16 @@ const NAV_BY_ROLE: Record<ConsoleRole, readonly NavItem[]> = {
     { href: "/credit", label: "信用", hint: "购 · 账 · 退" },
     { href: "/mall", label: "商城", hint: "券 · 下单" },
   ],
-  shop: [
-    { href: "/iot", label: "设备诊断", hint: "影子 · 工单" },
-    { href: "/settlement", label: "分润结算", hint: "本店意向 · 批" },
+  merchant: [
+    { href: "/merchant", label: "入驻进度", hint: "平台审批中" },
   ],
   operator: [
-    { href: "/operator", label: "运营配置", hint: "商家 · 套餐" },
+    { href: "/operator", label: "运营配置", hint: "套餐 · 覆盖" },
+    { href: "/iot", label: "设备诊断", hint: "影子 · 工单" },
     { href: "/settlement", label: "分润结算", hint: "全网意向 · 批" },
+  ],
+  admin: [
+    { href: "/admin", label: "平台审批", hint: "商家入驻" },
   ],
 };
 
@@ -46,20 +50,30 @@ const ROLE_UI: Record<
     home: "/",
     topbar: "消费者端：换电履约、信用账户与商城促销。",
   },
-  shop: {
-    brandSub: "店主端",
-    home: "/iot",
-    topbar: "店主端：设备诊断与本店分润结算。",
+  merchant: {
+    brandSub: "商家端",
+    home: "/merchant",
+    topbar: "商家端：商城商家入驻进度（由总后台平台审批）。",
   },
   operator: {
     brandSub: "运营商端",
     home: "/operator",
-    topbar: "运营商端：运营配置与分润结算。",
+    topbar: "运营商端：套餐发布/覆盖、设备诊断与分润结算。",
+  },
+  admin: {
+    brandSub: "总后台",
+    home: "/admin",
+    topbar: "总后台：平台批准商家入驻。",
   },
 };
 
 function isValidRole(value: string | null): value is ConsoleRole {
-  return value === "consumer" || value === "shop" || value === "operator";
+  return (
+    value === "consumer" ||
+    value === "merchant" ||
+    value === "operator" ||
+    value === "admin"
+  );
 }
 
 function pathInNav(pathname: string, nav: readonly NavItem[]): boolean {
