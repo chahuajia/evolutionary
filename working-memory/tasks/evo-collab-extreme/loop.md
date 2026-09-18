@@ -1,22 +1,20 @@
 ﻿# evo-collab-extreme（双轴极端）
 
-**更新**：2026-09-18 09:55  
-**主轴**：L2 · extreme **v9**  
-**波次**：wave19 ✅ · UI 壳重构 dc25588  
+**更新**：2026-09-18 10:10  
+**主轴**：L2 · extreme **v9**（≤2）  
+**波次**：wave20 ✅ · `dispatched=2 recovered=0`  
+**合入**：24a `28f7d54` + 24b `eb75a71` → PackageOverride / effective-product  
 **idle**：0 / 3  
-**分支**：	opic/fe-ddd-rsc
+**分支**：`topic/fe-ddd-rsc`
 
-## 切片
+## 上波交付
 
-| 步 | 状态 |
-| :-- | :--- |
-| 0–22 | ✅ |
-| 23a/b 发布套餐 | ✅ |
-| UI 控制台重构 | ✅ |
+- `POST /operator/templates/{id}/overrides` · `GET .../effective-product`
+- FE `/operator`「套餐覆盖」tab（T-PUB-1 / ORG-L2 / price=2800）
 
-## 分支说明
+## 下一波候选
 
-wave12–18 **feat 均已合入** topic；本地 branch tip 多出的是合并后 docs(wm) status，不是未完成任务。
+角色三分端壳（消费者 / 店主 / 运营商）或继续运营链（若有下一 AC）
 
 ## 停止
 
