@@ -67,7 +67,7 @@ function parseRefundResult(
   }
 
   const entitlementIdRaw =
-    raw.entitlementId ?? entitlement?.id;
+    raw.revokedEntitlementId ?? raw.entitlementId ?? entitlement?.id;
   const entitlementStatusRaw =
     raw.entitlementStatus ?? entitlement?.status;
   const refundedAtRaw = raw.refundedAt ?? order?.refundedAt;

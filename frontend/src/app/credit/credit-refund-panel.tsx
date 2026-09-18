@@ -1,16 +1,17 @@
 "use client";
 
 /**
- * 订单退款客户端岛 — 可粘贴 orderId，或先余额购拿 orderId 再退。
+ * 订单退款客户端岛 — 粘贴 orderId，或先信用购拿 orderId 再退。
+ * 契约：POST /commerce/orders/{orderId}/refund
  */
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { postRefundOrder } from "@/domains/commerce/infrastructure/order-refund-gateway";
 import {
-  postBalancePurchase,
-  postRefundOrder,
-} from "@/domains/commerce/infrastructure/order-gateway";
-import { DEFAULT_CREDIT_USER } from "@/domains/credit/infrastructure/credit-gateway";
+  DEFAULT_CREDIT_USER,
+  postCreditPurchase,
+} from "@/domains/credit/infrastructure/credit-gateway";
 import styles from "./page.module.css";
 
 const DEFAULT_PRODUCT_ID = "P-CREDIT-1";
@@ -30,7 +31,7 @@ export function CreditRefundPanel() {
     setError(null);
     setResult(null);
     try {
-      const r = await postBalancePurchase({ userId, productId });
+      const r = await postCreditPurchase({ userId, productId });
       setOrderId(r.orderId);
       setResult(`已购订单 ${r.orderId} · 权益 ${r.entitlementId}`);
       router.refresh();
@@ -47,10 +48,9 @@ export function CreditRefundPanel() {
     setError(null);
     setResult(null);
     try {
-      const r = await postRefundOrder(orderId.trim());
-      setResult(
-        `已退 ${r.orderId} · ${r.status} · 撤销权益 ${r.revokedEntitlementId}`,
-      );
+      const r = await postRefundOrder(orderId);
+      const ent = r.entitlementId ?? "(revoked)";
+      setResult(`已退 ${r.orderId} · ${r.status} · 权益 ${ent}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -64,7 +64,6 @@ export function CreditRefundPanel() {
       <h2>订单退款</h2>
       <p className={styles.note}>
         契约 <code>POST /commerce/orders/{"{orderId}"}/refund</code>
-        （余额购路径；信用购无支付分录不适用）
       </p>
       <form className={styles.repayForm} onSubmit={onBuy}>
         <label>
@@ -79,7 +78,7 @@ export function CreditRefundPanel() {
           />
         </label>
         <button type="submit" disabled={busy}>
-          {busy ? "提交中…" : "先余额购"}
+          {busy ? "提交中…" : "先信用购"}
         </button>
       </form>
       <form className={styles.repayForm} onSubmit={onRefund}>
@@ -88,7 +87,7 @@ export function CreditRefundPanel() {
           <input
             value={orderId}
             onChange={(e) => setOrderId(e.target.value)}
-            placeholder="粘贴或由余额购填入"
+            placeholder="粘贴或由信用购填入"
             required
           />
         </label>
