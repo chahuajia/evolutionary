@@ -261,12 +261,7 @@ curl -s -X POST http://localhost:8080/entitled-swaps -H "Content-Type: applicati
 | 优先级 | 项 | 现状 |
 | :--- | :--- | :--- |
 | P0 | `ApproveMerchantOnboarding` / `/admin` | ✅ 切片30b：成功同事务 `ONBOARDING_APPROVE` |
-<<<<<<< HEAD
 | P1 | `UsageEvent` | ✅ 切片31a：落库表 `usage_events` |
-| P1 | IoT `IdempotentCommandGateway` | 仅内存 ack |
-=======
-| P1 | `UsageEvent` | 有端口，InMemory，重启丢 |
 | P1 | IoT `IdempotentCommandGateway` | ✅ 切片31b：物理下发 append `command_dispatch_logs` |
->>>>>>> wave27/31b-iot-cmd-audit
-| P1 | 信用逾期/降额 | 无运营审计行 |
+| P1 | 信用逾期/降额 | ✅ 切片32a：成功路径 `CREDIT_MARK_OVERDUE` / `CREDIT_POLICY_DOWNGRADE` |
 | P2 | 领券 / 月结跑批 | 无独立操作审计 |
