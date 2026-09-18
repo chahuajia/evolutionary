@@ -32,6 +32,23 @@ public final class MallSku {
         this.status = status;
     }
 
+    /** JPA 回放；不做业务校验。 */
+    public static MallSku rehydrate(
+            String id,
+            String merchantOrgId,
+            String name,
+            Money price,
+            int stock,
+            MallSkuStatus status) {
+        return new MallSku(
+                id,
+                merchantOrgId,
+                name,
+                Objects.requireNonNull(price, "price"),
+                stock,
+                Objects.requireNonNull(status, "status"));
+    }
+
     public static MallSku createOnSale(
             String id, String merchantOrgId, String name, Money price, int stock) {
         if (id == null || id.isBlank()) {
