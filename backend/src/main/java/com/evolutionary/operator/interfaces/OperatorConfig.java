@@ -3,7 +3,6 @@ package com.evolutionary.operator.interfaces;
 import com.evolutionary.mall.application.MerchantProfileRepository;
 import com.evolutionary.mall.infrastructure.InMemoryMerchantProfileRepository;
 import com.evolutionary.operator.application.ActivatePackageOverride;
-import com.evolutionary.operator.application.ApproveMerchantOnboarding;
 import com.evolutionary.operator.application.AuditLogRepository;
 import com.evolutionary.operator.application.OnboardingApplicationRepository;
 import com.evolutionary.operator.application.OrganizationRepository;
@@ -93,15 +92,6 @@ public class OperatorConfig {
     OrgAuthorization orgAuthorization(OrganizationRepository organizations) {
         List<Organization> all = organizations.findAll();
         return new OrgAuthorization(OrgAuthorization.index(all.toArray(Organization[]::new)));
-    }
-
-    @Bean
-    ApproveMerchantOnboarding approveMerchantOnboarding(
-            OnboardingApplicationRepository applications,
-            OrganizationRepository organizations,
-            MerchantProfileRepository merchants) {
-        return new ApproveMerchantOnboarding(
-                applications, organizations, merchants, Clock.systemUTC());
     }
 
     @Bean
