@@ -10,7 +10,6 @@ import com.evolutionary.iot.application.TriageOutdatedSoc;
 import com.evolutionary.iot.domain.DeviceShadow;
 import com.evolutionary.iot.infrastructure.InMemoryAlertStore;
 import com.evolutionary.iot.infrastructure.InMemoryMaintenanceTicketRepository;
-import com.evolutionary.iot.infrastructure.InMemoryTelemetryStore;
 import java.time.Clock;
 import java.time.Instant;
 import org.springframework.boot.ApplicationRunner;
@@ -32,11 +31,7 @@ public class IotConfig {
         return new InMemoryMaintenanceTicketRepository();
     }
 
-    @Bean
-    TelemetryStore telemetryStore() {
-        return new InMemoryTelemetryStore();
-    }
-
+    // TelemetryStore → JpaTelemetryStore（表 telemetry_records）
     // CommandDispatchLogRepository → JpaCommandDispatchLogRepository（表 command_dispatch_logs）
 
     @Bean
