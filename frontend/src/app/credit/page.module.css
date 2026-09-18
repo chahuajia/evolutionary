@@ -136,3 +136,16 @@
   font: inherit;
   cursor: pointer;
 }
+
+.journeyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.journeyActions button {
+  padding: 0.35rem 0.75rem;
+  font: inherit;
+  cursor: pointer;
+}
