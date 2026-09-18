@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 客户端岛：表单 / 站详情 / 换电 POST。
+ * 客户端岛：表单 / 站详情 / 换电 POST / 换电日志。
  * 站列表由 RSC 首屏注入；刷新列表走 router.refresh()。
  */
 
@@ -44,8 +44,8 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
   const [stationId, setStationId] = useState(initialStationId);
   const [incomingBatteryId, setIncomingBatteryId] = useState("B-user-1");
   const [station, setStation] = useState<StationView | null>(null);
-  const [swapLogs, setSwapLogs] = useState<readonly SwapLog[]>([]);
   const [lastSwap, setLastSwap] = useState<SwapResult | null>(null);
+  const [swapLogs, setSwapLogs] = useState<readonly SwapLog[]>([]);
   const [error, setError] = useState<string | null>(listError);
   const [busy, setBusy] = useState(false);
 
@@ -54,10 +54,16 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
     router.refresh();
   }, [router]);
 
-  const loadSwapLogs = useCallback(async (id: string) => {
-    const logs = await fetchSwapLogs(id);
-    setSwapLogs(logs);
-  }, []);
+  const loadSwapLogs = useCallback(
+    async (id: string) => {
+      try {
+        setSwapLogs(await fetchSwapLogs(id));
+      } catch {
+        /* 日志失败不阻断主流程 */
+      }
+    },
+    [],
+  );
 
   const loadStation = useCallback(async () => {
     setBusy(true);
@@ -68,11 +74,7 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
         { timeoutMs: TIMEOUT_MS },
       );
       setStation(body);
-      try {
-        await loadSwapLogs(stationId);
-      } catch {
-        /* 站详情已成功；日志拉取失败不阻断 */
-      }
+      await loadSwapLogs(stationId);
     } catch (e) {
       setError(triageFetchError(e));
     } finally {
@@ -105,11 +107,7 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
       } catch {
         /* 换电已成功；详情刷新失败不阻断，列表仍 refresh */
       }
-      try {
-        await loadSwapLogs(stationId);
-      } catch {
-        /* 换电已成功；日志刷新失败不阻断 */
-      }
+      await loadSwapLogs(stationId);
       router.refresh();
     } catch (err) {
       setError(triageFetchError(err));
@@ -186,6 +184,20 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
         </section>
       )}
 
+      {swapLogs.length > 0 && (
+        <section className={styles.panel}>
+          <h2>换电日志</h2>
+          <ul>
+            {swapLogs.map((log) => (
+              <li key={log.id}>
+                {log.occurredAt}：出 {log.outgoingBatteryId} → 入{" "}
+                {log.incomingBatteryId}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {station && (
         <section className={styles.panel}>
           <h2>
@@ -195,20 +207,6 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
             {station.batteries.map((b) => (
               <li key={b.id}>
                 {b.id} — {b.status}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {swapLogs.length > 0 && (
-        <section className={styles.panel}>
-          <h2>换电日志</h2>
-          <ul>
-            {[...swapLogs].reverse().map((log) => (
-              <li key={log.id}>
-                {log.occurredAt}：取出 {log.outgoingBatteryId}，放入{" "}
-                {log.incomingBatteryId}
               </li>
             ))}
           </ul>
