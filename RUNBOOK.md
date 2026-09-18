@@ -248,7 +248,20 @@ curl -s http://localhost:8080/iot/batteries/BAT-IOT-1/tickets
 
 ```bash
 curl -s http://localhost:8080/stations | head
+# 物理换电后查日志（同事务双写 swap_logs，非 DB trigger）
+curl -s -X POST http://localhost:8080/stations/S1/swaps -H "Content-Type: application/json" -d '{"incomingBatteryId":"B-demo"}'
+curl -s http://localhost:8080/stations/S1/swap-logs
 curl -s http://localhost:8080/credit/profiles/U1
 curl -s http://localhost:8080/credit/profiles/U1/statements
 curl -s -X POST http://localhost:8080/entitled-swaps -H "Content-Type: application/json" -d '{"userId":"U1","entitlementId":"E-1","cabinetId":"CAB-1"}'
 ```
+
+## 轨迹缺口（同类 · 尚未本切片）
+
+| 优先级 | 项 | 现状 |
+| :--- | :--- | :--- |
+| P0 | `ApproveMerchantOnboarding` / `/admin` | 无 AuditLog |
+| P1 | `UsageEvent` | 有端口，InMemory，重启丢 |
+| P1 | IoT `IdempotentCommandGateway` | 仅内存 ack |
+| P1 | 信用逾期/降额 | 无运营审计行 |
+| P2 | 领券 / 月结跑批 | 无独立操作审计 |
