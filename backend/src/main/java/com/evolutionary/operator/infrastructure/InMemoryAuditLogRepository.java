@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/** 进程内审计日志仓储。 */
+/** 进程内审计日志仓储（单测用；生产由 {@link JpaAuditLogRepository} 接管）。 */
 public final class InMemoryAuditLogRepository implements AuditLogRepository {
 
     private final List<AuditLog> logs = new CopyOnWriteArrayList<>();

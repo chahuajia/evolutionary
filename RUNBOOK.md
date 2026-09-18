@@ -265,3 +265,4 @@ curl -s -X POST http://localhost:8080/entitled-swaps -H "Content-Type: applicati
 | P1 | IoT `IdempotentCommandGateway` | ✅ 切片31b：物理下发 append `command_dispatch_logs` |
 | P1 | 信用逾期/降额 | ✅ 切片32a：成功路径 `CREDIT_MARK_OVERDUE` / `CREDIT_POLICY_DOWNGRADE` |
 | P2 | 领券 / 月结跑批 | ✅ 切片33：`COUPON_CLAIM` / `CREDIT_MONTHLY_BILLING` |
+| P2 | `AuditLog` 仓储 | ✅ 切片34a：落库表 `audit_logs` |

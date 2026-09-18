@@ -21,7 +21,6 @@ import com.evolutionary.operator.domain.Organization;
 import com.evolutionary.operator.domain.OverridableField;
 import com.evolutionary.operator.domain.PackageTemplate;
 import com.evolutionary.operator.domain.TemplateBaseProduct;
-import com.evolutionary.operator.infrastructure.InMemoryAuditLogRepository;
 import com.evolutionary.operator.infrastructure.InMemoryOnboardingApplicationRepository;
 import com.evolutionary.operator.infrastructure.InMemoryOrganizationRepository;
 import com.evolutionary.operator.infrastructure.InMemoryPackageOverrideRepository;
@@ -87,10 +86,7 @@ public class OperatorConfig {
         return new InMemoryPackageOverrideRepository();
     }
 
-    @Bean
-    AuditLogRepository auditLogRepository() {
-        return new InMemoryAuditLogRepository();
-    }
+    /** AuditLogRepository → {@code JpaAuditLogRepository}（表 audit_logs）。 */
 
     @Bean
     MerchantProfileRepository merchantProfileRepository() {
