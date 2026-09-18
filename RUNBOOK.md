@@ -16,6 +16,7 @@
 | `POST /mall/orders` | SKU S1（M1 · 1000¢ · stock20）+ ACC-M1-SETTLE | `MallConfig` |
 | `POST /mall/orders/checkout-with-coupons` | claim CAMP-OK + T-C1 FIXED_OFF 500（minSpend 3000¢ → qty≥3） | `MallConfig` |
 | `POST /operator/onboarding/{id}/approve` | APP-M1（MERCHANT · SUBMITTED · ORG-NEW） | `OperatorConfig` |
+| `POST /operator/templates/{id}/publish` | ORG-L1 + T-DRAFT-1（OPERATOR）；T-DRAFT-M（ORG-NEW 负例） | `OperatorConfig` |
 | `POST /commerce/orders/{orderId}/refund` | 信用购/余额购 PAID 订单 → REFUNDED + 权益 REVOKED | `CommerceConfig` + `RefundOrder` |
 
 ## 已接通（正式可跑）
@@ -30,6 +31,7 @@
 | IoT 影子 / COMM_LOST / 遥测 / triage / 工单 | `/iot` → `/api/iot/...` | `IotController` |
 | 商城领券 / 下单 / 带券结账 | `/mall` → `/api/mall/...` | `MallController` |
 | 商家入驻批准 | — | `OperatorController` + OperatorConfig APP-M1 |
+| 套餐模板发布 | — | `OperatorController` + PublishPackageTemplate T-DRAFT-1 |
 | 订单退款 | — | `POST /commerce/orders/{orderId}/refund` · `CommerceOrderController` |
 
 ## 启动
@@ -165,6 +167,15 @@ curl -s -X POST http://localhost:8080/mall/orders/checkout-with-coupons \
 curl -s -X POST http://localhost:8080/operator/onboarding/APP-M1/approve \
   -H "Content-Type: application/json" \
   -d '{"shopName":"黑鸟旗舰店"}'
+```
+
+## 新接通（套餐模板发布 · wave19 / 23a · AC-24）
+
+```bash
+# T-DRAFT-1 / ORG-L1 → 200 id/status=PUBLISHED/version/publishedAt；ORG-NEW 发 T-DRAFT-M → 403
+curl -s -X POST http://localhost:8080/operator/templates/T-DRAFT-1/publish \
+  -H "Content-Type: application/json" \
+  -d '{"actorUserId":"U-ADMIN","actorOrgId":"ORG-L1"}'
 ```
 
 ## 新接通（信用购自动 Accrue · wave18 / 22a）
