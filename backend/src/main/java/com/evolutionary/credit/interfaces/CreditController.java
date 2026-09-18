@@ -1,6 +1,7 @@
 package com.evolutionary.credit.interfaces;
 
 import com.evolutionary.commerce.domain.Money;
+import com.evolutionary.credit.application.ApplyCreditPolicyDowngrade;
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.application.CreditProfileRepository;
 import com.evolutionary.credit.application.CreditPurchaseResult;
@@ -43,6 +44,7 @@ public class CreditController {
     private final MarkCreditOverdue markCreditOverdue;
     private final RepayBillingStatement repayBillingStatement;
     private final RunMonthlyBilling runMonthlyBilling;
+    private final ApplyCreditPolicyDowngrade applyCreditPolicyDowngrade;
 
     public CreditController(
             CreditProfileRepository profiles,
@@ -50,13 +52,15 @@ public class CreditController {
             PurchaseWithCredit purchaseWithCredit,
             MarkCreditOverdue markCreditOverdue,
             RepayBillingStatement repayBillingStatement,
-            RunMonthlyBilling runMonthlyBilling) {
+            RunMonthlyBilling runMonthlyBilling,
+            ApplyCreditPolicyDowngrade applyCreditPolicyDowngrade) {
         this.profiles = profiles;
         this.statements = statements;
         this.purchaseWithCredit = purchaseWithCredit;
         this.markCreditOverdue = markCreditOverdue;
         this.repayBillingStatement = repayBillingStatement;
         this.runMonthlyBilling = runMonthlyBilling;
+        this.applyCreditPolicyDowngrade = applyCreditPolicyDowngrade;
     }
 
     @GetMapping("/profiles/{userId}")
@@ -147,6 +151,23 @@ public class CreditController {
         return ResponseEntity.status(translated.status()).body(translated.body());
     }
 
+    /** 政策降额应用到档案（AC-54）；不清零 usedCredit。 */
+    @PostMapping("/profiles/{userId}/apply-policy")
+    public ResponseEntity<?> applyPolicy(
+            @PathVariable String userId, @RequestBody ApplyPolicyRequest body) {
+        if (body == null || body.policyVersion() == null) {
+            throw new IllegalArgumentException("policyVersion required");
+        }
+        CreditOutcome<CreditProfile> outcome =
+                applyCreditPolicyDowngrade.execute(userId, body.policyVersion());
+        if (outcome instanceof CreditOutcome.Ok<CreditProfile> ok) {
+            return ResponseEntity.ok(toProfile(ok.value()));
+        }
+        CreditOutcome.Err<CreditProfile> err = (CreditOutcome.Err<CreditProfile>) outcome;
+        CreditApiErrorTranslator.Translated translated = CreditApiErrorTranslator.translate(err);
+        return ResponseEntity.status(translated.status()).body(translated.body());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<CreditApiErrorTranslator.ApiError> handleBadRequest(
             IllegalArgumentException ex) {
@@ -205,6 +226,8 @@ public class CreditController {
     public record RepayRequest(String statementId, Long amountCents) {}
 
     public record MonthlyBillingRequest(String periodStart, String periodEnd) {}
+
+    public record ApplyPolicyRequest(Integer policyVersion) {}
 
     private static Instant parseInstant(String raw, String field) {
         if (raw == null || raw.isBlank()) {

@@ -14,8 +14,10 @@ import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.infrastructure.InMemoryOrderRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryProductRepository;
+import com.evolutionary.credit.application.ApplyCreditPolicyDowngrade;
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.application.CreditLedgerDebtRepository;
+import com.evolutionary.credit.application.CreditPolicyRepository;
 import com.evolutionary.credit.application.CreditProfileRepository;
 import com.evolutionary.credit.application.MarkCreditOverdue;
 import com.evolutionary.credit.application.PurchaseWithCredit;
@@ -23,13 +25,16 @@ import com.evolutionary.credit.application.RepayBillingStatement;
 import com.evolutionary.credit.application.RunMonthlyBilling;
 import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditOutcome;
+import com.evolutionary.credit.domain.CreditPolicy;
 import com.evolutionary.credit.domain.CreditProfile;
 import com.evolutionary.credit.domain.ScoreTier;
 import com.evolutionary.credit.infrastructure.InMemoryBillingStatementRepository;
 import com.evolutionary.credit.infrastructure.InMemoryCreditLedgerDebtRepository;
+import com.evolutionary.credit.infrastructure.InMemoryCreditPolicyRepository;
 import com.evolutionary.credit.infrastructure.InMemoryCreditProfileRepository;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,6 +45,11 @@ public class CreditConfig {
     @Bean
     CreditProfileRepository creditProfileRepository() {
         return new InMemoryCreditProfileRepository();
+    }
+
+    @Bean
+    CreditPolicyRepository creditPolicyRepository() {
+        return new InMemoryCreditPolicyRepository();
     }
 
     @Bean
@@ -100,20 +110,40 @@ public class CreditConfig {
         return new RunMonthlyBilling(debts, statements, Clock.systemUTC());
     }
 
+    /** 政策降额应用到档案（AC-54）；不清零 usedCredit。 */
+    @Bean
+    ApplyCreditPolicyDowngrade applyCreditPolicyDowngrade(
+            CreditPolicyRepository policies, CreditProfileRepository profiles) {
+        return new ApplyCreditPolicyDowngrade(policies, profiles);
+    }
+
     /**
      * 正式本地种子：与 FE RSC /credit 对齐。
      *
      * <p>U1 limit=10000 / used=3000（分）；余额 5000 + CREDIT-CLEARING；STMT-2026-02 DUE 3000。
      *
      * <p>P-CREDIT-1：FIXED 非计量 3000¢（可用额度 7000，可购一次）；写入同一 {@link ProductRepository}。
+     *
+     * <p>政策 v2：A 档限额 8000（低于 U1 当前 10000），便于 apply-policy IT。
      */
     @Bean
     ApplicationRunner seedCredit(
             CreditProfileRepository profiles,
+            CreditPolicyRepository policies,
             BillingStatementRepository statements,
             AccountRepository accounts,
             ProductRepository products) {
         return args -> {
+            policies.save(
+                    CreditPolicy.of(
+                            "POL-2",
+                            2,
+                            Map.of(
+                                    ScoreTier.A, Money.cny(8_000),
+                                    ScoreTier.B, Money.cny(5_000),
+                                    ScoreTier.C, Money.cny(2_000)),
+                            Instant.parse("2026-03-01T00:00:00Z")));
+
             CreditProfile profile =
                     CreditProfile.open("U1", Money.cny(10_000), ScoreTier.A, 1);
             CreditOutcome<CreditProfile> charged = profile.charge(Money.cny(3_000));
