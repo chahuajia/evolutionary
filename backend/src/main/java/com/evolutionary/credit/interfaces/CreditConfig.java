@@ -41,16 +41,9 @@ public class CreditConfig {
 
     /** CreditPolicyRepository → {@code JpaCreditPolicyRepository}（表 credit_policies）。 */
 
-<<<<<<< HEAD
     /** BillingStatementRepository → {@code JpaBillingStatementRepository}（表 billing_statements）。 */
-=======
-    /** CreditLedgerDebtRepository → {@code JpaCreditLedgerDebtRepository}（表 credit_ledger_debts）。 */
 
-    @Bean
-    BillingStatementRepository billingStatementRepository() {
-        return new InMemoryBillingStatementRepository();
-    }
->>>>>>> wave35/39b-credit-ledger-debt-jpa
+    /** CreditLedgerDebtRepository → {@code JpaCreditLedgerDebtRepository}（表 credit_ledger_debts）。 */
 
     /** OrderRepository → {@code JpaOrderRepository}（表 orders）。 */
 
