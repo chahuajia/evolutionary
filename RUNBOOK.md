@@ -13,6 +13,7 @@
 | `POST /iot/.../detect-comm-lost` | BAT-IOT-1 shadow lastSeen 过期（>5min） | `IotConfig` |
 | `POST /mall/campaigns/CAMP-OK/claims` | CAMP-OK 预算 5000¢ + T-C1 | `MallConfig` |
 | `POST /mall/orders` | SKU S1（M1 · 1000¢ · stock20）+ ACC-M1-SETTLE | `MallConfig` |
+| `POST /mall/orders/checkout-with-coupons` | claim CAMP-OK + T-C1 FIXED_OFF 500（minSpend 3000¢ → qty≥3） | `MallConfig` |
 
 ## 已接通（正式可跑）
 
@@ -23,7 +24,7 @@
 | 信用购 | `/credit` → `/api/credit/purchases` | `CreditController` + PurchaseWithCredit |
 | 权益换电（非计量 / 计量 / 默认选卡） | `/` 岛 → `/api/entitled-swaps` | `EntitledSwapController` |
 | IoT 影子 / COMM_LOST / 遥测 / triage / 工单 | `/iot` → `/api/iot/...` | `IotController` |
-| 商城领券 / 下单 | `/mall` → `/api/mall/...` | `MallController` |
+| 商城领券 / 下单 / 带券结账 | `/mall` → `/api/mall/...` | `MallController` |
 
 ## 启动
 
@@ -127,6 +128,19 @@ curl -s -X POST http://localhost:8080/iot/batteries/BAT-IOT-1/triage-outdated-so
 curl -s -X POST http://localhost:8080/mall/orders \
   -H "Content-Type: application/json" \
   -d '{"userId":"U1","merchantOrgId":"M1","skuId":"S1","qty":1}'
+```
+
+## 新接通（带券结账 · wave14 / 16a）
+
+```bash
+# 1) 领券 → 记下 id
+curl -s -X POST http://localhost:8080/mall/campaigns/CAMP-OK/claims \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"U1","templateId":"T-C1"}'
+# 2) 带券下单（T-C1 minSpend 3000¢ → qty=3；paid=2500 discount=500）
+curl -s -X POST http://localhost:8080/mall/orders/checkout-with-coupons \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"U1","merchantOrgId":"M1","skuId":"S1","qty":3,"userCouponIds":["<couponId>"]}'
 ```
 
 ## 新接通（运维工单列表 · wave13）
