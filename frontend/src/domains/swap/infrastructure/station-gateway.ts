@@ -3,6 +3,7 @@
  * RSC 直连 Spring；浏览器经 Next `/api` rewrite。
  */
 
+import { apiBase } from "@/shared/http/api-base";
 import { fetchJson } from "@/shared/http/fetch-json";
 
 export type StationSummary = {
@@ -14,16 +15,8 @@ export type StationSummary = {
 
 const TIMEOUT_MS = 8000;
 
-/**
- * Server Component 无相对 URL host；直连 BACKEND_ORIGIN。
- * 客户端仍走同域 `/api` → rewrite。
- */
-export function resolveApiBase(): string {
-  if (typeof window === "undefined") {
-    return process.env.BACKEND_ORIGIN ?? "http://localhost:8080";
-  }
-  return process.env.NEXT_PUBLIC_API_BASE ?? "/api";
-}
+/** @deprecated 请用 `@/shared/http/api-base`；保留别名供 swap-panel 兼容 */
+export const resolveApiBase = apiBase;
 
 function triageListError(e: unknown): Error {
   const msg = e instanceof Error ? e.message : String(e);
@@ -51,7 +44,7 @@ function parseStationSummary(raw: Record<string, unknown>): StationSummary {
 export async function fetchStationSummaries(): Promise<
   readonly StationSummary[]
 > {
-  const base = resolveApiBase();
+  const base = apiBase();
   try {
     const raw = await fetchJson<unknown[]>(`${base}/stations`, {
       cache: "no-store",

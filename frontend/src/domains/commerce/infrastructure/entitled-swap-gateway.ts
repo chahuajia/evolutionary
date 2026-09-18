@@ -2,6 +2,7 @@
  * 权益换电防腐 — POST /entitled-swaps
  */
 
+import { apiBase } from "@/shared/http/api-base";
 import { fetchJson } from "@/shared/http/fetch-json";
 
 const TIMEOUT_MS = 8000;
@@ -27,17 +28,10 @@ export type EntitledSwapResult = {
   chargedAmountCents?: number;
 };
 
-function resolveApiBase(): string {
-  if (typeof window === "undefined") {
-    return process.env.BACKEND_ORIGIN ?? "http://localhost:8080";
-  }
-  return process.env.NEXT_PUBLIC_API_BASE ?? "/api";
-}
-
 export async function postEntitledSwap(
   body: EntitledSwapRequest,
 ): Promise<EntitledSwapResult> {
-  const base = resolveApiBase();
+  const base = apiBase();
   const payload: Record<string, unknown> = {
     userId: body.userId,
     cabinetId: body.cabinetId,

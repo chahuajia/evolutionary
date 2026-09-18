@@ -5,15 +5,14 @@
 import { PageHeader } from "@/components/page-header";
 import {
   DEFAULT_CREDIT_USER,
-  fetchCreditProfile,
-  fetchCreditStatements,
-} from "@/domains/credit/infrastructure/credit-gateway";
+  loadCreditProfile,
+} from "@/domains/credit/application/load-credit-profile";
+import type { CreditProfileView } from "@/domains/credit/domain/credit-profile-view";
+import { fetchCreditStatements } from "@/domains/credit/infrastructure/credit-gateway";
 import {
-  CREDIT_STATUS_LABEL,
   STATEMENT_STATUS_LABEL,
   formatYuan,
   type BillingStatement,
-  type CreditProfile,
   type StatementStatus,
 } from "@/lib/credit/types";
 import { CreditRefreshButton } from "./credit-refresh";
@@ -28,13 +27,13 @@ function statusBadgeClass(status: StatementStatus): string {
 }
 
 export default async function CreditPage() {
-  let profile: CreditProfile | null = null;
+  let profile: CreditProfileView | null = null;
   let statements: readonly BillingStatement[] = [];
   let error: string | null = null;
 
   try {
     const [p, s] = await Promise.all([
-      fetchCreditProfile(DEFAULT_CREDIT_USER),
+      loadCreditProfile(DEFAULT_CREDIT_USER),
       fetchCreditStatements(DEFAULT_CREDIT_USER),
     ]);
     profile = p;
@@ -66,23 +65,21 @@ export default async function CreditPage() {
           <div className={styles.metric}>
             <span className={styles.metricLabel}>可用额度</span>
             <strong className={styles.metricValue}>
-              ¥{formatYuan(profile.creditLimit - profile.usedCredit)}
+              ¥{profile.availableYuan}
             </strong>
           </div>
           <div className={styles.metric}>
             <span className={styles.metricLabel}>已用 / 总额度</span>
             <strong className={styles.metricValue}>
-              ¥{formatYuan(profile.usedCredit)}
+              ¥{profile.usedYuan}
               <span className={styles.metricSuffix}>
-                / ¥{formatYuan(profile.creditLimit)}
+                / ¥{profile.limitYuan}
               </span>
             </strong>
           </div>
           <div className={styles.metric}>
             <span className={styles.metricLabel}>状态</span>
-            <strong className={styles.metricValue}>
-              {CREDIT_STATUS_LABEL[profile.status]}
-            </strong>
+            <strong className={styles.metricValue}>{profile.statusLabel}</strong>
             <span className={styles.metricMeta}>
               {profile.scoreTier} · 政策 v{profile.policyVersion}
             </span>
