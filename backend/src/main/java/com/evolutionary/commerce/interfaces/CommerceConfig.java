@@ -21,10 +21,6 @@ import com.evolutionary.commerce.domain.MeteringMode;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
-<<<<<<< HEAD
-=======
-import com.evolutionary.commerce.infrastructure.InMemoryBatteryAssetRepository;
->>>>>>> wave33/37b-order-jpa
 import java.time.Clock;
 import java.time.Instant;
 import org.springframework.boot.ApplicationRunner;
@@ -42,16 +38,9 @@ public class CommerceConfig {
 
     /** ProductRepository → {@code JpaProductRepository}（表 products）。 */
 
-<<<<<<< HEAD
     /** BatteryAssetRepository → {@code JpaBatteryAssetRepository}（表 battery_assets）。 */
-=======
-    /** OrderRepository → {@code JpaOrderRepository}（表 orders）。 */
 
-    @Bean
-    BatteryAssetRepository batteryAssetRepository() {
-        return new InMemoryBatteryAssetRepository();
-    }
->>>>>>> wave33/37b-order-jpa
+    /** OrderRepository → {@code JpaOrderRepository}（表 orders）。 */
 
     /** UsageEventRepository → {@code JpaUsageEventRepository}（表 usage_events）。 */
 
