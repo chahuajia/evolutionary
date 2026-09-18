@@ -109,6 +109,37 @@ public final class CouponTemplate {
                 null);
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static CouponTemplate rehydrate(
+            String id,
+            String issuerOrgId,
+            IssuerType issuerType,
+            CouponKind kind,
+            long value,
+            Money minSpend,
+            CouponScope scope,
+            List<String> scopeIds,
+            String mutexGroup,
+            String campaignId,
+            Instant validFrom,
+            Instant validUntil,
+            Integer perUserLimit) {
+        return new CouponTemplate(
+                id,
+                issuerOrgId,
+                Objects.requireNonNull(issuerType, "issuerType"),
+                Objects.requireNonNull(kind, "kind"),
+                value,
+                minSpend,
+                Objects.requireNonNull(scope, "scope"),
+                scopeIds,
+                mutexGroup,
+                campaignId,
+                Objects.requireNonNull(validFrom, "validFrom"),
+                Objects.requireNonNull(validUntil, "validUntil"),
+                perUserLimit);
+    }
+
     /** 领券时占用的面值预算（FIXED_OFF=value；PERCENT_OFF 按面值估算用 value 作为分）。 */
     public Money faceBudget() {
         return Money.cny(value);
