@@ -15,6 +15,7 @@
 | `POST /mall/campaigns/CAMP-OK/claims` | CAMP-OK 预算 5000¢ + T-C1 | `MallConfig` |
 | `POST /mall/orders` | SKU S1（M1 · 1000¢ · stock20）+ ACC-M1-SETTLE | `MallConfig` |
 | `POST /mall/orders/checkout-with-coupons` | claim CAMP-OK + T-C1 FIXED_OFF 500（minSpend 3000¢ → qty≥3） | `MallConfig` |
+| `POST /operator/onboarding/{id}/approve` | APP-M1（MERCHANT · SUBMITTED · ORG-NEW） | `OperatorConfig` |
 
 ## 已接通（正式可跑）
 
@@ -27,6 +28,7 @@
 | 权益换电（非计量 / 计量 / 默认选卡） | `/` 岛 → `/api/entitled-swaps` | `EntitledSwapController` |
 | IoT 影子 / COMM_LOST / 遥测 / triage / 工单 | `/iot` → `/api/iot/...` | `IotController` |
 | 商城领券 / 下单 / 带券结账 | `/mall` → `/api/mall/...` | `MallController` |
+| 商家入驻批准 | — | `OperatorController` + OperatorConfig APP-M1 |
 
 ## 启动
 
@@ -152,6 +154,15 @@ curl -s -X POST http://localhost:8080/mall/campaigns/CAMP-OK/claims \
 curl -s -X POST http://localhost:8080/mall/orders/checkout-with-coupons \
   -H "Content-Type: application/json" \
   -d '{"userId":"U1","merchantOrgId":"M1","skuId":"S1","qty":3,"userCouponIds":["<couponId>"]}'
+```
+
+## 新接通（商家入驻批准 · wave15 / 19a · AC-40）
+
+```bash
+# APP-M1 → ORG-NEW MerchantProfile ACTIVE；重复批准 / APP-OP1 → 403 CAPABILITY_DENIED
+curl -s -X POST http://localhost:8080/operator/onboarding/APP-M1/approve \
+  -H "Content-Type: application/json" \
+  -d '{"shopName":"黑鸟旗舰店"}'
 ```
 
 ## 新接通（运维工单列表 · wave13）
