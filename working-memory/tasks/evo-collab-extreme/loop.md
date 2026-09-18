@@ -1,20 +1,20 @@
 ﻿# evo-collab-extreme（双轴极端）
 
-**更新**：2026-09-18 10:10  
+**更新**：2026-09-18 10:30  
 **主轴**：L2 · extreme **v9**（≤2）  
-**波次**：wave20 ✅ · `dispatched=2 recovered=0`  
-**合入**：24a `28f7d54` + 24b `eb75a71` → PackageOverride / effective-product  
+**波次**：wave21 ✅ · `dispatched=2 recovered=0`  
+**合入**：25a `df2781d` 撤销覆盖 · 25b `a0c1a07` 角色三分端壳  
 **idle**：0 / 3  
 **分支**：`topic/fe-ddd-rsc`
 
 ## 上波交付
 
-- `POST /operator/templates/{id}/overrides` · `GET .../effective-product`
-- FE `/operator`「套餐覆盖」tab（T-PUB-1 / ORG-L2 / price=2800）
+- `POST /operator/overrides/{id}/revoke` → REVOKED，有效价回落
+- AppShell：消费者 / 店主 / 运营商侧栏裁剪（`actto.console.role`）
 
 ## 下一波候选
 
-角色三分端壳（消费者 / 店主 / 运营商）或继续运营链（若有下一 AC）
+FE 接通撤销覆盖按钮；或下一未 HTTP 化的 AC
 
 ## 停止
 
