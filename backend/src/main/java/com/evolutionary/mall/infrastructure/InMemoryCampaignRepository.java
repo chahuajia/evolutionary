@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+/** 进程内营销活动仓储（单测用；生产由 {@link JpaCampaignRepository} 接管）。 */
 public final class InMemoryCampaignRepository implements CampaignRepository {
 
     private final Map<String, Campaign> byId = new ConcurrentHashMap<>();

@@ -53,6 +53,25 @@ public final class Campaign {
                 couponTemplateIds);
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static Campaign rehydrate(
+            String id,
+            String ownerOrgId,
+            String name,
+            Money budgetTotal,
+            Money budgetRemaining,
+            CampaignStatus status,
+            List<String> couponTemplateIds) {
+        return new Campaign(
+                id,
+                ownerOrgId,
+                name,
+                Objects.requireNonNull(budgetTotal, "budgetTotal"),
+                Objects.requireNonNull(budgetRemaining, "budgetRemaining"),
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(couponTemplateIds, "couponTemplateIds"));
+    }
+
     public boolean containsTemplate(String templateId) {
         return couponTemplateIds.contains(templateId);
     }
