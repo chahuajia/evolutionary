@@ -59,6 +59,31 @@ public final class UsageEvent {
                 null);
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static UsageEvent rehydrate(
+            String id,
+            String userId,
+            String entitlementId,
+            String batteryId,
+            String cabinetId,
+            UsageEventStatus status,
+            Instant startedAt,
+            Instant completedAt,
+            MeterReading meterReading,
+            Money chargedAmount) {
+        return new UsageEvent(
+                requireId(id),
+                requireId(userId),
+                requireId(entitlementId),
+                requireId(batteryId),
+                requireId(cabinetId),
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(startedAt, "startedAt"),
+                completedAt,
+                meterReading,
+                chargedAmount);
+    }
+
     public UsageEvent complete(Instant at) {
         return complete(at, null, null);
     }
