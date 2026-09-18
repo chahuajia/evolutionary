@@ -59,6 +59,29 @@ public final class BillingStatement {
                 null);
     }
 
+    /** 持久层全字段回放（仅 infrastructure 使用）。 */
+    public static BillingStatement rehydrate(
+            String id,
+            String userId,
+            Instant periodStart,
+            Instant periodEnd,
+            Money totalDue,
+            StatementStatus status,
+            Instant dueDate,
+            Instant createdAt,
+            Instant paidAt) {
+        return new BillingStatement(
+                Objects.requireNonNull(id, "id"),
+                Objects.requireNonNull(userId, "userId"),
+                Objects.requireNonNull(periodStart, "periodStart"),
+                Objects.requireNonNull(periodEnd, "periodEnd"),
+                Objects.requireNonNull(totalDue, "totalDue"),
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(dueDate, "dueDate"),
+                Objects.requireNonNull(createdAt, "createdAt"),
+                paidAt);
+    }
+
     public BillingStatement markPaid(Instant at) {
         if (status != StatementStatus.DUE && status != StatementStatus.OVERDUE) {
             throw new IllegalStateException("仅 DUE/OVERDUE 可还款");
