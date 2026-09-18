@@ -1,6 +1,7 @@
 package com.evolutionary.credit.interfaces;
 
 import com.evolutionary.commerce.domain.Money;
+import com.evolutionary.commerce.domain.Order;
 import com.evolutionary.credit.application.ApplyCreditPolicyDowngrade;
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.application.CreditProfileRepository;
@@ -12,6 +13,9 @@ import com.evolutionary.credit.application.RunMonthlyBilling;
 import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditProfile;
+import com.evolutionary.settlement.application.AccrueOnOrderCompleted;
+import com.evolutionary.settlement.application.OrderCompletedFact;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -45,6 +49,8 @@ public class CreditController {
     private final RepayBillingStatement repayBillingStatement;
     private final RunMonthlyBilling runMonthlyBilling;
     private final ApplyCreditPolicyDowngrade applyCreditPolicyDowngrade;
+    private final AccrueOnOrderCompleted accrueOnOrderCompleted;
+    private final Clock clock = Clock.systemUTC();
 
     public CreditController(
             CreditProfileRepository profiles,
@@ -53,7 +59,8 @@ public class CreditController {
             MarkCreditOverdue markCreditOverdue,
             RepayBillingStatement repayBillingStatement,
             RunMonthlyBilling runMonthlyBilling,
-            ApplyCreditPolicyDowngrade applyCreditPolicyDowngrade) {
+            ApplyCreditPolicyDowngrade applyCreditPolicyDowngrade,
+            AccrueOnOrderCompleted accrueOnOrderCompleted) {
         this.profiles = profiles;
         this.statements = statements;
         this.purchaseWithCredit = purchaseWithCredit;
@@ -61,6 +68,7 @@ public class CreditController {
         this.repayBillingStatement = repayBillingStatement;
         this.runMonthlyBilling = runMonthlyBilling;
         this.applyCreditPolicyDowngrade = applyCreditPolicyDowngrade;
+        this.accrueOnOrderCompleted = accrueOnOrderCompleted;
     }
 
     @GetMapping("/profiles/{userId}")
@@ -93,7 +101,10 @@ public class CreditController {
         CreditOutcome<CreditPurchaseResult> outcome =
                 purchaseWithCredit.execute(body.userId().trim(), body.productId().trim());
         if (outcome instanceof CreditOutcome.Ok<CreditPurchaseResult> ok) {
-            return ResponseEntity.ok(toPurchase(ok.value()));
+            CreditPurchaseResult result = ok.value();
+            // 购后自动记 PENDING 分润意向（切片22a）；INV-17 仍由 PurchaseWithCredit 保证
+            accrueAfterCreditPurchase(result);
+            return ResponseEntity.ok(toPurchase(result));
         }
         CreditOutcome.Err<CreditPurchaseResult> err =
                 (CreditOutcome.Err<CreditPurchaseResult>) outcome;
@@ -197,6 +208,20 @@ public class CreditController {
                 DAY.format(s.dueDate()),
                 s.createdAt().toString(),
                 s.paidAt() == null ? null : s.paidAt().toString());
+    }
+
+    private void accrueAfterCreditPurchase(CreditPurchaseResult result) {
+        Order order = result.order();
+        Instant completedAt =
+                order.paidAt() != null ? order.paidAt() : clock.instant();
+        accrueOnOrderCompleted.execute(
+                new OrderCompletedFact(
+                        order.id(),
+                        order.userId(),
+                        order.orgId(),
+                        order.paidAmount().cents(),
+                        order.paidAmount().currency().name(),
+                        completedAt));
     }
 
     private static CreditPurchaseView toPurchase(CreditPurchaseResult r) {
