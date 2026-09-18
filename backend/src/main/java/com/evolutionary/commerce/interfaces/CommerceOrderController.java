@@ -8,6 +8,11 @@ import com.evolutionary.credit.application.CreditProfileRepository;
 import com.evolutionary.credit.domain.CreditLedgerDebt;
 import com.evolutionary.credit.domain.CreditProfile;
 import com.evolutionary.credit.domain.DebtStatus;
+import com.evolutionary.settlement.application.OrderRefundedFact;
+import com.evolutionary.settlement.application.ReverseAccrualsOnRefund;
+import com.evolutionary.settlement.domain.SettlementException;
+import java.time.Clock;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,6 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>契约：{@code POST /commerce/orders/{orderId}/refund} → orderId / status /
  * revokedEntitlementId。信用购订单额外核销 OPEN 负债并归还 usedCredit。
+ *
+ * <p>切片21a：退款成功后同 tick 调用 {@link ReverseAccrualsOnRefund}（AC-35）；已 SETTLED → 422
+ * {@code ORDER_NOT_REFUNDABLE_SETTLED}（AC-36）。
  */
 @RestController
 @RequestMapping("/commerce/orders")
@@ -28,14 +36,18 @@ public class CommerceOrderController {
     private final RefundOrder refundOrder;
     private final CreditLedgerDebtRepository debts;
     private final CreditProfileRepository profiles;
+    private final ReverseAccrualsOnRefund reverseAccrualsOnRefund;
+    private final Clock clock = Clock.systemUTC();
 
     public CommerceOrderController(
             RefundOrder refundOrder,
             CreditLedgerDebtRepository debts,
-            CreditProfileRepository profiles) {
+            CreditProfileRepository profiles,
+            ReverseAccrualsOnRefund reverseAccrualsOnRefund) {
         this.refundOrder = refundOrder;
         this.debts = debts;
         this.profiles = profiles;
+        this.reverseAccrualsOnRefund = reverseAccrualsOnRefund;
     }
 
     @PostMapping("/{orderId}/refund")
@@ -47,6 +59,8 @@ public class CommerceOrderController {
         if (outcome instanceof DomainOutcome.Ok<RefundResult> ok) {
             RefundResult result = ok.value();
             reverseCreditIfPresent(result.order().id(), result.order().userId());
+            reverseAccrualsOnRefund.execute(
+                    new OrderRefundedFact(result.order().id(), clock.instant()));
             return ResponseEntity.ok(
                     new RefundResponse(
                             result.order().id(),
@@ -77,6 +91,13 @@ public class CommerceOrderController {
         String msg = ex.getMessage() == null ? "bad request" : ex.getMessage();
         return ResponseEntity.badRequest()
                 .body(new CommerceApiErrorTranslator.ApiError(msg, null));
+    }
+
+    @ExceptionHandler(SettlementException.class)
+    public ResponseEntity<CommerceApiErrorTranslator.ApiError> handleSettlement(
+            SettlementException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(new CommerceApiErrorTranslator.ApiError(ex.code().name(), ex.getMessage()));
     }
 
     public record RefundResponse(String orderId, String status, String revokedEntitlementId) {}
