@@ -9,6 +9,7 @@
 | `GET /stations` | S1 东门站 / S2 西门站 / S3 南站 | `DevSeedConfig` |
 | `GET /credit/profiles/U1` | U1 limit=10000 used=3000（分）| `CreditConfig` |
 | `POST /credit/purchases` | P-CREDIT-1 FIXED 3000¢（非计量）+ U1 good | `CreditConfig` |
+| `POST /credit/profiles/U1/monthly-billing` | OPEN Debt → Statement DUE（需先 purchases） | `RunMonthlyBilling` |
 | `POST /entitled-swaps` | E-1 ACTIVE（U1）+ BAT-1 idle；计量 E-M1 / P-M1 / BAT-M1；默认选卡 E-FINITE | `CommerceConfig` |
 | `POST /iot/.../detect-comm-lost` | BAT-IOT-1 shadow lastSeen 过期（>5min） | `IotConfig` |
 | `POST /mall/campaigns/CAMP-OK/claims` | CAMP-OK 预算 5000¢ + T-C1 | `MallConfig` |
@@ -22,6 +23,7 @@
 | 站列表 / 详情 / 换电 | `/` → `/api/stations…` | `SwapController` :8080 |
 | 信用档案 + 账单 | `/credit` → `/api/credit/profiles/U1…` | `CreditController` + CreditConfig U1 |
 | 信用购 | `/credit` → `/api/credit/purchases` | `CreditController` + PurchaseWithCredit |
+| 月度出账 | `/credit` → `/api/credit/profiles/U1/monthly-billing` | `CreditController` + RunMonthlyBilling |
 | 权益换电（非计量 / 计量 / 默认选卡） | `/` 岛 → `/api/entitled-swaps` | `EntitledSwapController` |
 | IoT 影子 / COMM_LOST / 遥测 / triage / 工单 | `/iot` → `/api/iot/...` | `IotController` |
 | 商城领券 / 下单 / 带券结账 | `/mall` → `/api/mall/...` | `MallController` |
@@ -94,6 +96,15 @@ curl -s -X POST http://localhost:8080/credit/profiles/U1/repay \
 curl -s -X POST http://localhost:8080/credit/purchases \
   -H "Content-Type: application/json" \
   -d '{"userId":"U1","productId":"P-CREDIT-1"}'
+```
+
+## 新接通（月度出账 AC-50）
+
+```bash
+# 先 credit/purchases 造 OPEN debt；再出账 → 200 stmt-UUID + totalDue=3000 status=DUE
+curl -s -X POST http://localhost:8080/credit/profiles/U1/monthly-billing \
+  -H "Content-Type: application/json" \
+  -d '{"periodStart":"2026-02-01T00:00:00Z","periodEnd":"2026-02-28T23:59:59Z"}'
 ```
 
 ## 新接通（IoT COMM_LOST）

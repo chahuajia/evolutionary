@@ -20,6 +20,7 @@ import com.evolutionary.credit.application.CreditProfileRepository;
 import com.evolutionary.credit.application.MarkCreditOverdue;
 import com.evolutionary.credit.application.PurchaseWithCredit;
 import com.evolutionary.credit.application.RepayBillingStatement;
+import com.evolutionary.credit.application.RunMonthlyBilling;
 import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditProfile;
@@ -90,6 +91,13 @@ public class CreditConfig {
             CreditLedgerDebtRepository debts) {
         return new PurchaseWithCredit(
                 products, orders, entitlements, ledger, profiles, debts, Clock.systemUTC());
+    }
+
+    /** 月度出账：OPEN Debt → Statement DUE（AC-50）。 */
+    @Bean
+    RunMonthlyBilling runMonthlyBilling(
+            CreditLedgerDebtRepository debts, BillingStatementRepository statements) {
+        return new RunMonthlyBilling(debts, statements, Clock.systemUTC());
     }
 
     /**
