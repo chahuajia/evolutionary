@@ -26,7 +26,6 @@ import com.evolutionary.mall.infrastructure.InMemoryCampaignRepository;
 import com.evolutionary.mall.infrastructure.InMemoryCouponRedemptionRepository;
 import com.evolutionary.mall.infrastructure.InMemoryCouponTemplateRepository;
 import com.evolutionary.mall.infrastructure.InMemoryMallOrderRepository;
-import com.evolutionary.mall.infrastructure.InMemoryMallSkuRepository;
 import com.evolutionary.mall.infrastructure.InMemoryUserCouponRepository;
 import com.evolutionary.operator.application.AuditLogRepository;
 import java.time.Clock;
@@ -38,6 +37,8 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class MallConfig {
+
+    /** MallSkuRepository → {@code JpaMallSkuRepository}（表 mall_skus）。 */
 
     private static final Instant VALID_FROM = Instant.parse("2026-01-01T00:00:00Z");
     private static final Instant VALID_UNTIL = Instant.parse("2027-01-01T00:00:00Z");
@@ -55,11 +56,6 @@ public class MallConfig {
     @Bean
     UserCouponRepository userCouponRepository() {
         return new InMemoryUserCouponRepository();
-    }
-
-    @Bean
-    MallSkuRepository mallSkuRepository() {
-        return new InMemoryMallSkuRepository();
     }
 
     @Bean
