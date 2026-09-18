@@ -294,6 +294,79 @@ function parseActivatePackageOverride(
   };
 }
 
+/** POST /operator/overrides/{overrideId}/revoke 成功读模型（AC-31 · 30a） */
+export type RevokePackageOverrideResult = {
+  overrideId: string;
+  orgId: string;
+  templateId: string;
+  status: string;
+  priceCents: number | null;
+  displayName: string | null;
+};
+
+export type RevokePackageOverrideRequest = {
+  overrideId: string;
+  actorUserId: string;
+  actorOrgId: string;
+};
+
+/**
+ * POST /operator/overrides/{overrideId}/revoke
+ * body `{ actorUserId, actorOrgId }`；错误经 fetchJson 已拼 suggestion。
+ * 对齐 RevokePackageOverrideHttpIT：默认 OV-1 / ORG-L2 / U-SZ。
+ */
+export async function postRevokePackageOverride(
+  req: RevokePackageOverrideRequest,
+): Promise<RevokePackageOverrideResult> {
+  const overrideId = req.overrideId.trim() || DEFAULT_OVERRIDE_ID;
+  const actorUserId =
+    req.actorUserId.trim() || DEFAULT_OVERRIDE_ACTOR_USER_ID;
+  const actorOrgId = req.actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID;
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/operator/overrides/${encodeURIComponent(overrideId)}/revoke`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ actorUserId, actorOrgId }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return parseRevokePackageOverride(raw, overrideId);
+}
+
+function parseRevokePackageOverride(
+  raw: Record<string, unknown>,
+  fallbackOverrideId: string,
+): RevokePackageOverrideResult {
+  const overrideId = String(raw.overrideId ?? raw.id ?? fallbackOverrideId);
+  const orgId = String(raw.orgId ?? "");
+  const templateId = String(raw.templateId ?? "");
+  const status = String(raw.status ?? "");
+  const priceRaw = raw.priceCents ?? raw.price;
+  const priceCents =
+    priceRaw == null || priceRaw === ""
+      ? null
+      : typeof priceRaw === "number"
+        ? priceRaw
+        : Number.parseInt(String(priceRaw), 10);
+  const displayRaw = raw.displayName;
+  const displayName =
+    displayRaw == null || displayRaw === "" ? null : String(displayRaw);
+  if (!overrideId || !status) {
+    throw new Error("撤销覆盖响应缺少 overrideId/status");
+  }
+  return {
+    overrideId,
+    orgId,
+    templateId,
+    status,
+    priceCents:
+      priceCents != null && Number.isFinite(priceCents) ? priceCents : null,
+    displayName,
+  };
+}
+
 /** GET /operator/orgs/{orgId}/templates/{templateId}/effective-product 读模型（AC-26） */
 export type EffectiveProductResult = {
   templateId: string;
@@ -373,3 +446,4 @@ function parseEffectiveProduct(
     durationDays: Number.isFinite(durationDays) ? durationDays : 0,
   };
 }
+
