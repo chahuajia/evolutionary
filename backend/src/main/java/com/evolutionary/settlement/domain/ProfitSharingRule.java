@@ -80,6 +80,25 @@ public final class ProfitSharingRule {
                 version);
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static ProfitSharingRule rehydrate(
+            String id,
+            String orgId,
+            List<ProfitSplit> splits,
+            int promoterBonusPercent,
+            Instant effectiveFrom,
+            Instant effectiveUntil,
+            int version) {
+        return new ProfitSharingRule(
+                id,
+                orgId,
+                Objects.requireNonNull(splits, "splits"),
+                promoterBonusPercent,
+                Objects.requireNonNull(effectiveFrom, "effectiveFrom"),
+                effectiveUntil,
+                version);
+    }
+
     /** 按订单金额拆分；余量给 PLATFORM。 */
     public List<AllocatedShare> allocate(long orderAmountCents) {
         if (orderAmountCents < 0) {

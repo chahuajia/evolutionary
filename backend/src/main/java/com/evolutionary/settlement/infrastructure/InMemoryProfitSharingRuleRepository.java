@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** 进程内分润规则仓储（按售卖方 org 单规则）。 */
+/** 进程内分润规则仓储（单测用；生产由 {@link JpaProfitSharingRuleRepository} 接管）。 */
 public final class InMemoryProfitSharingRuleRepository implements ProfitSharingRuleRepository {
 
     private final Map<String, ProfitSharingRule> byOrg = new ConcurrentHashMap<>();
