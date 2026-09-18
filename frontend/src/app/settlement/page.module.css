@@ -1,70 +1,79 @@
+.surface {
+  padding: 1.15rem 1.2rem 1.25rem;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
 .main {
-  max-width: 40rem;
-  margin: 2rem auto;
-  padding: 0 1rem;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  line-height: 1.5;
+  /* legacy */
 }
 
 .title {
-  font-size: 1.5rem;
-  margin-bottom: 0.25rem;
-}
-
-.note {
-  color: #555;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
+  display: none;
 }
 
 .nav {
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
+  display: none;
 }
 
-.nav a {
-  color: #111;
+.note {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  margin: 0 0 0.85rem;
 }
 
 .panel {
-  margin-top: 1.5rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid #ccc;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .panel h2 {
   margin: 0 0 0.75rem;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
-.form {
+.repayForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+.repayForm label {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  max-width: 22rem;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-muted);
 }
 
-.form label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.9rem;
-}
-
-.form input {
-  padding: 0.25rem 0.4rem;
+.repayForm input {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
   font: inherit;
+  color: var(--ink);
+  background: #fff;
 }
 
-.form button {
-  align-self: flex-start;
-  margin-top: 0.25rem;
-  padding: 0.35rem 0.75rem;
+.repayForm button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 0.55rem 1.1rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
   font: inherit;
+  font-weight: 650;
   cursor: pointer;
 }
 
-.form button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+@media (max-width: 640px) {
+  .repayForm {
+    grid-template-columns: 1fr;
+  }
 }

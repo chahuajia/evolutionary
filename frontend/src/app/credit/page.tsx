@@ -1,8 +1,8 @@
 /**
- * 信用账单 — RSC SSR 读模型；刷新为客户端岛。
+ * 信用账户 — 概览 + 工作流分段（不再纵向堆表单）。
  */
 
-import Link from "next/link";
+import { PageHeader } from "@/components/page-header";
 import {
   DEFAULT_CREDIT_USER,
   fetchCreditProfile,
@@ -16,13 +16,8 @@ import {
   type CreditProfile,
   type StatementStatus,
 } from "@/lib/credit/types";
-import { CreditApplyPolicyPanel } from "./credit-apply-policy-panel";
-import { CreditJourneyPanel } from "./credit-journey-panel";
-import { CreditMonthlyBillingPanel } from "./credit-monthly-billing-panel";
-import { CreditPurchasePanel } from "./credit-purchase-panel";
-import { CreditRefundPanel } from "./credit-refund-panel";
 import { CreditRefreshButton } from "./credit-refresh";
-import { CreditRepayPanel } from "./credit-repay-panel";
+import { CreditWorkspace } from "./credit-workspace";
 import styles from "./page.module.css";
 
 function statusBadgeClass(status: StatementStatus): string {
@@ -52,79 +47,78 @@ export default async function CreditPage() {
   }
 
   return (
-    <main className={styles.main}>
-      <nav className={styles.nav}>
-        <Link href="/">← 换电首页</Link>
-      </nav>
+    <>
+      <PageHeader
+        eyebrow="Credit"
+        title="信用账户"
+        description={`用户 ${DEFAULT_CREDIT_USER} 的额度、账单与购退闭环。服务端 RSC 读档案；操作为客户端岛。`}
+        action={<CreditRefreshButton />}
+      />
 
-      <h1 className={styles.title}>信用账单</h1>
-      <p className={styles.note}>
-        RSC 对接 Spring <code>GET /credit/profiles/{DEFAULT_CREDIT_USER}</code>
-        （服务端直连；浏览器刷新走客户端岛）。{" "}
-        <CreditRefreshButton />
-      </p>
-
-      {error && (
-        <p className={styles.note} role="alert">
+      {error ? (
+        <p className={styles.alert} role="alert">
           {error}
         </p>
-      )}
+      ) : null}
 
-      {profile && (
-        <>
-          <section className={styles.panel}>
-            <h2>信用档案</h2>
-            <dl className={styles.dl}>
-              <dt>用户</dt>
-              <dd>{profile.userId}</dd>
-              <dt>信用额度</dt>
-              <dd>¥{formatYuan(profile.creditLimit)}</dd>
-              <dt>已用额度</dt>
-              <dd>¥{formatYuan(profile.usedCredit)}</dd>
-              <dt>可用额度</dt>
-              <dd>
-                ¥{formatYuan(profile.creditLimit - profile.usedCredit)}
-              </dd>
-              <dt>状态</dt>
-              <dd>
-                {CREDIT_STATUS_LABEL[profile.status]}（{profile.status}）
-              </dd>
-              <dt>评分档</dt>
-              <dd>{profile.scoreTier}</dd>
-              <dt>政策版本</dt>
-              <dd>v{profile.policyVersion}</dd>
-            </dl>
-          </section>
+      {profile ? (
+        <section className={styles.overview} aria-label="信用概览">
+          <div className={styles.metric}>
+            <span className={styles.metricLabel}>可用额度</span>
+            <strong className={styles.metricValue}>
+              ¥{formatYuan(profile.creditLimit - profile.usedCredit)}
+            </strong>
+          </div>
+          <div className={styles.metric}>
+            <span className={styles.metricLabel}>已用 / 总额度</span>
+            <strong className={styles.metricValue}>
+              ¥{formatYuan(profile.usedCredit)}
+              <span className={styles.metricSuffix}>
+                / ¥{formatYuan(profile.creditLimit)}
+              </span>
+            </strong>
+          </div>
+          <div className={styles.metric}>
+            <span className={styles.metricLabel}>状态</span>
+            <strong className={styles.metricValue}>
+              {CREDIT_STATUS_LABEL[profile.status]}
+            </strong>
+            <span className={styles.metricMeta}>
+              {profile.scoreTier} · 政策 v{profile.policyVersion}
+            </span>
+          </div>
+        </section>
+      ) : null}
 
-          <section className={styles.panel}>
-            <h2>账单列表</h2>
-            <ul className={styles.list}>
-              {statements.map((s) => (
-                <li key={s.id} className={styles.item}>
-                  <div className={styles.itemHead}>
-                    <span>{s.id}</span>
-                    <span className={statusBadgeClass(s.status)}>
-                      {STATEMENT_STATUS_LABEL[s.status]}
-                    </span>
-                  </div>
-                  <div className={styles.meta}>
-                    账期 {s.periodStart} ~ {s.periodEnd} · 应还 ¥
-                    {formatYuan(s.totalDue)} · 到期 {s.dueDate}
-                    {s.paidAt ? ` · 已还于 ${s.paidAt.slice(0, 10)}` : ""}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </>
-      )}
+      {statements.length > 0 ? (
+        <section className={styles.statements}>
+          <div className={styles.statementsHead}>
+            <h2>近期账单</h2>
+            <span className={styles.statementsHint}>只读 · RSC</span>
+          </div>
+          <ul className={styles.list}>
+            {statements.map((s) => (
+              <li key={s.id} className={styles.item}>
+                <div className={styles.itemHead}>
+                  <span>{s.id}</span>
+                  <span className={statusBadgeClass(s.status)}>
+                    {STATEMENT_STATUS_LABEL[s.status]}
+                  </span>
+                </div>
+                <div className={styles.meta}>
+                  账期 {s.periodStart} ~ {s.periodEnd} · 应还 ¥
+                  {formatYuan(s.totalDue)} · 到期 {s.dueDate}
+                  {s.paidAt ? ` · 已还于 ${s.paidAt.slice(0, 10)}` : ""}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
-      <CreditJourneyPanel />
-      <CreditPurchasePanel />
-      <CreditRefundPanel />
-      <CreditMonthlyBillingPanel />
-      <CreditApplyPolicyPanel />
-      <CreditRepayPanel />
-    </main>
+      <div className={styles.workspace}>
+        <CreditWorkspace />
+      </div>
+    </>
   );
 }

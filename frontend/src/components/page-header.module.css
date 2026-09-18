@@ -1,0 +1,41 @@
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent, #0f766e);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: clamp(1.6rem, 2.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.desc {
+  margin: 0.5rem 0 0;
+  max-width: 36rem;
+  color: var(--ink-muted, #486581);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.action {
+  flex-shrink: 0;
+}

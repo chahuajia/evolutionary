@@ -1,57 +1,74 @@
-.main {
-  max-width: 40rem;
-  margin: 2rem auto;
-  padding: 0 1rem;
-  font-family: ui-sans-serif, system-ui, sans-serif;
-  line-height: 1.5;
-}
-
-.title {
-  font-size: 1.5rem;
-  margin-bottom: 0.25rem;
-}
-
-.note {
-  color: #555;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-}
-
-.nav {
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
-.nav a {
-  color: #111;
-}
-
-.panel {
-  margin-top: 1.5rem;
-  padding: 0.75rem 1rem;
-  border: 1px solid #ccc;
-}
-
-.panel h2 {
-  margin: 0 0 0.75rem;
-  font-size: 1.1rem;
-}
-
-.dl {
+.overview {
   display: grid;
-  grid-template-columns: 7rem 1fr;
-  gap: 0.35rem 0.75rem;
-  margin: 0;
-  font-size: 0.95rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
 }
 
-.dl dt {
-  color: #555;
-  margin: 0;
+.metric {
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.dl dd {
+.metricLabel {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.metricValue {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.metricSuffix {
+  margin-left: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+
+.metricMeta {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.statements {
+  margin-bottom: 1.35rem;
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.statementsHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.statementsHead h2 {
   margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.statementsHint {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
 }
 
 .list {
@@ -61,8 +78,8 @@
 }
 
 .item {
-  padding: 0.6rem 0;
-  border-bottom: 1px solid #e5e5e5;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--line);
 }
 
 .item:last-child {
@@ -71,7 +88,7 @@
 }
 
 .item:first-child {
-  padding-top: 0;
+  padding-top: 0.25rem;
 }
 
 .itemHead {
@@ -82,70 +99,151 @@
 }
 
 .meta {
-  color: #555;
+  color: var(--ink-muted);
   font-size: 0.85rem;
   margin-top: 0.25rem;
 }
 
 .badge {
   display: inline-block;
-  padding: 0.1rem 0.4rem;
-  border: 1px solid #ccc;
-  font-size: 0.8rem;
-  font-weight: 500;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .badgeDue {
-  border-color: #b07000;
-  color: #8a5500;
+  border-color: rgba(180, 83, 9, 0.35);
+  color: var(--warn);
+  background: #fff7ed;
 }
 
 .badgePaid {
-  border-color: #2a7a3a;
-  color: #2a7a3a;
+  border-color: rgba(4, 120, 87, 0.3);
+  color: var(--ok);
+  background: #ecfdf5;
 }
 
 .badgeOverdue {
-  border-color: #b00020;
-  color: #b00020;
+  border-color: rgba(155, 28, 28, 0.3);
+  color: var(--danger);
+  background: #fef2f2;
+}
+
+.workspace {
+  margin-top: 0.25rem;
+}
+
+.alert {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(155, 28, 28, 0.25);
+  background: #fef2f2;
+  color: var(--danger);
+}
+
+/* 兼容各 panel 旧 class */
+.panel {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.note {
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  margin: 0 0 0.85rem;
 }
 
 .repayForm {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  max-width: 20rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
 }
 
 .repayForm label {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  font-size: 0.9rem;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-muted);
 }
 
 .repayForm input {
-  padding: 0.25rem 0.4rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
   font: inherit;
+  color: var(--ink);
+  background: #fff;
+}
+
+.repayForm input:focus {
+  outline: 2px solid rgba(15, 118, 110, 0.35);
+  outline-offset: 1px;
 }
 
 .repayForm button {
-  align-self: flex-start;
-  margin-top: 0.25rem;
-  padding: 0.35rem 0.75rem;
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin-top: 0.15rem;
+  padding: 0.55rem 1.1rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
   font: inherit;
+  font-weight: 650;
   cursor: pointer;
+}
+
+.repayForm button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.repayForm button:not(:disabled):hover {
+  filter: brightness(1.05);
 }
 
 .journeyActions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 0.75rem;
+  margin-top: 0.85rem;
 }
 
 .journeyActions button {
-  padding: 0.35rem 0.75rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
   font: inherit;
+  font-weight: 600;
   cursor: pointer;
+}
+
+.journeyActions button:hover {
+  border-color: rgba(15, 118, 110, 0.45);
+  background: var(--accent-soft);
+}
+
+@media (max-width: 720px) {
+  .overview {
+    grid-template-columns: 1fr;
+  }
+
+  .repayForm {
+    grid-template-columns: 1fr;
+  }
 }

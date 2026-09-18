@@ -1,8 +1,8 @@
 /**
- * 运维/运营 — 批准商家入驻客户端岛对接 Spring。
+ * 运营入驻工作台。
  */
 
-import Link from "next/link";
+import { PageHeader } from "@/components/page-header";
 import {
   DEFAULT_ONBOARDING_APPLICATION_ID,
   DEFAULT_SHOP_NAME,
@@ -12,20 +12,15 @@ import styles from "./page.module.css";
 
 export default function OperatorPage() {
   return (
-    <main className={styles.main}>
-      <nav className={styles.nav}>
-        <Link href="/">← 换电首页</Link>
-      </nav>
-
-      <h1 className={styles.title}>运维 / 运营</h1>
-      <p className={styles.note}>
-        批准入驻：
-        <code>POST /operator/onboarding/{"{applicationId}"}/approve</code>
-        （默认 {DEFAULT_ONBOARDING_APPLICATION_ID} / {DEFAULT_SHOP_NAME}；与 19a
-        种子 APP-M1 对齐）。shopName 可编辑。
-      </p>
-
-      <OnboardingApprovePanel />
-    </main>
+    <>
+      <PageHeader
+        eyebrow="Operator"
+        title="运营入驻"
+        description={`批准商家入驻（默认 ${DEFAULT_ONBOARDING_APPLICATION_ID} / ${DEFAULT_SHOP_NAME}）。发布套餐模板为后续能力。`}
+      />
+      <div className={styles.surface}>
+        <OnboardingApprovePanel />
+      </div>
+    </>
   );
 }
