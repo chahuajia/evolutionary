@@ -2,6 +2,7 @@ package com.evolutionary.iot.interfaces;
 
 import com.evolutionary.iot.application.AlertStore;
 import com.evolutionary.iot.application.ApplyTelemetryToShadow;
+import com.evolutionary.iot.application.CommandDispatchLogRepository;
 import com.evolutionary.iot.application.DetectCommLost;
 import com.evolutionary.iot.application.DeviceShadowRepository;
 import com.evolutionary.iot.application.MaintenanceTicketRepository;
@@ -9,6 +10,7 @@ import com.evolutionary.iot.application.TelemetryStore;
 import com.evolutionary.iot.application.TriageOutdatedSoc;
 import com.evolutionary.iot.domain.DeviceShadow;
 import com.evolutionary.iot.infrastructure.InMemoryAlertStore;
+import com.evolutionary.iot.infrastructure.InMemoryCommandDispatchLogRepository;
 import com.evolutionary.iot.infrastructure.InMemoryDeviceShadowRepository;
 import com.evolutionary.iot.infrastructure.InMemoryMaintenanceTicketRepository;
 import com.evolutionary.iot.infrastructure.InMemoryTelemetryStore;
@@ -39,6 +41,11 @@ public class IotConfig {
     @Bean
     TelemetryStore telemetryStore() {
         return new InMemoryTelemetryStore();
+    }
+
+    @Bean
+    CommandDispatchLogRepository commandDispatchLogRepository() {
+        return new InMemoryCommandDispatchLogRepository();
     }
 
     @Bean
