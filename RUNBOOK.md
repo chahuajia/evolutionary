@@ -17,6 +17,8 @@
 | `POST /mall/orders/checkout-with-coupons` | claim CAMP-OK + T-C1 FIXED_OFF 500（minSpend 3000¢ → qty≥3） | `MallConfig` |
 | `POST /operator/onboarding/{id}/approve` | APP-M1（MERCHANT · SUBMITTED · ORG-NEW） | `OperatorConfig` |
 | `POST /operator/templates/{id}/publish` | ORG-L1 + T-DRAFT-1（OPERATOR）；T-DRAFT-M（ORG-NEW 负例） | `OperatorConfig` |
+| `POST /operator/templates/{id}/overrides` | ORG-L2 + T-PUB-1（已发布）；非后代 ORG-NEW → 422 | `OperatorConfig` |
+| `GET /operator/orgs/{orgId}/templates/{id}/effective-product` | L2 覆盖后有效价；无覆盖继承模板原价 | `OperatorConfig` |
 | `POST /commerce/orders/{orderId}/refund` | 信用购/余额购 PAID 订单 → REFUNDED + 权益 REVOKED | `CommerceConfig` + `RefundOrder` |
 
 ## 已接通（正式可跑）
@@ -32,6 +34,7 @@
 | 商城领券 / 下单 / 带券结账 | `/mall` → `/api/mall/...` | `MallController` |
 | 商家入驻批准 | — | `OperatorController` + OperatorConfig APP-M1 |
 | 套餐模板发布 | — | `OperatorController` + PublishPackageTemplate T-DRAFT-1 |
+| 套餐覆盖 / 有效价 | — | `OperatorController` + ActivatePackageOverride / ResolveEffectiveProduct |
 | 订单退款 | — | `POST /commerce/orders/{orderId}/refund` · `CommerceOrderController` |
 
 ## 启动
@@ -176,6 +179,18 @@ curl -s -X POST http://localhost:8080/operator/onboarding/APP-M1/approve \
 curl -s -X POST http://localhost:8080/operator/templates/T-DRAFT-1/publish \
   -H "Content-Type: application/json" \
   -d '{"actorUserId":"U-ADMIN","actorOrgId":"ORG-L1"}'
+```
+
+## 新接通（套餐覆盖 / 有效价 · wave20 / 24a · AC-26）
+
+```bash
+# ORG-L2 对已发布 T-PUB-1 激活 price=2800 → 200 ACTIVE；ORG-NEW → 422 ORG_NOT_DESCENDANT
+curl -s -X POST http://localhost:8080/operator/templates/T-PUB-1/overrides \
+  -H "Content-Type: application/json" \
+  -d '{"actorUserId":"U-SZ","actorOrgId":"ORG-L2","overrideId":"OV-1","patches":{"price":2800}}'
+
+# L2 视角有效价 → priceCents=2800 overrideId=OV-1
+curl -s http://localhost:8080/operator/orgs/ORG-L2/templates/T-PUB-1/effective-product
 ```
 
 ## 新接通（信用购自动 Accrue · wave18 / 22a）

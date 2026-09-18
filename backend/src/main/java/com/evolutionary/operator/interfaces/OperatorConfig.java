@@ -2,13 +2,18 @@ package com.evolutionary.operator.interfaces;
 
 import com.evolutionary.mall.application.MerchantProfileRepository;
 import com.evolutionary.mall.infrastructure.InMemoryMerchantProfileRepository;
+import com.evolutionary.operator.application.ActivatePackageOverride;
 import com.evolutionary.operator.application.ApproveMerchantOnboarding;
 import com.evolutionary.operator.application.AuditLogRepository;
 import com.evolutionary.operator.application.OnboardingApplicationRepository;
 import com.evolutionary.operator.application.OrganizationRepository;
+import com.evolutionary.operator.application.PackageOverrideRepository;
 import com.evolutionary.operator.application.PackageTemplateRepository;
 import com.evolutionary.operator.application.PublishPackageTemplate;
+import com.evolutionary.operator.application.ResolveEffectiveProduct;
 import com.evolutionary.operator.domain.OnboardingApplication;
+import com.evolutionary.operator.domain.OperatorOutcome;
+import com.evolutionary.operator.domain.OrgAuthorization;
 import com.evolutionary.operator.domain.OrgCapability;
 import com.evolutionary.operator.domain.OrgStatus;
 import com.evolutionary.operator.domain.Organization;
@@ -18,6 +23,7 @@ import com.evolutionary.operator.domain.TemplateBaseProduct;
 import com.evolutionary.operator.infrastructure.InMemoryAuditLogRepository;
 import com.evolutionary.operator.infrastructure.InMemoryOnboardingApplicationRepository;
 import com.evolutionary.operator.infrastructure.InMemoryOrganizationRepository;
+import com.evolutionary.operator.infrastructure.InMemoryPackageOverrideRepository;
 import com.evolutionary.operator.infrastructure.InMemoryPackageTemplateRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -34,14 +40,42 @@ public class OperatorConfig {
         return new InMemoryOnboardingApplicationRepository();
     }
 
+    /**
+     * 组织须在 bean 构造时同步入仓，供 {@link #orgAuthorization} index（ApplicationRunner
+     * 晚于 bean 创建）。
+     */
     @Bean
     OrganizationRepository organizationRepository() {
-        return new InMemoryOrganizationRepository();
+        InMemoryOrganizationRepository organizations = new InMemoryOrganizationRepository();
+        organizations.save(
+                Organization.create(
+                        "ORG-NEW",
+                        "新商家待入驻",
+                        null,
+                        List.of(),
+                        List.of("SZ"),
+                        OrgStatus.ACTIVE));
+        organizations.save(
+                Organization.create(
+                        "ORG-OP-PENDING",
+                        "运营商待入驻",
+                        null,
+                        List.of(),
+                        List.of("SZ"),
+                        OrgStatus.ACTIVE));
+        organizations.save(Organization.createRoot("ORG-L1", "华南", List.of("GD", "SZ")));
+        organizations.save(Organization.createChild("ORG-L2", "深圳", "ORG-L1", List.of("SZ")));
+        return organizations;
     }
 
     @Bean
     PackageTemplateRepository packageTemplateRepository() {
         return new InMemoryPackageTemplateRepository();
+    }
+
+    @Bean
+    PackageOverrideRepository packageOverrideRepository() {
+        return new InMemoryPackageOverrideRepository();
     }
 
     @Bean
@@ -52,6 +86,12 @@ public class OperatorConfig {
     @Bean
     MerchantProfileRepository merchantProfileRepository() {
         return new InMemoryMerchantProfileRepository();
+    }
+
+    @Bean
+    OrgAuthorization orgAuthorization(OrganizationRepository organizations) {
+        List<Organization> all = organizations.findAll();
+        return new OrgAuthorization(OrgAuthorization.index(all.toArray(Organization[]::new)));
     }
 
     @Bean
@@ -72,38 +112,38 @@ public class OperatorConfig {
                 templates, auditLogs, organizations, Clock.systemUTC());
     }
 
+    @Bean
+    ActivatePackageOverride activatePackageOverride(
+            PackageTemplateRepository templates,
+            PackageOverrideRepository overrides,
+            AuditLogRepository auditLogs,
+            OrgAuthorization orgAuthorization) {
+        return new ActivatePackageOverride(
+                templates, overrides, auditLogs, orgAuthorization, Clock.systemUTC());
+    }
+
+    @Bean
+    ResolveEffectiveProduct resolveEffectiveProduct(
+            PackageTemplateRepository templates, PackageOverrideRepository overrides) {
+        return new ResolveEffectiveProduct(templates, overrides);
+    }
+
     /**
      * 正式本地种子：APP-M1（MERCHANT · SUBMITTED · ORG-NEW）；APP-OP1（OPERATOR · 负例）；
-     * ORG-L1 + T-DRAFT-1（AC-24 发布正例）；T-DRAFT-M（ORG-NEW · 禁发负例）。
+     * ORG-L1 + ORG-L2（深圳，已在 organizationRepository 入仓）+ T-DRAFT-1（AC-24）+ T-PUB-1（已发布 ·
+     * AC-26）；T-DRAFT-M（禁发负例）。
      */
     @Bean
     ApplicationRunner seedOperator(
             OnboardingApplicationRepository applications,
-            OrganizationRepository organizations,
             PackageTemplateRepository templates) {
         return args -> {
             Instant submittedAt = Instant.parse("2026-09-17T06:00:00Z");
+            Instant publishedAt = Instant.parse("2026-09-17T07:00:00Z");
 
-            organizations.save(
-                    Organization.create(
-                            "ORG-NEW",
-                            "新商家待入驻",
-                            null,
-                            List.of(),
-                            List.of("SZ"),
-                            OrgStatus.ACTIVE));
             applications.save(
                     OnboardingApplication.submit(
                             "APP-M1", "ORG-NEW", OrgCapability.MERCHANT, submittedAt));
-
-            organizations.save(
-                    Organization.create(
-                            "ORG-OP-PENDING",
-                            "运营商待入驻",
-                            null,
-                            List.of(),
-                            List.of("SZ"),
-                            OrgStatus.ACTIVE));
             applications.save(
                     OnboardingApplication.submit(
                             "APP-OP1",
@@ -111,7 +151,6 @@ public class OperatorConfig {
                             OrgCapability.OPERATOR,
                             submittedAt));
 
-            organizations.save(Organization.createRoot("ORG-L1", "华南", List.of("GD", "SZ")));
             TemplateBaseProduct base = TemplateBaseProduct.of("30天卡", 3000, 30);
             templates.save(
                     PackageTemplate.createDraft(
@@ -125,6 +164,15 @@ public class OperatorConfig {
                             "ORG-NEW",
                             base,
                             List.of(OverridableField.PRICE)));
+
+            PackageTemplate pubDraft =
+                    PackageTemplate.createDraft(
+                            "T-PUB-1",
+                            "ORG-L1",
+                            base,
+                            List.of(OverridableField.PRICE, OverridableField.DISPLAY_NAME));
+            OperatorOutcome<PackageTemplate> published = pubDraft.publish(publishedAt);
+            templates.save(((OperatorOutcome.Ok<PackageTemplate>) published).value());
         };
     }
 }

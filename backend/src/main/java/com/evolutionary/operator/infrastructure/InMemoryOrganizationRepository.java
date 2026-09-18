@@ -2,6 +2,8 @@ package com.evolutionary.operator.infrastructure;
 
 import com.evolutionary.operator.application.OrganizationRepository;
 import com.evolutionary.operator.domain.Organization;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,5 +21,10 @@ public final class InMemoryOrganizationRepository implements OrganizationReposit
     @Override
     public Optional<Organization> findById(String id) {
         return Optional.ofNullable(byId.get(id));
+    }
+
+    @Override
+    public List<Organization> findAll() {
+        return List.copyOf(new ArrayList<>(byId.values()));
     }
 }

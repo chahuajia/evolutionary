@@ -112,6 +112,11 @@ class MerchantOnboardingTest {
         public Optional<Organization> findById(String id) {
             return Optional.ofNullable(store.get(id));
         }
+
+        @Override
+        public List<Organization> findAll() {
+            return List.copyOf(store.values());
+        }
     }
 
     private static final class InMemoryOnboardingRepo implements OnboardingApplicationRepository {
