@@ -16,6 +16,7 @@
 | `POST /mall/orders` | SKU S1（M1 · 1000¢ · stock20）+ ACC-M1-SETTLE | `MallConfig` |
 | `POST /mall/orders/checkout-with-coupons` | claim CAMP-OK + T-C1 FIXED_OFF 500（minSpend 3000¢ → qty≥3） | `MallConfig` |
 | `POST /operator/onboarding/{id}/approve` | APP-M1（MERCHANT · SUBMITTED · ORG-NEW） | `OperatorConfig` |
+| `POST /commerce/orders/{orderId}/refund` | 信用购/余额购 PAID 订单 → REFUNDED + 权益 REVOKED | `CommerceConfig` + `RefundOrder` |
 
 ## 已接通（正式可跑）
 
@@ -29,6 +30,7 @@
 | IoT 影子 / COMM_LOST / 遥测 / triage / 工单 | `/iot` → `/api/iot/...` | `IotController` |
 | 商城领券 / 下单 / 带券结账 | `/mall` → `/api/mall/...` | `MallController` |
 | 商家入驻批准 | — | `OperatorController` + OperatorConfig APP-M1 |
+| 订单退款 | — | `POST /commerce/orders/{orderId}/refund` · `CommerceOrderController` |
 
 ## 启动
 
@@ -163,6 +165,17 @@ curl -s -X POST http://localhost:8080/mall/orders/checkout-with-coupons \
 curl -s -X POST http://localhost:8080/operator/onboarding/APP-M1/approve \
   -H "Content-Type: application/json" \
   -d '{"shopName":"黑鸟旗舰店"}'
+```
+
+## 新接通（订单退款 · wave16 / 20a · AC-20）
+
+```bash
+# 1) 信用购得 orderId
+curl -s -X POST http://localhost:8080/credit/purchases \
+  -H "Content-Type: application/json" \
+  -d '{"userId":"U1","productId":"P-CREDIT-1"}'
+# 2) 退款 → 200 orderId / status=REFUNDED / revokedEntitlementId；再退 → 422 ORDER_NOT_REFUNDABLE
+curl -s -X POST http://localhost:8080/commerce/orders/<orderId>/refund
 ```
 
 ## 新接通（运维工单列表 · wave13）

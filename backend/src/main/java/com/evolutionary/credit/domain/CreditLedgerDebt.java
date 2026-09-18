@@ -78,6 +78,15 @@ public final class CreditLedgerDebt {
                 Objects.requireNonNull(at, "paidAt"));
     }
 
+    /** 订单退款核销未出账负债（OPEN → WRITTEN_OFF）。 */
+    public CreditLedgerDebt writeOff() {
+        if (status != DebtStatus.OPEN) {
+            throw new IllegalStateException("仅 OPEN 可核销");
+        }
+        return new CreditLedgerDebt(
+                id, userId, orderId, amount, DebtStatus.WRITTEN_OFF, createdAt, null, null);
+    }
+
     public String id() {
         return id;
     }

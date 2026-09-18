@@ -67,25 +67,30 @@ public final class RefundOrder {
 
         List<LedgerEntry> payments =
                 ledger.findByOrderId(orderId).stream().filter(RefundOrder::isPaymentEntry).toList();
-        if (payments.isEmpty()) {
-            throw new IllegalStateException("订单缺少支付分录");
-        }
 
         Instant now = clock.instant();
-        Account orgSettlement =
-                accounts.findOrgSettlement(order.orgId(), order.paidAmount().currency());
-        Account updatedOrg = orgSettlement;
 
-        // AC-20：先退余额，再退积分；INV-9：金额逐类型相等
-        for (LedgerEntry payment : balancePayments(payments)) {
-            updatedOrg = refundBalanceEntry(payment, orgSettlement.id(), updatedOrg, order.id(), now);
-        }
-        for (LedgerEntry payment : pointsPayments(payments)) {
-            updatedOrg = refundPointsEntry(payment, orgSettlement.id(), updatedOrg, order.id(), now);
-        }
+        // 余额/积分购：有支付分录则逆序退款（AC-20 / INV-9）。
+        // 信用购（INV-17）：无 ORDER_PAYMENT*，跳过 ledger 逆向；额度/负债由 HTTP 层接线。
+        if (!payments.isEmpty()) {
+            Account orgSettlement =
+                    accounts.findOrgSettlement(order.orgId(), order.paidAmount().currency());
+            Account updatedOrg = orgSettlement;
 
-        accounts.save(updatedOrg);
-        LedgerInvariant.assertBalanced(ledger.findAll());
+            for (LedgerEntry payment : balancePayments(payments)) {
+                updatedOrg =
+                        refundBalanceEntry(
+                                payment, orgSettlement.id(), updatedOrg, order.id(), now);
+            }
+            for (LedgerEntry payment : pointsPayments(payments)) {
+                updatedOrg =
+                        refundPointsEntry(
+                                payment, orgSettlement.id(), updatedOrg, order.id(), now);
+            }
+
+            accounts.save(updatedOrg);
+            LedgerInvariant.assertBalanced(ledger.findAll());
+        }
 
         Entitlement revoked = entitlement.revoke();
         Order refunded = order.refund(now);

@@ -4,8 +4,10 @@ import com.evolutionary.commerce.application.AccountRepository;
 import com.evolutionary.commerce.application.BatteryAssetRepository;
 import com.evolutionary.commerce.application.EntitlementRepository;
 import com.evolutionary.commerce.application.LedgerRepository;
+import com.evolutionary.commerce.application.OrderRepository;
 import com.evolutionary.commerce.application.PerformEntitledSwap;
 import com.evolutionary.commerce.application.ProductRepository;
+import com.evolutionary.commerce.application.RefundOrder;
 import com.evolutionary.commerce.application.UsageEventRepository;
 import com.evolutionary.commerce.domain.Account;
 import com.evolutionary.commerce.domain.AccountOwnerType;
@@ -73,6 +75,18 @@ public class CommerceConfig {
             LedgerRepository ledger) {
         return new PerformEntitledSwap(
                 entitlements, batteries, usages, products, accounts, ledger, Clock.systemUTC());
+    }
+
+    /** 切片20a / AC-20：订单退款（余额/积分逆序；信用购无支付分录亦可）。 */
+    @Bean
+    RefundOrder refundOrder(
+            OrderRepository orders,
+            EntitlementRepository entitlements,
+            UsageEventRepository usages,
+            AccountRepository accounts,
+            LedgerRepository ledger) {
+        return new RefundOrder(
+                orders, entitlements, usages, accounts, ledger, Clock.systemUTC());
     }
 
     /**
