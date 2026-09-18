@@ -1,25 +1,26 @@
 ﻿# evo-collab-extreme（双轴极端）
 
-**更新**：2026-09-18 09:15  
+**更新**：2026-09-18 09:20  
 **主轴**：L2 · extreme **v9**（≤2 写者）  
-**波次**：wave17 · `dispatched=2 recovered=0`  
-**上波**：wave16 ✅ 退款  
+**波次**：wave17 ✅ · `dispatched=2 recovered=2`（沉默 FAILED → 父接管；子代理晚交骨架已并）  
+**HEAD**：`60fae6d` 切片 21a/b 结算 ✅  
 **idle**：0 / 3  
 **分支**：`topic/fe-ddd-rsc`
 
-## 本波 worktree（v9）
+## 效率账（wave12–17）
 
-| 路 | worktree | 分支 |
-| :-- | :--- | :--- |
-| 21a BE | `../evo-wt-21a-be` | `wave17/21a-settlement-be` |
-| 21b FE | `../evo-wt-21b-fe` | `wave17/21b-settlement-fe` |
+| 波 | 派出 | 结果 |
+| :-- | :-- | :--- |
+| 12–15 | 常 4 | 固定 4 负优化 / 父接管税高 |
+| 16 | 2 | ✅ 退款 |
+| 17 | 2 | ✅ 结算（沉默后父接管仍绿） |
 
 ## 切片
 
 | 步 | 状态 |
 | :-- | :--- |
 | 0–20 | ✅ |
-| 21a/b 结算批 HTTP∥FE | 派出 |
+| 21a/b 结算批 | ✅ `665c32a` / `1c7b96a` |
 
 ## 停止
 
