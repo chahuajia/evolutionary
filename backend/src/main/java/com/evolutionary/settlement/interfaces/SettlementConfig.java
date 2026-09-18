@@ -16,7 +16,6 @@ import com.evolutionary.settlement.application.SettlementBatchRepository;
 import com.evolutionary.settlement.domain.ProfitSharingRule;
 import com.evolutionary.settlement.domain.ProfitSplit;
 import com.evolutionary.settlement.infrastructure.InMemoryProfitShareAccrualRepository;
-import com.evolutionary.settlement.infrastructure.InMemorySettlementBatchRepository;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.boot.ApplicationRunner;
@@ -33,6 +32,7 @@ public class SettlementConfig {
 
     /** ProfitSharingRuleRepository → {@code JpaProfitSharingRuleRepository}（表 profit_sharing_rules）。 */
     /** ReferralBindingRepository → {@code JpaReferralBindingRepository}（表 referral_bindings）。 */
+    /** SettlementBatchRepository → {@code JpaSettlementBatchRepository}（表 settlement_batches）。 */
 
     /** 分润清算户（SETTLEMENT）；RunSettlementBatch 借方。 */
     public static final String CLEARING_ACCOUNT_ID = "ACC-SETTLE-CLR";
@@ -45,11 +45,6 @@ public class SettlementConfig {
     @Bean
     ProfitShareAccrualRepository profitShareAccrualRepository() {
         return new InMemoryProfitShareAccrualRepository();
-    }
-
-    @Bean
-    SettlementBatchRepository settlementBatchRepository() {
-        return new InMemorySettlementBatchRepository();
     }
 
     @Bean

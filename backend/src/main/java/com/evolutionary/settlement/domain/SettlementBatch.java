@@ -32,6 +32,23 @@ public final class SettlementBatch {
         this.closedAt = closedAt;
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static SettlementBatch rehydrate(
+            String id,
+            Instant periodStart,
+            Instant periodEnd,
+            BatchStatus status,
+            Instant createdAt,
+            Instant closedAt) {
+        return new SettlementBatch(
+                requireId(id),
+                Objects.requireNonNull(periodStart, "periodStart"),
+                Objects.requireNonNull(periodEnd, "periodEnd"),
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(createdAt, "createdAt"),
+                closedAt);
+    }
+
     public static SettlementBatch open(
             String id, Instant periodStart, Instant periodEnd, Instant createdAt) {
         Instant start = Objects.requireNonNull(periodStart, "periodStart");
