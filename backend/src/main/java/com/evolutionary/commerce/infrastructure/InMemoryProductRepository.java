@@ -19,6 +19,7 @@ public final class InMemoryProductRepository implements ProductRepository {
         return p;
     }
 
+    @Override
     public void save(Product product) {
         byId.put(product.id(), product);
     }

@@ -113,6 +113,11 @@ class PurchaseWithCreditTest {
         }
 
         @Override
+        public void save(Product product) {
+            put(product);
+        }
+
+        @Override
         public Product get(String productId) {
             return Optional.ofNullable(byId.get(productId)).orElseThrow();
         }

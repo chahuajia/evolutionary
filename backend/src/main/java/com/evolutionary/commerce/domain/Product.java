@@ -96,6 +96,27 @@ public final class Product {
                 ratePerSocUnit);
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static Product rehydrate(
+            String id,
+            String orgId,
+            String name,
+            Money price,
+            int durationDays,
+            SwapLimit swapLimit,
+            ProductStatus status,
+            Money meteredRate) {
+        return new Product(
+                id,
+                orgId,
+                name,
+                Objects.requireNonNull(price, "price"),
+                durationDays,
+                Objects.requireNonNull(swapLimit, "swapLimit"),
+                Objects.requireNonNull(status, "status"),
+                meteredRate);
+    }
+
     public boolean isPublished() {
         return status == ProductStatus.PUBLISHED;
     }
