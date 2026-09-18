@@ -11,6 +11,7 @@ import com.evolutionary.operator.application.PackageOverrideRepository;
 import com.evolutionary.operator.application.PackageTemplateRepository;
 import com.evolutionary.operator.application.PublishPackageTemplate;
 import com.evolutionary.operator.application.ResolveEffectiveProduct;
+import com.evolutionary.operator.application.RevokePackageOverride;
 import com.evolutionary.operator.domain.OnboardingApplication;
 import com.evolutionary.operator.domain.OperatorOutcome;
 import com.evolutionary.operator.domain.OrgAuthorization;
@@ -120,6 +121,12 @@ public class OperatorConfig {
             OrgAuthorization orgAuthorization) {
         return new ActivatePackageOverride(
                 templates, overrides, auditLogs, orgAuthorization, Clock.systemUTC());
+    }
+
+    @Bean
+    RevokePackageOverride revokePackageOverride(
+            PackageOverrideRepository overrides, AuditLogRepository auditLogs) {
+        return new RevokePackageOverride(overrides, auditLogs, Clock.systemUTC());
     }
 
     @Bean

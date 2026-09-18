@@ -5,6 +5,7 @@ import com.evolutionary.operator.application.ActivatePackageOverride;
 import com.evolutionary.operator.application.ApproveMerchantOnboarding;
 import com.evolutionary.operator.application.PublishPackageTemplate;
 import com.evolutionary.operator.application.ResolveEffectiveProduct;
+import com.evolutionary.operator.application.RevokePackageOverride;
 import com.evolutionary.operator.domain.EffectiveProduct;
 import com.evolutionary.operator.domain.OperatorOutcome;
 import com.evolutionary.operator.domain.PackageOverride;
@@ -20,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 运营 HTTP（商家入驻 AC-40 · 套餐发布 AC-24 · 覆盖/有效价 AC-26/27）。 */
+/** 运营 HTTP（商家入驻 AC-40 · 套餐发布 AC-24 · 覆盖/有效价/撤销 AC-26/27/31）。 */
 @RestController
 @RequestMapping("/operator")
 public class OperatorController {
@@ -28,16 +29,19 @@ public class OperatorController {
     private final ApproveMerchantOnboarding approveMerchantOnboarding;
     private final PublishPackageTemplate publishPackageTemplate;
     private final ActivatePackageOverride activatePackageOverride;
+    private final RevokePackageOverride revokePackageOverride;
     private final ResolveEffectiveProduct resolveEffectiveProduct;
 
     public OperatorController(
             ApproveMerchantOnboarding approveMerchantOnboarding,
             PublishPackageTemplate publishPackageTemplate,
             ActivatePackageOverride activatePackageOverride,
+            RevokePackageOverride revokePackageOverride,
             ResolveEffectiveProduct resolveEffectiveProduct) {
         this.approveMerchantOnboarding = approveMerchantOnboarding;
         this.publishPackageTemplate = publishPackageTemplate;
         this.activatePackageOverride = activatePackageOverride;
+        this.revokePackageOverride = revokePackageOverride;
         this.resolveEffectiveProduct = resolveEffectiveProduct;
     }
 
@@ -119,6 +123,32 @@ public class OperatorController {
         return ResponseEntity.status(translated.status()).body(translated.body());
     }
 
+    /** 切片25a / AC-31：撤销已激活覆盖 → REVOKED；目录回落模板原价。 */
+    @PostMapping("/overrides/{overrideId}/revoke")
+    public ResponseEntity<?> revokeOverride(
+            @PathVariable String overrideId, @RequestBody RevokeOverrideRequest body) {
+        if (body == null
+                || body.actorUserId() == null
+                || body.actorUserId().isBlank()
+                || body.actorOrgId() == null
+                || body.actorOrgId().isBlank()) {
+            throw new IllegalArgumentException("actorUserId and actorOrgId required");
+        }
+        OperatorOutcome<PackageOverride> outcome =
+                revokePackageOverride.execute(
+                        body.actorUserId().trim(),
+                        body.actorOrgId().trim(),
+                        overrideId.trim());
+        if (outcome instanceof OperatorOutcome.Ok<PackageOverride> ok) {
+            return ResponseEntity.ok(toOverrideView(ok.value()));
+        }
+        OperatorOutcome.Err<PackageOverride> err =
+                (OperatorOutcome.Err<PackageOverride>) outcome;
+        OperatorApiErrorTranslator.Translated translated =
+                OperatorApiErrorTranslator.translate(err);
+        return ResponseEntity.status(translated.status()).body(translated.body());
+    }
+
     /** 切片24a / AC-26：组织视角有效商品读模型。 */
     @GetMapping("/orgs/{orgId}/templates/{templateId}/effective-product")
     public ResponseEntity<EffectiveProductView> effectiveProduct(
@@ -179,6 +209,8 @@ public class OperatorController {
 
     public record ActivateOverrideRequest(
             String actorUserId, String actorOrgId, String overrideId, Map<String, Object> patches) {}
+
+    public record RevokeOverrideRequest(String actorUserId, String actorOrgId) {}
 
     public record OverrideView(
             String id,

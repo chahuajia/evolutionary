@@ -18,7 +18,8 @@
 | `POST /operator/onboarding/{id}/approve` | APP-M1（MERCHANT · SUBMITTED · ORG-NEW） | `OperatorConfig` |
 | `POST /operator/templates/{id}/publish` | ORG-L1 + T-DRAFT-1（OPERATOR）；T-DRAFT-M（ORG-NEW 负例） | `OperatorConfig` |
 | `POST /operator/templates/{id}/overrides` | ORG-L2 + T-PUB-1（已发布）；非后代 ORG-NEW → 422 | `OperatorConfig` |
-| `GET /operator/orgs/{orgId}/templates/{id}/effective-product` | L2 覆盖后有效价；无覆盖继承模板原价 | `OperatorConfig` |
+| `POST /operator/overrides/{overrideId}/revoke` | 先激活 OV-1；所属 ORG-L2 → REVOKED；非所属 → 422 | `OperatorConfig` |
+| `GET /operator/orgs/{orgId}/templates/{id}/effective-product` | L2 覆盖后有效价；无覆盖/撤销后继承模板原价 | `OperatorConfig` |
 | `POST /commerce/orders/{orderId}/refund` | 信用购/余额购 PAID 订单 → REFUNDED + 权益 REVOKED | `CommerceConfig` + `RefundOrder` |
 
 ## 已接通（正式可跑）
@@ -34,7 +35,7 @@
 | 商城领券 / 下单 / 带券结账 | `/mall` → `/api/mall/...` | `MallController` |
 | 商家入驻批准 | — | `OperatorController` + OperatorConfig APP-M1 |
 | 套餐模板发布 | — | `OperatorController` + PublishPackageTemplate T-DRAFT-1 |
-| 套餐覆盖 / 有效价 | — | `OperatorController` + ActivatePackageOverride / ResolveEffectiveProduct |
+| 套餐覆盖 / 有效价 / 撤销 | — | `OperatorController` + Activate / RevokePackageOverride / ResolveEffectiveProduct |
 | 订单退款 | — | `POST /commerce/orders/{orderId}/refund` · `CommerceOrderController` |
 
 ## 启动
