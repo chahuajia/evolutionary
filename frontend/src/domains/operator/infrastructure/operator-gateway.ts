@@ -30,7 +30,7 @@ function resolveOperatorApiBase(): string {
   return process.env.NEXT_PUBLIC_API_BASE ?? "/api";
 }
 
-/** POST /operator/onboarding/{applicationId}/approve 成功读模型（AC-40） */
+/** POST /admin/onboarding/{applicationId}/approve 成功读模型（AC-40 · 26a 对齐） */
 export type ApproveOnboardingResult = {
   orgId: string;
   shopName: string;
@@ -43,7 +43,7 @@ export type ApproveOnboardingRequest = {
 };
 
 /**
- * POST /operator/onboarding/{applicationId}/approve
+ * POST /admin/onboarding/{applicationId}/approve
  * body `{ shopName }`；错误经 fetchJson 已拼 suggestion。
  */
 export async function postApproveOnboarding(
@@ -54,7 +54,7 @@ export async function postApproveOnboarding(
   const shopName = req.shopName.trim() || DEFAULT_SHOP_NAME;
   const base = resolveOperatorApiBase();
   const raw = await fetchJson<Record<string, unknown>>(
-    `${base}/operator/onboarding/${encodeURIComponent(applicationId)}/approve`,
+    `${base}/admin/onboarding/${encodeURIComponent(applicationId)}/approve`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

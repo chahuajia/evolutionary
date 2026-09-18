@@ -58,6 +58,7 @@
 
 .roleSwitch {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
   padding: 0.2rem;
   margin: 0 0.25rem;
@@ -68,15 +69,16 @@
 
 .roleChip,
 .roleChipActive {
-  flex: 1;
+  flex: 1 1 calc(50% - 0.25rem);
+  min-width: 0;
   margin: 0;
-  padding: 0.4rem 0.35rem;
+  padding: 0.4rem 0.25rem;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--ink-muted);
   font: inherit;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 160ms ease, color 160ms ease, border-color 160ms ease;

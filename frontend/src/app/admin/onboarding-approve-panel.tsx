@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 批准商家入驻客户端岛 — POST /operator/onboarding/{id}/approve（AC-40）。
+ * 批准商家入驻客户端岛 — POST /admin/onboarding/{id}/approve（AC-40 · 26a）。
  */
 
 import { FormEvent, useState } from "react";
@@ -43,7 +43,7 @@ export function OnboardingApprovePanel() {
 
   return (
     <section className={styles.panel}>
-      <h2>批准商家入驻（HTTP · AC-40）</h2>
+      <h2>平台批准商家入驻（HTTP · AC-40）</h2>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
           applicationId
