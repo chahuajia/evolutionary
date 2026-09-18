@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** 进程内电池台账（非计量换电路径最小实现）。 */
+/** 进程内电池台账（单测用；生产由 {@link JpaBatteryAssetRepository} 接管）。 */
 public final class InMemoryBatteryAssetRepository implements BatteryAssetRepository {
 
     private final Map<String, BatteryAsset> byId = new ConcurrentHashMap<>();
