@@ -74,6 +74,23 @@ public final class Organization {
         return new Organization(id, name, parentId, capabilities, regionScope, status);
     }
 
+    /**
+     * 从持久化回放。
+     *
+     * <p>与 {@link #create} 的区别只是**语义**：工厂表达"新建一份"，
+     * rehydrate 表达"把已有的读回来"。两者校验同一组形状约束 ——
+     * 一条从库里读出来就不合法的记录，说明库坏了，应该在被读到的那一刻就炸。
+     */
+    public static Organization rehydrate(
+            String id,
+            String name,
+            String parentId,
+            List<OrgCapability> capabilities,
+            List<String> regionScope,
+            Organization.Status status) {
+        return create(id, name, parentId, capabilities, regionScope, status);
+    }
+
     public boolean isActive() {
         return status == Organization.Status.ACTIVE;
     }

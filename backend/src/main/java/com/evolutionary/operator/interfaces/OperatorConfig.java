@@ -20,10 +20,8 @@ import com.evolutionary.operator.domain.Organization;
 import com.evolutionary.operator.domain.OverridableField;
 import com.evolutionary.operator.domain.PackageTemplate;
 import com.evolutionary.operator.domain.TemplateBaseProduct;
-import com.evolutionary.operator.infrastructure.InMemoryOnboardingApplicationRepository;
-import com.evolutionary.operator.infrastructure.InMemoryOrganizationRepository;
-import com.evolutionary.operator.infrastructure.InMemoryPackageOverrideRepository;
-import com.evolutionary.operator.infrastructure.InMemoryPackageTemplateRepository;
+import com.evolutionary.operator.infrastructure.JpaOrganizationRepository;
+import com.evolutionary.operator.infrastructure.OrganizationJpaRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -34,18 +32,23 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OperatorConfig {
 
-    @Bean
-    OnboardingApplicationRepository onboardingApplicationRepository() {
-        return new InMemoryOnboardingApplicationRepository();
-    }
+    /** OnboardingApplicationRepository → {@code JpaOnboardingApplicationRepository}（表 onboarding_applications）。 */
 
     /**
-     * 组织须在 bean 构造时同步入仓，供 {@link #orgAuthorization} index（ApplicationRunner
-     * 晚于 bean 创建）。
+     * 组织种子**必须在本 bean 构造时入仓**，且**同步落库**（`JpaOrganizationRepository` 用
+     * `saveAndFlush`）。
+     *
+     * <p>为什么不能挪去 {@code ApplicationRunner}：{@link #orgAuthorization} 是另一个 bean，
+     * 它在**构造时**一次性读全表建祖先链索引。Spring 保证被依赖的 bean 先创建，
+     * 而 {@code ApplicationRunner} 在所有 bean 创建**之后**才跑 —— 那时索引早已建好，
+     * 种子不在里面。
+     *
+     * <p>InMemory → JPA 没有改变这个约束，只是把它从"内存 map 可见性"变成了
+     * "**事务可见性**"：`save` 若不 flush，紧接着的 `findAll` 同样看不到。
      */
     @Bean
-    OrganizationRepository organizationRepository() {
-        InMemoryOrganizationRepository organizations = new InMemoryOrganizationRepository();
+    OrganizationRepository organizationRepository(OrganizationJpaRepository jpa) {
+        OrganizationRepository organizations = new JpaOrganizationRepository(jpa);
         organizations.save(
                 Organization.create(
                         "ORG-NEW",
@@ -75,15 +78,9 @@ public class OperatorConfig {
         return organizations;
     }
 
-    @Bean
-    PackageTemplateRepository packageTemplateRepository() {
-        return new InMemoryPackageTemplateRepository();
-    }
+    /** PackageTemplateRepository → {@code JpaPackageTemplateRepository}（表 package_templates）。 */
 
-    @Bean
-    PackageOverrideRepository packageOverrideRepository() {
-        return new InMemoryPackageOverrideRepository();
-    }
+    /** PackageOverrideRepository → {@code JpaPackageOverrideRepository}（表 package_overrides）。 */
 
     /** AuditLogRepository → {@code JpaAuditLogRepository}（表 audit_logs）。 */
 

@@ -56,6 +56,31 @@ public final class OnboardingApplication {
                 null);
     }
 
+    /**
+     * 从持久化回放。
+     *
+     * <p>与 {@link #submit} 的区别：**不做状态机校验**——持久层里已经是 `APPROVED`
+     * 的申请不需要再"批准"一次。校验的是**形状**（id/orgId 非空、能力与状态非 null）。
+     */
+    public static OnboardingApplication rehydrate(
+            String id,
+            String orgId,
+            OrgCapability capability,
+            OnboardingApplication.Status status,
+            Instant submittedAt,
+            Instant reviewedAt) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("id 不能为空");
+        }
+        if (orgId == null || orgId.isBlank()) {
+            throw new IllegalArgumentException("orgId 不能为空");
+        }
+        Objects.requireNonNull(capability, "capability");
+        Objects.requireNonNull(status, "status");
+        Objects.requireNonNull(submittedAt, "submittedAt");
+        return new OnboardingApplication(id, orgId, capability, status, submittedAt, reviewedAt);
+    }
+
     public OnboardingApplication approve(Instant reviewedAt) {
         if (status != OnboardingApplication.Status.SUBMITTED) {
             throw new IllegalStateException("仅 submitted 可批准");

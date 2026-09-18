@@ -98,6 +98,46 @@ public final class PackageOverride {
                         PackageOverride.Status.DRAFT));
     }
 
+    /**
+     * 从持久化回放。
+     *
+     * <p>与 {@link #createDraft} 的区别：不校验"模板已发布 / 是后代组织 /
+     * patches 非空"这些**创建时**的规则 —— 那些是写入路径的门禁，
+     * 回放时它们早已通过。这里只校验形状。
+     */
+    public static PackageOverride rehydrate(
+            String id,
+            String orgId,
+            String templateId,
+            int templateVersion,
+            List<OverridableField> allowedFields,
+            OverridePatches patches,
+            Instant effectiveFrom,
+            Instant effectiveUntil,
+            PackageOverride.Status status) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("override id 不能为空");
+        }
+        if (orgId == null || orgId.isBlank()) {
+            throw new IllegalArgumentException("orgId 不能为空");
+        }
+        Objects.requireNonNull(templateId, "templateId");
+        Objects.requireNonNull(allowedFields, "allowedFields");
+        Objects.requireNonNull(patches, "patches");
+        Objects.requireNonNull(effectiveFrom, "effectiveFrom");
+        Objects.requireNonNull(status, "status");
+        return new PackageOverride(
+                id,
+                orgId,
+                templateId,
+                templateVersion,
+                allowedFields,
+                patches,
+                effectiveFrom,
+                effectiveUntil,
+                status);
+    }
+
     public OperatorOutcome<PackageOverride> activate() {
         if (status != PackageOverride.Status.DRAFT) {
             return OperatorOutcome.err(OperatorErrorCode.OVERRIDE_INVALID, "仅草稿可激活");

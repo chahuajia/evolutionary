@@ -87,6 +87,45 @@ public final class PackageTemplate {
                 null);
     }
 
+    /**
+     * 从持久化回放。
+     *
+     * <p>与 {@link #createDraft} 的区别：**不强制 status 为 DRAFT** ——
+     * 库里存着的就是它当时的那个状态（`published` 带 `publishedAt`，
+     * 草稿的 `publishedAt` 为 null）。校验的是形状，不是状态机。
+     */
+    public static PackageTemplate rehydrate(
+            String id,
+            String ownerOrgId,
+            int version,
+            TemplateBaseProduct baseProduct,
+            PackageTemplate.Status status,
+            String inheritedFrom,
+            List<OverridableField> allowedOverrideFields,
+            Instant publishedAt) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("template id 不能为空");
+        }
+        if (ownerOrgId == null || ownerOrgId.isBlank()) {
+            throw new IllegalArgumentException("ownerOrgId 不能为空");
+        }
+        if (version < 1) {
+            throw new IllegalArgumentException("version 必须 >= 1");
+        }
+        Objects.requireNonNull(baseProduct, "baseProduct");
+        Objects.requireNonNull(status, "status");
+        Objects.requireNonNull(allowedOverrideFields, "allowedOverrideFields");
+        return new PackageTemplate(
+                id,
+                ownerOrgId,
+                version,
+                baseProduct,
+                status,
+                inheritedFrom,
+                allowedOverrideFields,
+                publishedAt);
+    }
+
     /** draft → published；记录 publishedAt。 */
     public OperatorOutcome<PackageTemplate> publish(Instant at) {
         Objects.requireNonNull(at, "at");
