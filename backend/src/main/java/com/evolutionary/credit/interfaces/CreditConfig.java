@@ -12,7 +12,6 @@ import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
-import com.evolutionary.commerce.infrastructure.InMemoryOrderRepository;
 import com.evolutionary.credit.application.ApplyCreditPolicyDowngrade;
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.application.CreditLedgerDebtRepository;
@@ -62,11 +61,7 @@ public class CreditConfig {
         return new InMemoryCreditLedgerDebtRepository();
     }
 
-    /** 与 Commerce 共用写单面；bean 放 Credit 以免改 CommerceConfig 种子。 */
-    @Bean
-    OrderRepository orderRepository() {
-        return new InMemoryOrderRepository();
-    }
+    /** OrderRepository → {@code JpaOrderRepository}（表 orders）。 */
 
     /**
      * 逾期冻权益；注入与 {@code CommerceConfig} 同一 {@link EntitlementRepository} bean。
