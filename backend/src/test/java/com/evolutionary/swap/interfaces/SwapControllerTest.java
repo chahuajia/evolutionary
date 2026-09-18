@@ -9,6 +9,7 @@ import com.evolutionary.battery.domain.Battery;
 import com.evolutionary.station.domain.Station;
 import com.evolutionary.swap.application.StationRepository;
 import com.evolutionary.swap.infrastructure.JpaStationRepository;
+import com.evolutionary.swap.infrastructure.SwapLogJpaRepository;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,8 +33,12 @@ class SwapControllerTest {
     @Autowired
     private StationRepository stationPort;
 
+    @Autowired
+    private SwapLogJpaRepository swapLogJpa;
+
     @BeforeEach
     void seed() {
+        swapLogJpa.deleteAllInBatch();
         stations.seed(Station.create("S1", "东门站", List.of(Battery.create("B-out"))));
     }
 
@@ -122,5 +127,31 @@ class SwapControllerTest {
         org.junit.jupiter.api.Assertions.assertEquals(
                 com.evolutionary.battery.domain.BatteryStatus.CHARGING,
                 reloaded.batteries().get(0).status());
+    }
+
+    @Test
+    @DisplayName("换电后 GET swap-logs → 1 条落库日志")
+    void swapLogPersistedAndListed() throws Exception {
+        stations.seed(Station.create("S-LOG", "日志站", List.of(Battery.create("B-log-out"))));
+
+        mockMvc.perform(
+                        post("/stations/S-LOG/swaps")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"incomingBatteryId\":\"B-log-in\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/stations/S-LOG/swap-logs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].stationId").value("S-LOG"))
+                .andExpect(jsonPath("$[0].outgoingBatteryId").value("B-log-out"))
+                .andExpect(jsonPath("$[0].incomingBatteryId").value("B-log-in"))
+                .andExpect(jsonPath("$[0].occurredAt").exists());
+    }
+
+    @Test
+    @DisplayName("未知站 GET swap-logs → 404")
+    void swapLogsUnknownStation() throws Exception {
+        mockMvc.perform(get("/stations/missing/swap-logs")).andExpect(status().isNotFound());
     }
 }

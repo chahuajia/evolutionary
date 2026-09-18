@@ -7,6 +7,7 @@
 | 端点 | 种子 | 来源 |
 | :--- | :--- | :--- |
 | `GET /stations` | S1 东门站 / S2 西门站 / S3 南站 | `DevSeedConfig` |
+| `GET /stations/{id}/swap-logs` | 物理换电后追加式日志（表 `swap_logs`） | `PerformSwap` 同事务双写 |
 | `GET /credit/profiles/U1` | U1 limit=10000 used=3000（分）| `CreditConfig` |
 | `POST /credit/purchases` | P-CREDIT-1 FIXED 3000¢（非计量）+ U1 good | `CreditConfig` |
 | `POST /credit/profiles/U1/monthly-billing` | OPEN Debt → Statement DUE（需先 purchases） | `RunMonthlyBilling` |
@@ -28,7 +29,7 @@
 
 | 场景 | FE | BE |
 | :--- | :--- | :--- |
-| 站列表 / 详情 / 换电 | `/` → `/api/stations…` | `SwapController` :8080 |
+| 站列表 / 详情 / 换电 / 换电日志 | `/` → `/api/stations…` | `SwapController` :8080 · `GET …/swap-logs` |
 | 信用档案 + 账单 | `/credit` → `/api/credit/profiles/U1…` | `CreditController` + CreditConfig U1 |
 | 信用购 | `/credit` → `/api/credit/purchases` | `CreditController` + PurchaseWithCredit |
 | 月度出账 | `/credit` → `/api/credit/profiles/U1/monthly-billing` | `CreditController` + RunMonthlyBilling |

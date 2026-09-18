@@ -3,8 +3,11 @@ package com.evolutionary.swap.interfaces;
 import com.evolutionary.station.domain.Station;
 import com.evolutionary.swap.application.GetStation;
 import com.evolutionary.swap.application.ListStations;
+import com.evolutionary.swap.application.ListSwapLogs;
 import com.evolutionary.swap.application.PerformSwap;
+import com.evolutionary.swap.domain.SwapLog;
 import com.evolutionary.swap.domain.SwapSession;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,11 +29,17 @@ public class SwapController {
     private final PerformSwap performSwap;
     private final ListStations listStations;
     private final GetStation getStation;
+    private final ListSwapLogs listSwapLogs;
 
-    public SwapController(PerformSwap performSwap, ListStations listStations, GetStation getStation) {
+    public SwapController(
+            PerformSwap performSwap,
+            ListStations listStations,
+            GetStation getStation,
+            ListSwapLogs listSwapLogs) {
         this.performSwap = performSwap;
         this.listStations = listStations;
         this.getStation = getStation;
+        this.listSwapLogs = listSwapLogs;
     }
 
     @GetMapping
@@ -48,6 +57,11 @@ public class SwapController {
         return new StationView(station.id(), station.name(), batteries);
     }
 
+    @GetMapping("/{stationId}/swap-logs")
+    public List<SwapLogView> swapLogs(@PathVariable String stationId) {
+        return listSwapLogs.execute(stationId).stream().map(SwapController::toLogView).toList();
+    }
+
     @PostMapping("/{stationId}/swaps")
     public SwapResponse swap(
             @PathVariable String stationId, @RequestBody SwapRequest body) {
@@ -60,6 +74,15 @@ public class SwapController {
     private static StationSummaryView toSummary(Station station) {
         return new StationSummaryView(
                 station.id(), station.name(), station.canSwapOut(), station.batteries().size());
+    }
+
+    private static SwapLogView toLogView(SwapLog log) {
+        return new SwapLogView(
+                log.id(),
+                log.stationId(),
+                log.outgoingBatteryId(),
+                log.incomingBatteryId(),
+                log.occurredAt());
     }
 
     @ExceptionHandler(RuntimeException.class)
@@ -83,4 +106,11 @@ public class SwapController {
             String id, String name, boolean canSwapOut, int batteryCount) {}
 
     public record BatteryView(String id, String status) {}
+
+    public record SwapLogView(
+            String id,
+            String stationId,
+            String outgoingBatteryId,
+            String incomingBatteryId,
+            Instant occurredAt) {}
 }
