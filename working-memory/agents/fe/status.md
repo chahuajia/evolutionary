@@ -1,19 +1,19 @@
-# FE agent status（extreme · wave15 · 切片18b）
+# FE agent status（extreme · wave16 · 切片20b）
 
-**日期**：2026-09-18 · evo-collab-extreme wave15  
-**分支**：`wave15/18b-policy-downgrade-fe`  
-**18b**：应用信用政策 FE · CreditApplyPolicyPanel · SUCCESS  
+**日期**：2026-09-18 · evo-collab-extreme wave16  
+**分支**：`wave16/20b-refund-fe`  
+**20b**：订单退款 FE · CreditRefundPanel · SUCCESS  
 
 ## 完成
 
-### Slice 18b（应用信用政策 FE）
+### Slice 20b（订单退款 FE）
 
-- `domains/credit/infrastructure/credit-gateway.ts`：`postApplyCreditPolicy` → `POST /credit/profiles/{userId}/apply-policy`；响应对齐 `CreditProfile`
-- `app/credit/credit-apply-policy-panel.tsx`：客户端岛（默认 U1 / policyVersion=2）；展示更新后档案摘要
-- `app/credit/page.tsx`：挂载 `CreditApplyPolicyPanel`
+- `domains/commerce/infrastructure/order-refund-gateway.ts`：`postRefundOrder(orderId)` → `POST /commerce/orders/{orderId}/refund`
+- `app/credit/credit-refund-panel.tsx`：客户端岛（可粘贴 orderId；可先信用购拿 id）
+- `app/credit/page.tsx`：挂载 `CreditRefundPanel`
 - `npx tsc --noEmit` 通过
-- 未改 backend/mall；未 push
+- 未改 backend；未 push
 
 ## 阻塞
 
-- 依赖 18a BE 暴露 `POST .../apply-policy`
+- 依赖 20a BE 暴露 `POST /commerce/orders/{orderId}/refund`

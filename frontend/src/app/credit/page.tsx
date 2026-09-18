@@ -19,6 +19,7 @@ import {
 import { CreditApplyPolicyPanel } from "./credit-apply-policy-panel";
 import { CreditMonthlyBillingPanel } from "./credit-monthly-billing-panel";
 import { CreditPurchasePanel } from "./credit-purchase-panel";
+import { CreditRefundPanel } from "./credit-refund-panel";
 import { CreditRefreshButton } from "./credit-refresh";
 import { CreditRepayPanel } from "./credit-repay-panel";
 import styles from "./page.module.css";
@@ -118,6 +119,7 @@ export default async function CreditPage() {
       )}
 
       <CreditPurchasePanel />
+      <CreditRefundPanel />
       <CreditMonthlyBillingPanel />
       <CreditApplyPolicyPanel />
       <CreditRepayPanel />
