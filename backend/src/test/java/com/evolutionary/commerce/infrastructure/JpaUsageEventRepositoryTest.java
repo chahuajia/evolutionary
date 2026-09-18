@@ -56,10 +56,10 @@ class JpaUsageEventRepositoryTest {
         assertTrue(usages.findStartedByBattery("BAT-M1").isEmpty());
 
         UsageEventJpaEntity row = jpa.findById("UE-M").orElseThrow();
-        assertEquals(UsageEventStatus.COMPLETED.name(), row.getStatus());
-        assertEquals(80, row.getSocBefore());
-        assertEquals(55, row.getSocAfter());
-        assertEquals(1250L, row.getChargedAmountCents());
+        assertEquals(UsageEventStatus.COMPLETED, row.getStatus());
+        assertEquals(80, row.getMeterSocBefore());
+        assertEquals(55, row.getMeterSocAfter());
+        assertEquals(1250L, row.getChargedCents());
         assertEquals("CNY", row.getChargedCurrency());
     }
 }

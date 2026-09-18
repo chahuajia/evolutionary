@@ -32,6 +32,7 @@ import com.evolutionary.credit.infrastructure.InMemoryBillingStatementRepository
 import com.evolutionary.credit.infrastructure.InMemoryCreditLedgerDebtRepository;
 import com.evolutionary.credit.infrastructure.InMemoryCreditPolicyRepository;
 import com.evolutionary.credit.infrastructure.InMemoryCreditProfileRepository;
+import com.evolutionary.operator.application.AuditLogRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -70,13 +71,17 @@ public class CreditConfig {
 
     /**
      * 逾期冻权益；注入与 {@code CommerceConfig} 同一 {@link EntitlementRepository} bean。
+     *
+     * <p>审计写入与 Operator 共用 {@link AuditLogRepository}（切片32a）。
      */
     @Bean
     MarkCreditOverdue markCreditOverdue(
             BillingStatementRepository statements,
             CreditProfileRepository profiles,
-            EntitlementRepository entitlements) {
-        return new MarkCreditOverdue(statements, profiles, entitlements, Clock.systemUTC());
+            EntitlementRepository entitlements,
+            AuditLogRepository auditLogs) {
+        return new MarkCreditOverdue(
+                statements, profiles, entitlements, auditLogs, Clock.systemUTC());
     }
 
     @Bean
@@ -110,11 +115,13 @@ public class CreditConfig {
         return new RunMonthlyBilling(debts, statements, Clock.systemUTC());
     }
 
-    /** 政策降额应用到档案（AC-54）；不清零 usedCredit。 */
+    /** 政策降额应用到档案（AC-54）；不清零 usedCredit；成功记 CREDIT_POLICY_DOWNGRADE。 */
     @Bean
     ApplyCreditPolicyDowngrade applyCreditPolicyDowngrade(
-            CreditPolicyRepository policies, CreditProfileRepository profiles) {
-        return new ApplyCreditPolicyDowngrade(policies, profiles);
+            CreditPolicyRepository policies,
+            CreditProfileRepository profiles,
+            AuditLogRepository auditLogs) {
+        return new ApplyCreditPolicyDowngrade(policies, profiles, auditLogs, Clock.systemUTC());
     }
 
     /**
