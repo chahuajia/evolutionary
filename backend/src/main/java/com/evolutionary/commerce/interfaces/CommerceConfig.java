@@ -21,7 +21,6 @@ import com.evolutionary.commerce.domain.MeteringMode;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.ProductStatus;
-import com.evolutionary.commerce.infrastructure.InMemoryAccountRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryBatteryAssetRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryEntitlementRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryLedgerRepository;
@@ -40,10 +39,7 @@ public class CommerceConfig {
         return new InMemoryEntitlementRepository();
     }
 
-    @Bean
-    AccountRepository accountRepository() {
-        return new InMemoryAccountRepository();
-    }
+    /** AccountRepository → {@code JpaAccountRepository}（表 accounts）。 */
 
     @Bean
     LedgerRepository ledgerRepository() {
