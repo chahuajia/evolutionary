@@ -15,7 +15,6 @@ import com.evolutionary.settlement.application.RunSettlementBatch;
 import com.evolutionary.settlement.application.SettlementBatchRepository;
 import com.evolutionary.settlement.domain.ProfitSharingRule;
 import com.evolutionary.settlement.domain.ProfitSplit;
-import com.evolutionary.settlement.infrastructure.InMemoryProfitShareAccrualRepository;
 import com.evolutionary.settlement.infrastructure.InMemorySettlementBatchRepository;
 import java.time.Instant;
 import java.util.List;
@@ -33,6 +32,7 @@ public class SettlementConfig {
 
     /** ProfitSharingRuleRepository → {@code JpaProfitSharingRuleRepository}（表 profit_sharing_rules）。 */
     /** ReferralBindingRepository → {@code JpaReferralBindingRepository}（表 referral_bindings）。 */
+    /** ProfitShareAccrualRepository → {@code JpaProfitShareAccrualRepository}（表 profit_share_accruals）。 */
 
     /** 分润清算户（SETTLEMENT）；RunSettlementBatch 借方。 */
     public static final String CLEARING_ACCOUNT_ID = "ACC-SETTLE-CLR";
@@ -41,11 +41,6 @@ public class SettlementConfig {
     public static final String PARENT_ORG_ID = "ORG-L1";
     /** 信用购种子商品 P-CREDIT-1 的售卖方（与 Commerce/Credit 种子对齐）。 */
     public static final String CREDIT_SELLER_ORG_ID = "ORG-1";
-
-    @Bean
-    ProfitShareAccrualRepository profitShareAccrualRepository() {
-        return new InMemoryProfitShareAccrualRepository();
-    }
 
     @Bean
     SettlementBatchRepository settlementBatchRepository() {

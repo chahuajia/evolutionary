@@ -48,6 +48,33 @@ public final class ProfitShareAccrual {
         this.reversalOf = reversalOf;
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static ProfitShareAccrual rehydrate(
+            String id,
+            String orderId,
+            String orgId,
+            long amountCents,
+            String currency,
+            int ruleVersion,
+            AccrualStatus status,
+            Instant createdAt,
+            Instant settledAt,
+            String batchId,
+            String reversalOf) {
+        return new ProfitShareAccrual(
+                requireId(id),
+                requireId(orderId),
+                requireId(orgId),
+                amountCents,
+                requireCurrency(currency),
+                ruleVersion,
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(createdAt, "createdAt"),
+                settledAt,
+                batchId,
+                reversalOf);
+    }
+
     /** 订单完成后记一笔 PENDING 意向（不写账）。 */
     public static ProfitShareAccrual pending(
             String id,
