@@ -202,3 +202,44 @@ function parseTriageOutdatedSoc(
     shadow,
   };
 }
+
+/** GET /iot/batteries/{id}/tickets 读模型 */
+export type MaintenanceTicketItem = {
+  ticketId: string;
+  batteryId: string;
+  alertType: string;
+  status: string;
+  createdAt: string | null;
+};
+
+/**
+ * GET /iot/batteries/{batteryId}/tickets
+ */
+export async function fetchMaintenanceTickets(
+  batteryId: string = DEFAULT_IOT_BATTERY,
+): Promise<MaintenanceTicketItem[]> {
+  const base = resolveIotApiBase();
+  const raw = await fetchJson<unknown>(
+    `${base}/iot/batteries/${encodeURIComponent(batteryId)}/tickets`,
+    {
+      method: "GET",
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  if (!Array.isArray(raw)) {
+    throw new Error("工单列表响应不是数组");
+  }
+  return raw.map((item) => {
+    const r = item as Record<string, unknown>;
+    return {
+      ticketId: String(r.ticketId ?? ""),
+      batteryId: String(r.batteryId ?? batteryId),
+      alertType: String(r.alertType ?? ""),
+      status: String(r.status ?? ""),
+      createdAt:
+        r.createdAt == null || String(r.createdAt).length === 0
+          ? null
+          : String(r.createdAt),
+    };
+  });
+}

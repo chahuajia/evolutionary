@@ -66,3 +66,62 @@ function parseClaimCoupon(raw: Record<string, unknown>): ClaimCouponResult {
   }
   return { id, userId, templateId, status };
 }
+
+export const DEFAULT_MALL_SKU = "S1";
+export const DEFAULT_MALL_MERCHANT = "M1";
+
+/** POST /mall/orders 成功读模型（AC-41） */
+export type PurchaseMallOrderResult = {
+  orderId: string;
+  userId: string;
+  merchantOrgId: string;
+  status: string;
+  paidAmountCents: number;
+  skuId: string;
+  qty: number;
+};
+
+export type PurchaseMallOrderRequest = {
+  userId: string;
+  merchantOrgId?: string;
+  skuId?: string;
+  qty?: number;
+};
+
+/**
+ * POST /mall/orders — 余额购 SKU
+ */
+export async function postPurchaseMallOrder(
+  req: PurchaseMallOrderRequest,
+): Promise<PurchaseMallOrderResult> {
+  const base = resolveMallApiBase();
+  const raw = await fetchJson<Record<string, unknown>>(`${base}/mall/orders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId: req.userId,
+      merchantOrgId: req.merchantOrgId ?? DEFAULT_MALL_MERCHANT,
+      skuId: req.skuId ?? DEFAULT_MALL_SKU,
+      qty: req.qty ?? 1,
+    }),
+    timeoutMs: TIMEOUT_MS,
+  });
+  return parsePurchase(raw);
+}
+
+function parsePurchase(raw: Record<string, unknown>): PurchaseMallOrderResult {
+  const orderId = String(raw.orderId ?? "");
+  const status = String(raw.status ?? "");
+  if (!orderId || !status) {
+    throw new Error("下单响应缺少 orderId/status");
+  }
+  return {
+    orderId,
+    userId: String(raw.userId ?? ""),
+    merchantOrgId: String(raw.merchantOrgId ?? ""),
+    status,
+    paidAmountCents: Number(raw.paidAmountCents ?? 0),
+    skuId: String(raw.skuId ?? ""),
+    qty: Number(raw.qty ?? 0),
+  };
+}

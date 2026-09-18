@@ -3,9 +3,11 @@ package com.evolutionary.iot.interfaces;
 import com.evolutionary.iot.application.ApplyTelemetryToShadow;
 import com.evolutionary.iot.application.DetectCommLost;
 import com.evolutionary.iot.application.DeviceShadowRepository;
+import com.evolutionary.iot.application.MaintenanceTicketRepository;
 import com.evolutionary.iot.application.TriageOutdatedSoc;
 import com.evolutionary.iot.domain.BatteryTelemetryReported;
 import com.evolutionary.iot.domain.DeviceShadow;
+import com.evolutionary.iot.domain.MaintenanceTicket;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * IoT HTTP：影子只读 + COMM_LOST 检测开单 + 遥测入影 + SOC 过时诊断。
+ * IoT HTTP：影子只读 + COMM_LOST 检测开单 + 遥测入影 + SOC 过时诊断 + 工单列表。
  *
  * <p>领域错误经 {@link IotApiErrorTranslator} 按码翻译（S34）；不嗅探 message。
  */
@@ -30,16 +32,19 @@ public class IotController {
     private final DetectCommLost detectCommLost;
     private final ApplyTelemetryToShadow applyTelemetryToShadow;
     private final TriageOutdatedSoc triageOutdatedSoc;
+    private final MaintenanceTicketRepository tickets;
 
     public IotController(
             DeviceShadowRepository shadows,
             DetectCommLost detectCommLost,
             ApplyTelemetryToShadow applyTelemetryToShadow,
-            TriageOutdatedSoc triageOutdatedSoc) {
+            TriageOutdatedSoc triageOutdatedSoc,
+            MaintenanceTicketRepository tickets) {
         this.shadows = shadows;
         this.detectCommLost = detectCommLost;
         this.applyTelemetryToShadow = applyTelemetryToShadow;
         this.triageOutdatedSoc = triageOutdatedSoc;
+        this.tickets = tickets;
     }
 
     @GetMapping("/batteries/{batteryId}/shadow")
@@ -87,6 +92,17 @@ public class IotController {
         return ResponseEntity.ok(toTriageView(report));
     }
 
+    /** 切片15a：按电池列运维工单（detect-comm-lost 开单后可查）。 */
+    @GetMapping("/batteries/{batteryId}/tickets")
+    public ResponseEntity<?> listTickets(@PathVariable String batteryId) {
+        if (shadows.findByBatteryId(batteryId).isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        List<TicketView> views =
+                tickets.findByBatteryId(batteryId).stream().map(IotController::toTicketView).toList();
+        return ResponseEntity.ok(views);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<IotApiErrorTranslator.ApiError> handleBadRequest(
             IllegalArgumentException ex) {
@@ -119,6 +135,15 @@ public class IotController {
                 s.lastSeenAt().toString());
     }
 
+    private static TicketView toTicketView(MaintenanceTicket t) {
+        return new TicketView(
+                t.id(),
+                t.batteryId(),
+                t.alertType().name(),
+                t.status().name(),
+                t.createdAt().toString());
+    }
+
     private static ShadowView toShadow(DeviceShadow s) {
         return new ShadowView(
                 s.batteryId(),
@@ -149,6 +174,13 @@ public class IotController {
             int soc,
             boolean stale,
             String lastSeenAt) {}
+
+    public record TicketView(
+            String ticketId,
+            String batteryId,
+            String alertType,
+            String status,
+            String createdAt) {}
 
     public record ShadowView(
             String batteryId,

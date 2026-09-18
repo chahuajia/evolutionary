@@ -11,6 +11,7 @@ import {
 } from "@/domains/iot/infrastructure/iot-gateway";
 import { CommLostPanel } from "./comm-lost-panel";
 import { TelemetryPanel } from "./telemetry-panel";
+import { TicketsPanel } from "./tickets-panel";
 import { TriagePanel } from "./triage-panel";
 import styles from "./page.module.css";
 
@@ -45,6 +46,7 @@ export default function IotPage() {
       <TelemetryPanel />
       <CommLostPanel />
       <TriagePanel />
+      <TicketsPanel />
     </main>
   );
 }

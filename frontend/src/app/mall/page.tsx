@@ -1,14 +1,17 @@
 /**
- * 商城领券 — 客户端岛对接 Spring POST /mall/campaigns/{campaignId}/claims。
+ * 商城 — 领券 + 下单客户端岛对接 Spring。
  */
 
 import Link from "next/link";
 import {
   DEFAULT_MALL_CAMPAIGN,
+  DEFAULT_MALL_MERCHANT,
+  DEFAULT_MALL_SKU,
   DEFAULT_MALL_TEMPLATE,
   DEFAULT_MALL_USER,
 } from "@/domains/mall/infrastructure/mall-gateway";
 import { CouponClaimPanel } from "./coupon-claim-panel";
+import { MallPurchasePanel } from "./mall-purchase-panel";
 import styles from "./page.module.css";
 
 export default function MallPage() {
@@ -18,17 +21,18 @@ export default function MallPage() {
         <Link href="/">← 换电首页</Link>
       </nav>
 
-      <h1 className={styles.title}>商城领券</h1>
+      <h1 className={styles.title}>商城</h1>
       <p className={styles.note}>
-        客户端岛调用{" "}
+        领券：
         <code>POST /mall/campaigns/{"{campaignId}"}/claims</code>
-        ；默认活动 <code>{DEFAULT_MALL_CAMPAIGN}</code>、用户{" "}
-        <code>{DEFAULT_MALL_USER}</code>、模板{" "}
-        <code>{DEFAULT_MALL_TEMPLATE}</code>。成功展示券 id/status；错误经
-        fetchJson suggestion。
+        （默认 {DEFAULT_MALL_CAMPAIGN}/{DEFAULT_MALL_USER}/{DEFAULT_MALL_TEMPLATE}
+        ）。下单：
+        <code>POST /mall/orders</code>
+        （默认 {DEFAULT_MALL_MERCHANT}/{DEFAULT_MALL_SKU}）。
       </p>
 
       <CouponClaimPanel />
+      <MallPurchasePanel />
     </main>
   );
 }

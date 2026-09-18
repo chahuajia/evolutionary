@@ -32,6 +32,9 @@ public final class MallApiErrorTranslator {
             case CAMPAIGN_BUDGET_EXHAUSTED -> "wait for campaign budget refill or try another campaign";
             case CAMPAIGN_NOT_ACTIVE -> "use an active campaign that includes the template";
             case COUPON_NOT_AVAILABLE -> "check template id or coupon availability";
+            case INSUFFICIENT_BALANCE -> "top up user balance then retry";
+            case INSUFFICIENT_STOCK -> "reduce qty or wait for restock";
+            case SKU_NOT_ON_SALE -> "pick an on-sale sku";
             default -> null;
         };
     }

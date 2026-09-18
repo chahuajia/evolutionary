@@ -1,18 +1,31 @@
 package com.evolutionary.mall.interfaces;
 
+import com.evolutionary.commerce.application.AccountRepository;
+import com.evolutionary.commerce.application.LedgerRepository;
+import com.evolutionary.commerce.domain.Account;
+import com.evolutionary.commerce.domain.AccountOwnerType;
+import com.evolutionary.commerce.domain.AccountType;
+import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.mall.application.CampaignRepository;
 import com.evolutionary.mall.application.ClaimCouponFromCampaign;
 import com.evolutionary.mall.application.CouponTemplateRepository;
+import com.evolutionary.mall.application.MallOrderRepository;
+import com.evolutionary.mall.application.MallSkuRepository;
+import com.evolutionary.mall.application.PurchaseMallOrder;
 import com.evolutionary.mall.application.UserCouponRepository;
 import com.evolutionary.mall.domain.Campaign;
 import com.evolutionary.mall.domain.CouponKind;
 import com.evolutionary.mall.domain.CouponScope;
 import com.evolutionary.mall.domain.CouponTemplate;
 import com.evolutionary.mall.domain.IssuerType;
+import com.evolutionary.mall.domain.MallSku;
 import com.evolutionary.mall.infrastructure.InMemoryCampaignRepository;
 import com.evolutionary.mall.infrastructure.InMemoryCouponTemplateRepository;
+import com.evolutionary.mall.infrastructure.InMemoryMallOrderRepository;
+import com.evolutionary.mall.infrastructure.InMemoryMallSkuRepository;
 import com.evolutionary.mall.infrastructure.InMemoryUserCouponRepository;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.boot.ApplicationRunner;
@@ -41,6 +54,16 @@ public class MallConfig {
     }
 
     @Bean
+    MallSkuRepository mallSkuRepository() {
+        return new InMemoryMallSkuRepository();
+    }
+
+    @Bean
+    MallOrderRepository mallOrderRepository() {
+        return new InMemoryMallOrderRepository();
+    }
+
+    @Bean
     ClaimCouponFromCampaign claimCouponFromCampaign(
             CampaignRepository campaigns,
             CouponTemplateRepository templates,
@@ -48,12 +71,24 @@ public class MallConfig {
         return new ClaimCouponFromCampaign(campaigns, templates, userCoupons);
     }
 
+    @Bean
+    PurchaseMallOrder purchaseMallOrder(
+            MallSkuRepository skus,
+            MallOrderRepository orders,
+            AccountRepository accounts,
+            LedgerRepository ledger) {
+        return new PurchaseMallOrder(skus, orders, accounts, ledger, Clock.systemUTC());
+    }
+
     /**
-     * 正式本地种子：CAMP-OK + T-C1（预算 5000¢）；CAMP-EMPTY 供预算耗尽验收。
+     * 正式本地种子：CAMP-OK + T-C1；SKU S1（M1 · 1000¢）；M1 结算户。
      */
     @Bean
     ApplicationRunner seedMall(
-            CampaignRepository campaigns, CouponTemplateRepository templates) {
+            CampaignRepository campaigns,
+            CouponTemplateRepository templates,
+            MallSkuRepository skus,
+            AccountRepository accounts) {
         return args -> {
             templates.save(
                     CouponTemplate.create(
@@ -76,6 +111,16 @@ public class MallConfig {
             campaigns.save(
                     Campaign.createActive(
                             "CAMP-EMPTY", "M1", "空预算活动", Money.cny(0), List.of("T-C1")));
+
+            skus.save(MallSku.createOnSale("S1", "M1", "商城配件", Money.cny(1_000), 20));
+            accounts.save(
+                    Account.open(
+                            "ACC-M1-SETTLE",
+                            AccountOwnerType.ORG,
+                            "M1",
+                            AccountType.SETTLEMENT,
+                            Currency.CNY,
+                            0));
         };
     }
 }
