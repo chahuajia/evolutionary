@@ -48,6 +48,27 @@ public final class CreditLedgerDebt {
                 null);
     }
 
+    /** 持久层全字段回放（仅 infrastructure 使用）。 */
+    public static CreditLedgerDebt rehydrate(
+            String id,
+            String userId,
+            String orderId,
+            Money amount,
+            DebtStatus status,
+            Instant createdAt,
+            String billedStatementId,
+            Instant paidAt) {
+        return new CreditLedgerDebt(
+                Objects.requireNonNull(id, "id"),
+                Objects.requireNonNull(userId, "userId"),
+                Objects.requireNonNull(orderId, "orderId"),
+                Objects.requireNonNull(amount, "amount"),
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(createdAt, "createdAt"),
+                billedStatementId,
+                paidAt);
+    }
+
     public CreditLedgerDebt markBilled(String statementId) {
         if (status != DebtStatus.OPEN) {
             throw new IllegalStateException("仅 OPEN 可出账");
