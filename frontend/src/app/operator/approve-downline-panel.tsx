@@ -1,0 +1,100 @@
+"use client";
+
+/**
+ * 批准运营商下线客户端岛 — POST /operator/onboarding/{id}/approve-downline（29a/29b）。
+ * 批的是运营商下线，不是商城商家（商家走 /admin）。
+ */
+
+import { FormEvent, useState } from "react";
+import {
+  approveOperatorDownline,
+  DEFAULT_DOWNLINE_ACTOR_ORG_ID,
+  DEFAULT_DOWNLINE_ACTOR_USER_ID,
+  DEFAULT_DOWNLINE_APPLICATION_ID,
+} from "@/domains/operator/application/approve-operator-downline";
+import type { ApproveOperatorDownlineResult } from "@/domains/operator/infrastructure/operator-gateway";
+import styles from "./page.module.css";
+
+export function ApproveDownlinePanel() {
+  const [applicationId, setApplicationId] = useState(
+    DEFAULT_DOWNLINE_APPLICATION_ID,
+  );
+  const [actorOrgId, setActorOrgId] = useState(DEFAULT_DOWNLINE_ACTOR_ORG_ID);
+  const [actorUserId, setActorUserId] = useState(
+    DEFAULT_DOWNLINE_ACTOR_USER_ID,
+  );
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<ApproveOperatorDownlineResult | null>(
+    null,
+  );
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      const r = await approveOperatorDownline({
+        applicationId:
+          applicationId.trim() || DEFAULT_DOWNLINE_APPLICATION_ID,
+        actorOrgId: actorOrgId.trim() || DEFAULT_DOWNLINE_ACTOR_ORG_ID,
+        actorUserId: actorUserId.trim() || DEFAULT_DOWNLINE_ACTOR_USER_ID,
+      });
+      setResult(r);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className={styles.panel}>
+      <h2>批运营商下线（HTTP · 29a）</h2>
+      <p className={styles.note}>
+        批的是运营商下线入驻（OPERATOR），不是批商城商家；商家入驻由总后台
+        /admin 审批。
+      </p>
+      <form className={styles.form} onSubmit={onSubmit}>
+        <label>
+          applicationId
+          <input
+            value={applicationId}
+            onChange={(e) => setApplicationId(e.target.value)}
+          />
+        </label>
+        <label>
+          actorOrgId
+          <input
+            value={actorOrgId}
+            onChange={(e) => setActorOrgId(e.target.value)}
+          />
+        </label>
+        <label>
+          actorUserId
+          <input
+            value={actorUserId}
+            onChange={(e) => setActorUserId(e.target.value)}
+          />
+        </label>
+        <button type="submit" disabled={busy}>
+          {busy ? "批准中…" : "批下线"}
+        </button>
+      </form>
+      {error ? (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      ) : null}
+      {result ? (
+        <p>
+          下线组织 {result.orgId}
+          {result.name ? ` · ${result.name}` : ""}
+          {result.parentOrgId ? ` · parent ${result.parentOrgId}` : ""}
+          {result.operatorCapability ? " · OPERATOR" : ""}
+        </p>
+      ) : null}
+    </section>
+  );
+}

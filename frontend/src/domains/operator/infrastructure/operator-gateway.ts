@@ -10,6 +10,11 @@ import { fetchJson } from "@/shared/http/fetch-json";
 export const DEFAULT_ONBOARDING_APPLICATION_ID = "APP-M1";
 export const DEFAULT_SHOP_NAME = "黑鸟旗舰店";
 
+/** 与 29a 下线批契约对齐：APP-DL1（OPERATOR · ORG-DL1）/ ORG-L1 / U-ADMIN */
+export const DEFAULT_DOWNLINE_APPLICATION_ID = "APP-DL1";
+export const DEFAULT_DOWNLINE_ACTOR_ORG_ID = "ORG-L1";
+export const DEFAULT_DOWNLINE_ACTOR_USER_ID = "U-ADMIN";
+
 /** 与 23a 发布契约对齐：草稿模板 T-DRAFT-1 / ORG-L1 / U-ADMIN */
 export const DEFAULT_PACKAGE_TEMPLATE_ID = "T-DRAFT-1";
 export const DEFAULT_PUBLISH_ACTOR_ORG_ID = "ORG-L1";
@@ -69,6 +74,62 @@ function parseApproveOnboarding(
     throw new Error("批准入驻响应缺少 orgId/status");
   }
   return { orgId, shopName, status };
+}
+
+/** POST /operator/onboarding/{applicationId}/approve-downline 成功读模型（29a） */
+export type ApproveOperatorDownlineResult = {
+  orgId: string;
+  name: string;
+  parentOrgId: string | null;
+  operatorCapability: boolean;
+};
+
+export type ApproveOperatorDownlineRequest = {
+  applicationId: string;
+  actorUserId: string;
+  actorOrgId: string;
+};
+
+/**
+ * POST /operator/onboarding/{applicationId}/approve-downline
+ * body `{ actorUserId, actorOrgId }`；错误经 fetchJson 已拼 suggestion。
+ */
+export async function postApproveOperatorDownline(
+  req: ApproveOperatorDownlineRequest,
+): Promise<ApproveOperatorDownlineResult> {
+  const applicationId =
+    req.applicationId.trim() || DEFAULT_DOWNLINE_APPLICATION_ID;
+  const actorUserId =
+    req.actorUserId.trim() || DEFAULT_DOWNLINE_ACTOR_USER_ID;
+  const actorOrgId = req.actorOrgId.trim() || DEFAULT_DOWNLINE_ACTOR_ORG_ID;
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/operator/onboarding/${encodeURIComponent(applicationId)}/approve-downline`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ actorUserId, actorOrgId }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return parseApproveOperatorDownline(raw);
+}
+
+function parseApproveOperatorDownline(
+  raw: Record<string, unknown>,
+): ApproveOperatorDownlineResult {
+  const orgId = String(raw.orgId ?? raw.id ?? "");
+  const name = String(raw.name ?? "");
+  const parentRaw = raw.parentOrgId ?? raw.parentId;
+  const parentOrgId =
+    parentRaw == null || parentRaw === "" ? null : String(parentRaw);
+  const operatorCapability = Boolean(
+    raw.operatorCapability ?? raw.hasOperatorCapability ?? false,
+  );
+  if (!orgId) {
+    throw new Error("批下线响应缺少 orgId");
+  }
+  return { orgId, name, parentOrgId, operatorCapability };
 }
 
 /** POST /operator/templates/{templateId}/publish 成功读模型（AC-24） */
