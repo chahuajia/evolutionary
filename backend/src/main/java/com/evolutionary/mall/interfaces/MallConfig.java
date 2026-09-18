@@ -25,7 +25,6 @@ import com.evolutionary.mall.domain.MallSku;
 import com.evolutionary.mall.infrastructure.InMemoryCouponRedemptionRepository;
 import com.evolutionary.mall.infrastructure.InMemoryCouponTemplateRepository;
 import com.evolutionary.mall.infrastructure.InMemoryMallOrderRepository;
-import com.evolutionary.mall.infrastructure.InMemoryUserCouponRepository;
 import com.evolutionary.operator.application.AuditLogRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -44,14 +43,11 @@ public class MallConfig {
 
     /** CampaignRepository → {@code JpaCampaignRepository}（表 campaigns）。 */
 
+    /** UserCouponRepository → {@code JpaUserCouponRepository}（表 user_coupons）。 */
+
     @Bean
     CouponTemplateRepository couponTemplateRepository() {
         return new InMemoryCouponTemplateRepository();
-    }
-
-    @Bean
-    UserCouponRepository userCouponRepository() {
-        return new InMemoryUserCouponRepository();
     }
 
     @Bean
