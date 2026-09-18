@@ -7,8 +7,14 @@
 
 import { FormEvent, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { StationSummary } from "@/domains/swap/infrastructure/station-gateway";
-import { resolveApiBase } from "@/domains/swap/infrastructure/station-gateway";
+import type {
+  StationSummary,
+  SwapLog,
+} from "@/domains/swap/infrastructure/station-gateway";
+import {
+  fetchSwapLogs,
+  resolveApiBase,
+} from "@/domains/swap/infrastructure/station-gateway";
 import { fetchJson } from "@/shared/http/fetch-json";
 import styles from "./page.module.css";
 
@@ -38,6 +44,7 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
   const [stationId, setStationId] = useState(initialStationId);
   const [incomingBatteryId, setIncomingBatteryId] = useState("B-user-1");
   const [station, setStation] = useState<StationView | null>(null);
+  const [swapLogs, setSwapLogs] = useState<readonly SwapLog[]>([]);
   const [lastSwap, setLastSwap] = useState<SwapResult | null>(null);
   const [error, setError] = useState<string | null>(listError);
   const [busy, setBusy] = useState(false);
@@ -46,6 +53,11 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
     setError(null);
     router.refresh();
   }, [router]);
+
+  const loadSwapLogs = useCallback(async (id: string) => {
+    const logs = await fetchSwapLogs(id);
+    setSwapLogs(logs);
+  }, []);
 
   const loadStation = useCallback(async () => {
     setBusy(true);
@@ -56,12 +68,17 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
         { timeoutMs: TIMEOUT_MS },
       );
       setStation(body);
+      try {
+        await loadSwapLogs(stationId);
+      } catch {
+        /* 站详情已成功；日志拉取失败不阻断 */
+      }
     } catch (e) {
       setError(triageFetchError(e));
     } finally {
       setBusy(false);
     }
-  }, [apiBase, stationId]);
+  }, [apiBase, stationId, loadSwapLogs]);
 
   async function onSwap(e: FormEvent) {
     e.preventDefault();
@@ -87,6 +104,11 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
         setStation(next);
       } catch {
         /* 换电已成功；详情刷新失败不阻断，列表仍 refresh */
+      }
+      try {
+        await loadSwapLogs(stationId);
+      } catch {
+        /* 换电已成功；日志刷新失败不阻断 */
       }
       router.refresh();
     } catch (err) {
@@ -173,6 +195,20 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
             {station.batteries.map((b) => (
               <li key={b.id}>
                 {b.id} — {b.status}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {swapLogs.length > 0 && (
+        <section className={styles.panel}>
+          <h2>换电日志</h2>
+          <ul>
+            {[...swapLogs].reverse().map((log) => (
+              <li key={log.id}>
+                {log.occurredAt}：取出 {log.outgoingBatteryId}，放入{" "}
+                {log.incomingBatteryId}
               </li>
             ))}
           </ul>
