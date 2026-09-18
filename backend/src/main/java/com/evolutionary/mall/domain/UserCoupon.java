@@ -24,6 +24,21 @@ public final class UserCoupon {
         this.lockedByOrderId = lockedByOrderId;
     }
 
+    /** JPA 回放；不做业务校验。 */
+    public static UserCoupon rehydrate(
+            String id,
+            String userId,
+            String templateId,
+            UserCouponStatus status,
+            String lockedByOrderId) {
+        return new UserCoupon(
+                id,
+                userId,
+                templateId,
+                Objects.requireNonNull(status, "status"),
+                lockedByOrderId);
+    }
+
     public static UserCoupon issue(String id, String userId, String templateId) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("userCoupon id 不能为空");
