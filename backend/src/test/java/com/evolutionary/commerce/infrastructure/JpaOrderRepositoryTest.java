@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.evolutionary.commerce.application.OrderRepository;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Order;
-import com.evolutionary.commerce.domain.OrderStatus;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -46,7 +45,7 @@ class JpaOrderRepositoryTest {
         assertEquals("U-JPA", found.userId());
         assertEquals("P-JPA", found.productId());
         assertEquals("ORG-JPA", found.orgId());
-        assertEquals(OrderStatus.CREATED, found.status());
+        assertEquals(Order.Status.CREATED, found.status());
         assertEquals(9_900, found.paidAmount().cents());
         assertEquals(T0, found.createdAt());
         assertNull(found.paidAt());
@@ -66,12 +65,12 @@ class JpaOrderRepositoryTest {
         orders.save(paid);
 
         Order found = orders.get("O-JPA-2");
-        assertEquals(OrderStatus.PAID, found.status());
+        assertEquals(Order.Status.PAID, found.status());
         assertEquals(T1, found.paidAt());
         assertNotNull(found.paidAt());
 
         OrderJpaEntity row = jpa.findById("O-JPA-2").orElseThrow();
-        assertEquals(OrderStatus.PAID, row.getStatus());
+        assertEquals(Order.Status.PAID, row.getStatus());
         assertEquals(T1, row.getPaidAt());
         assertEquals(3_000L, row.getPaidCents());
         assertEquals("CNY", row.getPaidCurrency());

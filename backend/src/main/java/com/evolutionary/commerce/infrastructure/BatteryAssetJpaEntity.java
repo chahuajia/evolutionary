@@ -1,6 +1,7 @@
 package com.evolutionary.commerce.infrastructure;
 
-import com.evolutionary.commerce.domain.BatteryAssetStatus;
+
+import com.evolutionary.commerce.domain.BatteryAsset;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -26,7 +27,7 @@ public class BatteryAssetJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private BatteryAssetStatus status;
+    private BatteryAsset.Status status;
 
     private String currentHolderId;
 
@@ -37,7 +38,7 @@ public class BatteryAssetJpaEntity {
             String orgId,
             String vendor,
             String model,
-            BatteryAssetStatus status,
+            BatteryAsset.Status status,
             String currentHolderId) {
         this.id = id;
         this.orgId = orgId;
@@ -63,7 +64,7 @@ public class BatteryAssetJpaEntity {
         return model;
     }
 
-    public BatteryAssetStatus getStatus() {
+    public BatteryAsset.Status getStatus() {
         return status;
     }
 

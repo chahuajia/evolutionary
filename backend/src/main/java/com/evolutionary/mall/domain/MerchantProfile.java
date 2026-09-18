@@ -5,11 +5,20 @@ import java.util.Objects;
 /** 商家档案（AC-40）。 */
 public final class MerchantProfile {
 
+    /**
+     * 商家档案状态。
+     */
+    public enum Status {
+        ACTIVE,
+        SUSPENDED
+    }
+
+
     private final String orgId;
     private final String shopName;
-    private final MerchantStatus status;
+    private final MerchantProfile.Status status;
 
-    private MerchantProfile(String orgId, String shopName, MerchantStatus status) {
+    private MerchantProfile(String orgId, String shopName, MerchantProfile.Status status) {
         this.orgId = orgId;
         this.shopName = shopName;
         this.status = status;
@@ -22,11 +31,11 @@ public final class MerchantProfile {
         if (shopName == null || shopName.isBlank()) {
             throw new IllegalArgumentException("shopName 不能为空");
         }
-        return new MerchantProfile(orgId, shopName, MerchantStatus.ACTIVE);
+        return new MerchantProfile(orgId, shopName, MerchantProfile.Status.ACTIVE);
     }
 
     public boolean isActive() {
-        return status == MerchantStatus.ACTIVE;
+        return status == MerchantProfile.Status.ACTIVE;
     }
 
     public String orgId() {
@@ -37,7 +46,7 @@ public final class MerchantProfile {
         return shopName;
     }
 
-    public MerchantStatus status() {
+    public MerchantProfile.Status status() {
         return status;
     }
 

@@ -11,7 +11,6 @@ import com.evolutionary.commerce.domain.AccountType;
 import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Product;
-import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.credit.application.ApplyCreditPolicyDowngrade;
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.application.CreditLedgerDebtRepository;
@@ -183,7 +182,7 @@ public class CreditConfig {
                             "信用购月卡",
                             Money.cny(3_000),
                             30,
-                            ProductStatus.PUBLISHED));
+                            Product.Status.PUBLISHED));
         };
     }
 }

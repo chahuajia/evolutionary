@@ -1,6 +1,7 @@
 package com.evolutionary.mall.infrastructure;
 
-import com.evolutionary.mall.domain.MallSkuStatus;
+
+import com.evolutionary.mall.domain.MallSku;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -32,7 +33,7 @@ public class MallSkuJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MallSkuStatus status;
+    private MallSku.Status status;
 
     protected MallSkuJpaEntity() {}
 
@@ -43,7 +44,7 @@ public class MallSkuJpaEntity {
             long priceCents,
             String priceCurrency,
             int stock,
-            MallSkuStatus status) {
+            MallSku.Status status) {
         this.id = id;
         this.merchantOrgId = merchantOrgId;
         this.name = name;
@@ -77,7 +78,7 @@ public class MallSkuJpaEntity {
         return stock;
     }
 
-    public MallSkuStatus getStatus() {
+    public MallSku.Status getStatus() {
         return status;
     }
 }

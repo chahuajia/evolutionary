@@ -8,7 +8,6 @@ import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.mall.application.MallSkuRepository;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.MallSku;
-import com.evolutionary.mall.domain.MallSkuStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,7 +40,7 @@ class JpaMallSkuRepositoryTest {
         assertEquals("商城配件", found.name());
         assertEquals(1_000, found.price().cents());
         assertEquals(20, found.stock());
-        assertEquals(MallSkuStatus.ON_SALE, found.status());
+        assertEquals(MallSku.Status.ON_SALE, found.status());
         assertTrue(jpa.findById("S-JPA-1").isPresent());
     }
 

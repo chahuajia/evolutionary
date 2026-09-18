@@ -16,7 +16,6 @@ import com.evolutionary.operator.domain.OnboardingApplication;
 import com.evolutionary.operator.domain.OperatorOutcome;
 import com.evolutionary.operator.domain.OrgAuthorization;
 import com.evolutionary.operator.domain.OrgCapability;
-import com.evolutionary.operator.domain.OrgStatus;
 import com.evolutionary.operator.domain.Organization;
 import com.evolutionary.operator.domain.OverridableField;
 import com.evolutionary.operator.domain.PackageTemplate;
@@ -54,7 +53,7 @@ public class OperatorConfig {
                         null,
                         List.of(),
                         List.of("SZ"),
-                        OrgStatus.ACTIVE));
+                        Organization.Status.ACTIVE));
         organizations.save(
                 Organization.create(
                         "ORG-OP-PENDING",
@@ -62,7 +61,7 @@ public class OperatorConfig {
                         null,
                         List.of(),
                         List.of("SZ"),
-                        OrgStatus.ACTIVE));
+                        Organization.Status.ACTIVE));
         organizations.save(Organization.createRoot("ORG-L1", "华南", List.of("GD", "SZ")));
         organizations.save(Organization.createChild("ORG-L2", "深圳", "ORG-L1", List.of("SZ")));
         organizations.save(
@@ -72,7 +71,7 @@ public class OperatorConfig {
                         "ORG-L1",
                         List.of(),
                         List.of("SZ"),
-                        OrgStatus.ACTIVE));
+                        Organization.Status.ACTIVE));
         return organizations;
     }
 

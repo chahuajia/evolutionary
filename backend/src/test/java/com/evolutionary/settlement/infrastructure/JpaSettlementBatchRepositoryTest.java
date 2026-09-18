@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.evolutionary.settlement.application.SettlementBatchRepository;
-import com.evolutionary.settlement.domain.BatchStatus;
 import com.evolutionary.settlement.domain.SettlementBatch;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +42,7 @@ class JpaSettlementBatchRepositoryTest {
         assertEquals("BATCH-1", found.id());
         assertEquals(T0, found.periodStart());
         assertEquals(T7, found.periodEnd());
-        assertEquals(BatchStatus.OPEN, found.status());
+        assertEquals(SettlementBatch.Status.OPEN, found.status());
         assertEquals(T0, found.createdAt());
         assertNull(found.closedAt());
         assertTrue(jpa.findById("BATCH-1").isPresent());
@@ -57,8 +56,8 @@ class JpaSettlementBatchRepositoryTest {
         batches.save(closed);
 
         SettlementBatch found = batches.get("BATCH-2");
-        assertEquals(BatchStatus.CLOSED, found.status());
+        assertEquals(SettlementBatch.Status.CLOSED, found.status());
         assertEquals(T7, found.closedAt());
-        assertEquals(BatchStatus.CLOSED, jpa.findById("BATCH-2").orElseThrow().getStatus());
+        assertEquals(SettlementBatch.Status.CLOSED, jpa.findById("BATCH-2").orElseThrow().getStatus());
     }
 }

@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.evolutionary.mall.application.MerchantProfileRepository;
 import com.evolutionary.mall.domain.MerchantProfile;
-import com.evolutionary.mall.domain.MerchantStatus;
 import com.evolutionary.operator.domain.AuditAction;
 import com.evolutionary.operator.domain.AuditLog;
 import com.evolutionary.operator.domain.OnboardingApplication;
@@ -66,7 +65,7 @@ class MerchantOnboardingTest {
                         null,
                         List.of(),
                         List.of("SZ"),
-                        com.evolutionary.operator.domain.OrgStatus.ACTIVE);
+                        com.evolutionary.operator.domain.Organization.Status.ACTIVE);
         orgs.save(merchantOnly);
 
         OnboardingApplication app =
@@ -78,7 +77,7 @@ class MerchantOnboardingTest {
                 approve.execute("ONB-1", "黑鸟旗舰店", "U-PLATFORM", "PLATFORM");
         assertInstanceOf(OperatorOutcome.Ok.class, outcome);
         MerchantProfile profile = ((OperatorOutcome.Ok<MerchantProfile>) outcome).value();
-        assertEquals(MerchantStatus.ACTIVE, profile.status());
+        assertEquals(MerchantProfile.Status.ACTIVE, profile.status());
         assertTrue(profile.isActive());
         assertEquals("ORG-M1", profile.orgId());
 
@@ -119,7 +118,7 @@ class MerchantOnboardingTest {
                         null,
                         List.of(),
                         List.of("SZ"),
-                        com.evolutionary.operator.domain.OrgStatus.ACTIVE);
+                        com.evolutionary.operator.domain.Organization.Status.ACTIVE);
         orgs.save(merchantOnly);
         applications.save(
                 OnboardingApplication.submit(
@@ -147,7 +146,7 @@ class MerchantOnboardingTest {
                         null,
                         List.of(),
                         List.of("SZ"),
-                        com.evolutionary.operator.domain.OrgStatus.ACTIVE);
+                        com.evolutionary.operator.domain.Organization.Status.ACTIVE);
         orgs.save(pending);
         applications.save(
                 OnboardingApplication.submit(

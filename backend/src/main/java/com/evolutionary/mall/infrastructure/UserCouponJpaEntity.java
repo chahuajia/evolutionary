@@ -1,6 +1,7 @@
 package com.evolutionary.mall.infrastructure;
 
-import com.evolutionary.mall.domain.UserCouponStatus;
+
+import com.evolutionary.mall.domain.UserCoupon;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -23,7 +24,7 @@ public class UserCouponJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UserCouponStatus status;
+    private UserCoupon.Status status;
 
     private String lockedByOrderId;
 
@@ -33,7 +34,7 @@ public class UserCouponJpaEntity {
             String id,
             String userId,
             String templateId,
-            UserCouponStatus status,
+            UserCoupon.Status status,
             String lockedByOrderId) {
         this.id = id;
         this.userId = userId;
@@ -54,7 +55,7 @@ public class UserCouponJpaEntity {
         return templateId;
     }
 
-    public UserCouponStatus getStatus() {
+    public UserCoupon.Status getStatus() {
         return status;
     }
 

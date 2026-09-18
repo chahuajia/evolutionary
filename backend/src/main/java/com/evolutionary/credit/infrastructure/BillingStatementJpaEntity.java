@@ -1,6 +1,7 @@
 package com.evolutionary.credit.infrastructure;
 
-import com.evolutionary.credit.domain.StatementStatus;
+
+import com.evolutionary.credit.domain.BillingStatement;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,7 +35,7 @@ public class BillingStatementJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private StatementStatus status;
+    private BillingStatement.Status status;
 
     @Column(nullable = false)
     private Instant dueDate;
@@ -54,7 +55,7 @@ public class BillingStatementJpaEntity {
             Instant periodEnd,
             long totalDueCents,
             String totalDueCurrency,
-            StatementStatus status,
+            BillingStatement.Status status,
             Instant dueDate,
             Instant createdAt,
             Instant paidAt) {
@@ -94,7 +95,7 @@ public class BillingStatementJpaEntity {
         return totalDueCurrency;
     }
 
-    public StatementStatus getStatus() {
+    public BillingStatement.Status getStatus() {
         return status;
     }
 

@@ -1,6 +1,7 @@
 package com.evolutionary.commerce.infrastructure;
 
-import com.evolutionary.commerce.domain.UsageEventStatus;
+
+import com.evolutionary.commerce.domain.UsageEvent;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -31,7 +32,7 @@ public class UsageEventJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private UsageEventStatus status;
+    private UsageEvent.Status status;
 
     @Column(nullable = false)
     private Instant startedAt;
@@ -54,7 +55,7 @@ public class UsageEventJpaEntity {
             String entitlementId,
             String batteryId,
             String cabinetId,
-            UsageEventStatus status,
+            UsageEvent.Status status,
             Instant startedAt,
             Instant completedAt,
             Integer meterSocBefore,
@@ -95,7 +96,7 @@ public class UsageEventJpaEntity {
         return cabinetId;
     }
 
-    public UsageEventStatus getStatus() {
+    public UsageEvent.Status getStatus() {
         return status;
     }
 

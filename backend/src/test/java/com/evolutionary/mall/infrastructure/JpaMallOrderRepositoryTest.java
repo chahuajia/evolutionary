@@ -1,5 +1,7 @@
 package com.evolutionary.mall.infrastructure;
 
+
+import com.evolutionary.commerce.domain.Order;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -10,7 +12,6 @@ import com.evolutionary.commerce.domain.PaymentIntent;
 import com.evolutionary.mall.application.MallOrderRepository;
 import com.evolutionary.mall.domain.MallOrder;
 import com.evolutionary.mall.domain.MallOrderLine;
-import com.evolutionary.mall.domain.MallOrderStatus;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +58,7 @@ class JpaMallOrderRepositoryTest {
         assertEquals("MORD-JPA-1", found.id());
         assertEquals("U-JPA", found.userId());
         assertEquals("M1", found.merchantOrgId());
-        assertEquals(MallOrderStatus.CREATED, found.status());
+        assertEquals(MallOrder.Status.CREATED, found.status());
         assertEquals(1, found.lines().size());
         assertEquals("S1", found.lines().get(0).skuId());
         assertEquals(2, found.lines().get(0).qty());
@@ -87,12 +88,12 @@ class JpaMallOrderRepositoryTest {
         orders.save(paid);
 
         MallOrder found = orders.findById("MORD-JPA-2").orElseThrow();
-        assertEquals(MallOrderStatus.PAID, found.status());
+        assertEquals(MallOrder.Status.PAID, found.status());
         assertEquals(T1, found.paidAt());
         assertNotNull(found.paidAt());
 
         MallOrderJpaEntity row = jpa.findById("MORD-JPA-2").orElseThrow();
-        assertEquals(MallOrderStatus.PAID, row.getStatus());
+        assertEquals(MallOrder.Status.PAID, row.getStatus());
         assertEquals(T1, row.getPaidAt());
         assertEquals(3_000L, row.getPaidCents());
         assertEquals("CNY", row.getPaidCurrency());

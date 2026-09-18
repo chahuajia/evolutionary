@@ -11,6 +11,16 @@ import java.util.Objects;
  */
 public final class PackageOverride {
 
+    /**
+     * 套餐覆盖状态（对齐 IDL PackageOverride.Status）。
+     */
+    public enum Status {
+        DRAFT,
+        ACTIVE,
+        REVOKED
+    }
+
+
     private final String id;
     private final String orgId;
     private final String templateId;
@@ -19,7 +29,7 @@ public final class PackageOverride {
     private final OverridePatches patches;
     private final Instant effectiveFrom;
     private final Instant effectiveUntil;
-    private final OverrideStatus status;
+    private final PackageOverride.Status status;
 
     private PackageOverride(
             String id,
@@ -30,7 +40,7 @@ public final class PackageOverride {
             OverridePatches patches,
             Instant effectiveFrom,
             Instant effectiveUntil,
-            OverrideStatus status) {
+            PackageOverride.Status status) {
         this.id = id;
         this.orgId = orgId;
         this.templateId = templateId;
@@ -85,11 +95,11 @@ public final class PackageOverride {
                         patches,
                         effectiveFrom,
                         null,
-                        OverrideStatus.DRAFT));
+                        PackageOverride.Status.DRAFT));
     }
 
     public OperatorOutcome<PackageOverride> activate() {
-        if (status != OverrideStatus.DRAFT) {
+        if (status != PackageOverride.Status.DRAFT) {
             return OperatorOutcome.err(OperatorErrorCode.OVERRIDE_INVALID, "仅草稿可激活");
         }
         return OperatorOutcome.ok(
@@ -102,11 +112,11 @@ public final class PackageOverride {
                         patches,
                         effectiveFrom,
                         effectiveUntil,
-                        OverrideStatus.ACTIVE));
+                        PackageOverride.Status.ACTIVE));
     }
 
     public OperatorOutcome<PackageOverride> revoke() {
-        if (status != OverrideStatus.ACTIVE) {
+        if (status != PackageOverride.Status.ACTIVE) {
             return OperatorOutcome.err(OperatorErrorCode.OVERRIDE_INVALID, "仅激活态可撤销");
         }
         return OperatorOutcome.ok(
@@ -119,11 +129,11 @@ public final class PackageOverride {
                         patches,
                         effectiveFrom,
                         effectiveUntil,
-                        OverrideStatus.REVOKED));
+                        PackageOverride.Status.REVOKED));
     }
 
     public boolean isActive() {
-        return status == OverrideStatus.ACTIVE;
+        return status == PackageOverride.Status.ACTIVE;
     }
 
     public String id() {
@@ -158,7 +168,7 @@ public final class PackageOverride {
         return effectiveUntil;
     }
 
-    public OverrideStatus status() {
+    public PackageOverride.Status status() {
         return status;
     }
 }

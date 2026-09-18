@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.evolutionary.mall.application.UserCouponRepository;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.UserCoupon;
-import com.evolutionary.mall.domain.UserCouponStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,7 +38,7 @@ class JpaUserCouponRepositoryTest {
         assertEquals("UC-JPA-1", found.id());
         assertEquals("U1", found.userId());
         assertEquals("T-C1", found.templateId());
-        assertEquals(UserCouponStatus.AVAILABLE, found.status());
+        assertEquals(UserCoupon.Status.AVAILABLE, found.status());
         assertTrue(jpa.findById("UC-JPA-1").isPresent());
     }
 
@@ -55,10 +54,10 @@ class JpaUserCouponRepositoryTest {
         userCoupons.save(after);
 
         UserCoupon found = userCoupons.findById("UC-JPA-2").orElseThrow();
-        assertEquals(UserCouponStatus.LOCKED, found.status());
+        assertEquals(UserCoupon.Status.LOCKED, found.status());
         assertEquals("ORDER-1", found.lockedByOrderId());
         assertEquals(
-                UserCouponStatus.LOCKED,
+                UserCoupon.Status.LOCKED,
                 jpa.findById("UC-JPA-2").orElseThrow().getStatus());
         assertEquals("ORDER-1", jpa.findById("UC-JPA-2").orElseThrow().getLockedByOrderId());
     }

@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.evolutionary.commerce.application.EntitlementRepository;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,12 +41,12 @@ class JpaEntitlementRepositoryTest {
                         "P-1",
                         T0.minusSeconds(3600),
                         T0.plusSeconds(86_400),
-                        EntitlementStatus.ACTIVE));
+                        Entitlement.Status.ACTIVE));
 
         List<Entitlement> found = entitlements.findActiveByUser("U-JPA");
         assertEquals(1, found.size());
         assertEquals("E-JPA-1", found.get(0).id());
-        assertEquals(EntitlementStatus.ACTIVE, found.get(0).status());
+        assertEquals(Entitlement.Status.ACTIVE, found.get(0).status());
         assertTrue(jpa.findById("E-JPA-1").isPresent());
     }
 }

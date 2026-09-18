@@ -1,6 +1,7 @@
 package com.evolutionary.settlement.infrastructure;
 
-import com.evolutionary.settlement.domain.BatchStatus;
+
+import com.evolutionary.settlement.domain.SettlementBatch;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -25,7 +26,7 @@ public class SettlementBatchJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private BatchStatus status;
+    private SettlementBatch.Status status;
 
     @Column(nullable = false)
     private Instant createdAt;
@@ -39,7 +40,7 @@ public class SettlementBatchJpaEntity {
             String id,
             Instant periodStart,
             Instant periodEnd,
-            BatchStatus status,
+            SettlementBatch.Status status,
             Instant createdAt,
             Instant closedAt) {
         this.id = id;
@@ -62,7 +63,7 @@ public class SettlementBatchJpaEntity {
         return periodEnd;
     }
 
-    public BatchStatus getStatus() {
+    public SettlementBatch.Status getStatus() {
         return status;
     }
 

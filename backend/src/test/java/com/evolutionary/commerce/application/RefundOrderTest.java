@@ -10,16 +10,13 @@ import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.DomainErrorCode;
 import com.evolutionary.commerce.domain.DomainOutcome;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerInvariant;
 import com.evolutionary.commerce.domain.LedgerRefType;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Order;
-import com.evolutionary.commerce.domain.OrderStatus;
 import com.evolutionary.commerce.domain.PaymentIntent;
 import com.evolutionary.commerce.domain.Product;
-import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.domain.UsageEvent;
 import java.time.Clock;
 import java.time.Instant;
@@ -66,7 +63,7 @@ class RefundOrderTest {
                         "30天不限次换电卡",
                         Money.cny(9_900),
                         30,
-                        ProductStatus.PUBLISHED));
+                        Product.Status.PUBLISHED));
         accounts.put(
                 Account.open(
                         "ACC-U-1",
@@ -95,8 +92,8 @@ class RefundOrderTest {
 
         assertInstanceOf(DomainOutcome.Ok.class, outcome);
         RefundResult result = ((DomainOutcome.Ok<RefundResult>) outcome).value();
-        assertEquals(OrderStatus.REFUNDED, result.order().status());
-        assertEquals(EntitlementStatus.REVOKED, result.entitlement().status());
+        assertEquals(Order.Status.REFUNDED, result.order().status());
+        assertEquals(Entitlement.Status.REVOKED, result.entitlement().status());
         assertEquals(20_000, accounts.get("ACC-U-1").balanceCents());
         assertEquals(0, accounts.get("ACC-O-1").balanceCents());
         LedgerInvariant.assertBalanced(ledger.findAll());
@@ -117,7 +114,7 @@ class RefundOrderTest {
                         "混合支付卡",
                         Money.cny(3_000),
                         30,
-                        ProductStatus.PUBLISHED));
+                        Product.Status.PUBLISHED));
         accounts.put(
                 Account.open(
                         "ACC-U-1",
@@ -149,8 +146,8 @@ class RefundOrderTest {
 
         assertInstanceOf(DomainOutcome.Ok.class, outcome);
         RefundResult result = ((DomainOutcome.Ok<RefundResult>) outcome).value();
-        assertEquals(OrderStatus.REFUNDED, result.order().status());
-        assertEquals(EntitlementStatus.REVOKED, result.entitlement().status());
+        assertEquals(Order.Status.REFUNDED, result.order().status());
+        assertEquals(Entitlement.Status.REVOKED, result.entitlement().status());
         assertEquals(10_000, accounts.get("ACC-U-1").balanceCents());
         assertEquals(5_000, accounts.get("ACC-U-P").balanceCents());
         assertEquals(0, accounts.get("ACC-O-1").balanceCents());
@@ -190,8 +187,8 @@ class RefundOrderTest {
         assertEquals(
                 DomainErrorCode.REFUND_BLOCKED_IN_PROGRESS_SWAP,
                 ((DomainOutcome.Err<RefundResult>) outcome).code());
-        assertEquals(OrderStatus.PAID, orders.get(bought.order().id()).status());
-        assertEquals(EntitlementStatus.ACTIVE, entitlements.get(bought.entitlement().id()).status());
+        assertEquals(Order.Status.PAID, orders.get(bought.order().id()).status());
+        assertEquals(Entitlement.Status.ACTIVE, entitlements.get(bought.entitlement().id()).status());
     }
 
     @Test
@@ -208,7 +205,7 @@ class RefundOrderTest {
                         "P-1",
                         T0,
                         T0.plusSeconds(86_400),
-                        EntitlementStatus.ACTIVE));
+                        Entitlement.Status.ACTIVE));
 
         DomainOutcome<RefundResult> outcome = refund.execute("O-x");
 
@@ -341,7 +338,7 @@ class RefundOrderTest {
         public List<Entitlement> findActiveByUser(String userId) {
             return byId.values().stream()
                     .filter(e -> e.userId().equals(userId))
-                    .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                    .filter(e -> e.status() == Entitlement.Status.ACTIVE)
                     .toList();
         }
     }

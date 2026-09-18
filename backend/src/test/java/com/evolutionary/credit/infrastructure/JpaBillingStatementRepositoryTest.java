@@ -8,7 +8,6 @@ import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.credit.application.BillingStatementRepository;
 import com.evolutionary.credit.domain.BillingStatement;
-import com.evolutionary.credit.domain.StatementStatus;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,7 +51,7 @@ class JpaBillingStatementRepositoryTest {
         assertEquals(Instant.parse("2026-01-31T00:00:00Z"), found.periodEnd());
         assertEquals(3_000, found.totalDue().cents());
         assertEquals(Currency.CNY, found.totalDue().currency());
-        assertEquals(StatementStatus.DUE, found.status());
+        assertEquals(BillingStatement.Status.DUE, found.status());
         assertEquals(Instant.parse("2026-02-07T00:00:00Z"), found.dueDate());
         assertEquals(Instant.parse("2026-02-01T00:00:00Z"), found.createdAt());
         assertNull(found.paidAt());
@@ -76,11 +75,11 @@ class JpaBillingStatementRepositoryTest {
         statements.save(paid);
 
         BillingStatement found = statements.get("STMT-T2");
-        assertEquals(StatementStatus.PAID, found.status());
+        assertEquals(BillingStatement.Status.PAID, found.status());
         assertEquals(Instant.parse("2026-02-05T08:30:00Z"), found.paidAt());
 
         BillingStatementJpaEntity row = jpa.findById("STMT-T2").orElseThrow();
-        assertEquals(StatementStatus.PAID, row.getStatus());
+        assertEquals(BillingStatement.Status.PAID, row.getStatus());
         assertEquals(Instant.parse("2026-02-05T08:30:00Z"), row.getPaidAt());
     }
 

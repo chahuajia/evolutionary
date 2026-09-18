@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.evolutionary.commerce.application.BatteryAssetRepository;
 import com.evolutionary.commerce.domain.BatteryAsset;
-import com.evolutionary.commerce.domain.BatteryAssetStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,7 +34,7 @@ class JpaBatteryAssetRepositoryTest {
         BatteryAsset found = batteries.get("BAT-JPA-1");
         assertEquals("BAT-JPA-1", found.id());
         assertEquals("ORG-JPA", found.orgId());
-        assertEquals(BatteryAssetStatus.IDLE, found.status());
+        assertEquals(BatteryAsset.Status.IDLE, found.status());
         assertTrue(jpa.findById("BAT-JPA-1").isPresent());
     }
 
@@ -47,7 +46,7 @@ class JpaBatteryAssetRepositoryTest {
                 BatteryAsset.createIdle("BAT-RENT", "ORG-JPA", "vendor", "model").checkout("U1"));
 
         BatteryAsset rented = batteries.get("BAT-RENT");
-        assertEquals(BatteryAssetStatus.RENTED, rented.status());
+        assertEquals(BatteryAsset.Status.RENTED, rented.status());
         assertEquals("U1", rented.currentHolderId());
 
         assertTrue(batteries.findAnyIdle().isPresent());

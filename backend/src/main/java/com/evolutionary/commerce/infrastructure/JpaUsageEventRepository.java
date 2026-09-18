@@ -5,7 +5,6 @@ import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.MeterReading;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.UsageEvent;
-import com.evolutionary.commerce.domain.UsageEventStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,7 +52,7 @@ public final class JpaUsageEventRepository implements UsageEventRepository {
 
     @Override
     public Optional<UsageEvent> findStartedByBattery(String batteryId) {
-        return jpa.findFirstByBatteryIdAndStatus(batteryId, UsageEventStatus.STARTED)
+        return jpa.findFirstByBatteryIdAndStatus(batteryId, UsageEvent.Status.STARTED)
                 .map(JpaUsageEventRepository::toDomain);
     }
 
@@ -61,7 +60,7 @@ public final class JpaUsageEventRepository implements UsageEventRepository {
     public List<UsageEvent> findStartedByUser(String userId) {
         List<UsageEvent> result = new ArrayList<>();
         for (UsageEventJpaEntity row :
-                jpa.findByUserIdAndStatus(userId, UsageEventStatus.STARTED)) {
+                jpa.findByUserIdAndStatus(userId, UsageEvent.Status.STARTED)) {
             result.add(toDomain(row));
         }
         return result;
@@ -69,7 +68,7 @@ public final class JpaUsageEventRepository implements UsageEventRepository {
 
     @Override
     public Optional<UsageEvent> findStartedByEntitlement(String entitlementId) {
-        return jpa.findFirstByEntitlementIdAndStatus(entitlementId, UsageEventStatus.STARTED)
+        return jpa.findFirstByEntitlementIdAndStatus(entitlementId, UsageEvent.Status.STARTED)
                 .map(JpaUsageEventRepository::toDomain);
     }
 

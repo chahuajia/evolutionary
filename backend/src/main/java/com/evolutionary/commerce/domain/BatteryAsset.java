@@ -10,11 +10,18 @@ import java.util.Objects;
  */
 public final class BatteryAsset {
 
+    public enum Status {
+        IDLE,
+        RENTED,
+        MAINTENANCE
+    }
+
+
     private final String id;
     private final String orgId;
     private final String vendor;
     private final String model;
-    private final BatteryAssetStatus status;
+    private final BatteryAsset.Status status;
     private final String currentHolderId;
 
     private BatteryAsset(
@@ -22,7 +29,7 @@ public final class BatteryAsset {
             String orgId,
             String vendor,
             String model,
-            BatteryAssetStatus status,
+            BatteryAsset.Status status,
             String currentHolderId) {
         this.id = id;
         this.orgId = orgId;
@@ -39,7 +46,7 @@ public final class BatteryAsset {
                 requireId(orgId),
                 Objects.requireNonNull(vendor, "vendor"),
                 Objects.requireNonNull(model, "model"),
-                BatteryAssetStatus.IDLE,
+                BatteryAsset.Status.IDLE,
                 null);
     }
 
@@ -48,7 +55,7 @@ public final class BatteryAsset {
             String orgId,
             String vendor,
             String model,
-            BatteryAssetStatus status,
+            BatteryAsset.Status status,
             String currentHolderId) {
         return new BatteryAsset(
                 requireId(id),
@@ -61,25 +68,25 @@ public final class BatteryAsset {
 
     /** idle → rented（UsageEvent STARTED）。 */
     public BatteryAsset checkout(String userId) {
-        if (status != BatteryAssetStatus.IDLE) {
-            throw new IllegalTransitionException(BatteryAssetStatus.RENTED);
+        if (status != BatteryAsset.Status.IDLE) {
+            throw new IllegalTransitionException(BatteryAsset.Status.RENTED);
         }
         if (userId == null || userId.isBlank()) {
             throw new IllegalArgumentException("userId must not be blank");
         }
-        return new BatteryAsset(id, orgId, vendor, model, BatteryAssetStatus.RENTED, userId);
+        return new BatteryAsset(id, orgId, vendor, model, BatteryAsset.Status.RENTED, userId);
     }
 
     /** rented → idle（UsageEvent COMPLETED）。INV-4 */
     public BatteryAsset returnToIdle() {
-        if (status != BatteryAssetStatus.RENTED) {
-            throw new IllegalTransitionException(BatteryAssetStatus.IDLE);
+        if (status != BatteryAsset.Status.RENTED) {
+            throw new IllegalTransitionException(BatteryAsset.Status.IDLE);
         }
-        return new BatteryAsset(id, orgId, vendor, model, BatteryAssetStatus.IDLE, null);
+        return new BatteryAsset(id, orgId, vendor, model, BatteryAsset.Status.IDLE, null);
     }
 
     public boolean isIdle() {
-        return status == BatteryAssetStatus.IDLE;
+        return status == BatteryAsset.Status.IDLE;
     }
 
     public String id() {
@@ -98,7 +105,7 @@ public final class BatteryAsset {
         return model;
     }
 
-    public BatteryAssetStatus status() {
+    public BatteryAsset.Status status() {
         return status;
     }
 
@@ -107,7 +114,7 @@ public final class BatteryAsset {
     }
 
     public static final class IllegalTransitionException extends RuntimeException {
-        IllegalTransitionException(BatteryAssetStatus next) {
+        IllegalTransitionException(BatteryAsset.Status next) {
             super("illegal battery asset transition to " + next);
         }
     }

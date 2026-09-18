@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.evolutionary.settlement.application.ReferralBindingRepository;
 import com.evolutionary.settlement.domain.ReferralBinding;
-import com.evolutionary.settlement.domain.ReferralStatus;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +39,7 @@ class JpaReferralBindingRepositoryTest {
         assertEquals("ORG-L2", found.promoterOrgId());
         assertEquals(T0, found.boundAt());
         assertEquals(T0.plusSeconds(ReferralBinding.BINDING_WINDOW_SECONDS), found.expiresAt());
-        assertEquals(ReferralStatus.ACTIVE, found.status());
+        assertEquals(ReferralBinding.Status.ACTIVE, found.status());
         assertTrue(jpa.findById("U-T").isPresent());
     }
 
@@ -51,6 +50,6 @@ class JpaReferralBindingRepositoryTest {
         bindings.save(active.expire());
 
         assertTrue(bindings.findActiveByUserId("U-T2").isEmpty());
-        assertEquals(ReferralStatus.EXPIRED, jpa.findById("U-T2").orElseThrow().getStatus());
+        assertEquals(ReferralBinding.Status.EXPIRED, jpa.findById("U-T2").orElseThrow().getStatus());
     }
 }

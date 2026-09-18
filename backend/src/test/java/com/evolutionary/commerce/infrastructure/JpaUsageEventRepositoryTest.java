@@ -7,7 +7,6 @@ import com.evolutionary.commerce.application.UsageEventRepository;
 import com.evolutionary.commerce.domain.MeterReading;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.UsageEvent;
-import com.evolutionary.commerce.domain.UsageEventStatus;
 import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +40,7 @@ class JpaUsageEventRepositoryTest {
         Optional<UsageEvent> found = usages.findStartedByBattery("BAT-1");
         assertTrue(found.isPresent());
         assertEquals("UE-1", found.get().id());
-        assertEquals(UsageEventStatus.STARTED, found.get().status());
+        assertEquals(UsageEvent.Status.STARTED, found.get().status());
     }
 
     @Test
@@ -56,7 +55,7 @@ class JpaUsageEventRepositoryTest {
         assertTrue(usages.findStartedByBattery("BAT-M1").isEmpty());
 
         UsageEventJpaEntity row = jpa.findById("UE-M").orElseThrow();
-        assertEquals(UsageEventStatus.COMPLETED, row.getStatus());
+        assertEquals(UsageEvent.Status.COMPLETED, row.getStatus());
         assertEquals(80, row.getMeterSocBefore());
         assertEquals(55, row.getMeterSocAfter());
         assertEquals(1250L, row.getChargedCents());

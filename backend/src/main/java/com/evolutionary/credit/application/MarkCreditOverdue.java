@@ -5,7 +5,6 @@ import com.evolutionary.commerce.domain.Entitlement;
 import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditProfile;
-import com.evolutionary.credit.domain.StatementStatus;
 import com.evolutionary.operator.application.AuditLogRepository;
 import com.evolutionary.operator.domain.AuditAction;
 import com.evolutionary.operator.domain.AuditLog;
@@ -52,7 +51,7 @@ public final class MarkCreditOverdue {
                     com.evolutionary.credit.domain.CreditErrorCode.STATEMENT_NOT_DUE,
                     "账单不属于该用户");
         }
-        if (statement.status() != StatementStatus.DUE) {
+        if (statement.status() != BillingStatement.Status.DUE) {
             return CreditOutcome.err(
                     com.evolutionary.credit.domain.CreditErrorCode.STATEMENT_NOT_DUE,
                     "仅 DUE 账单可逾期");

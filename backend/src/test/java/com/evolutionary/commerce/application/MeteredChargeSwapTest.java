@@ -17,9 +17,7 @@ import com.evolutionary.commerce.domain.LedgerRefType;
 import com.evolutionary.commerce.domain.MeteringMode;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Product;
-import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.domain.UsageEvent;
-import com.evolutionary.commerce.domain.UsageEventStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -60,7 +58,7 @@ class MeteredChargeSwapTest {
 
         products.put(
                 Product.createMetered(
-                        "P-3", "ORG-1", "按电量计费", Money.cny(50), ProductStatus.PUBLISHED));
+                        "P-3", "ORG-1", "按电量计费", Money.cny(50), Product.Status.PUBLISHED));
         batteries.put(BatteryAsset.createIdle("BAT-1", "ORG-1", "v", "m"));
         accounts.put(
                 Account.open(
@@ -86,7 +84,7 @@ class MeteredChargeSwapTest {
                         "P-3",
                         T0.minusSeconds(60),
                         null,
-                        com.evolutionary.commerce.domain.EntitlementStatus.ACTIVE,
+                        com.evolutionary.commerce.domain.Entitlement.Status.ACTIVE,
                         null,
                         MeteringMode.PAY_AS_YOU_GO));
     }
@@ -98,7 +96,7 @@ class MeteredChargeSwapTest {
 
         assertInstanceOf(DomainOutcome.Ok.class, outcome);
         UsageEvent event = ((DomainOutcome.Ok<UsageEvent>) outcome).value();
-        assertEquals(UsageEventStatus.COMPLETED, event.status());
+        assertEquals(UsageEvent.Status.COMPLETED, event.status());
         // (socBefore - socAfter) × rate = 20 × 50¢ = 1000¢
         assertEquals(Money.cny(1_000), event.chargedAmount());
         assertEquals(80, event.meterReading().socBefore());
@@ -164,7 +162,7 @@ class MeteredChargeSwapTest {
         public List<Entitlement> findActiveByUser(String userId) {
             return byId.values().stream()
                     .filter(e -> e.userId().equals(userId))
-                    .filter(e -> e.status() == com.evolutionary.commerce.domain.EntitlementStatus.ACTIVE)
+                    .filter(e -> e.status() == com.evolutionary.commerce.domain.Entitlement.Status.ACTIVE)
                     .toList();
         }
     }

@@ -1,6 +1,7 @@
 package com.evolutionary.mall.infrastructure;
 
-import com.evolutionary.mall.domain.CampaignStatus;
+
+import com.evolutionary.mall.domain.Campaign;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -35,7 +36,7 @@ public class CampaignJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CampaignStatus status;
+    private Campaign.Status status;
 
     /** 逗号分隔的 couponTemplateId 列表。 */
     @Column(nullable = false)
@@ -51,7 +52,7 @@ public class CampaignJpaEntity {
             String budgetTotalCurrency,
             long budgetRemainingCents,
             String budgetRemainingCurrency,
-            CampaignStatus status,
+            Campaign.Status status,
             String couponTemplateIdsCsv) {
         this.id = id;
         this.ownerOrgId = ownerOrgId;
@@ -92,7 +93,7 @@ public class CampaignJpaEntity {
         return budgetRemainingCurrency;
     }
 
-    public CampaignStatus getStatus() {
+    public Campaign.Status getStatus() {
         return status;
     }
 

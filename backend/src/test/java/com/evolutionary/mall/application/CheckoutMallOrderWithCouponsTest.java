@@ -1,5 +1,7 @@
 package com.evolutionary.mall.application;
 
+
+import com.evolutionary.commerce.domain.Order;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,11 +26,9 @@ import com.evolutionary.mall.domain.CouponTemplate;
 import com.evolutionary.mall.domain.IssuerType;
 import com.evolutionary.mall.domain.MallErrorCode;
 import com.evolutionary.mall.domain.MallOrder;
-import com.evolutionary.mall.domain.MallOrderStatus;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.MallSku;
 import com.evolutionary.mall.domain.UserCoupon;
-import com.evolutionary.mall.domain.UserCouponStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -189,11 +189,11 @@ class CheckoutMallOrderWithCouponsTest {
 
         assertInstanceOf(MallOutcome.Ok.class, outcome);
         MallOrder order = ((MallOutcome.Ok<MallOrder>) outcome).value();
-        assertEquals(MallOrderStatus.PAID, order.status());
+        assertEquals(MallOrder.Status.PAID, order.status());
         assertEquals(500, order.discountTotal().cents());
         assertEquals(4_500, order.paidAmount().cents());
 
-        assertEquals(UserCouponStatus.USED, userCoupons.get("UC-C1").status());
+        assertEquals(UserCoupon.Status.USED, userCoupons.get("UC-C1").status());
         List<CouponRedemption> reds = redemptions.findByOrderId(order.id());
         assertEquals(1, reds.size());
         assertEquals(500, reds.get(0).discountAmount().cents());
@@ -220,7 +220,7 @@ class CheckoutMallOrderWithCouponsTest {
                 MallErrorCode.COUPON_MUTEX_VIOLATION,
                 ((MallOutcome.Err<MallOrder>) outcome).code());
         assertTrue(orders.all().isEmpty());
-        assertEquals(UserCouponStatus.AVAILABLE, userCoupons.get("UC-C1").status());
+        assertEquals(UserCoupon.Status.AVAILABLE, userCoupons.get("UC-C1").status());
         assertTrue(redemptions.findAll().isEmpty());
         assertEquals(10, skus.get("S1").stock());
     }

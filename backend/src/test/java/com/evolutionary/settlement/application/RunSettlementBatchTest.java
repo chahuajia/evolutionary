@@ -11,8 +11,6 @@ import com.evolutionary.commerce.domain.AccountType;
 import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerRefType;
-import com.evolutionary.settlement.domain.AccrualStatus;
-import com.evolutionary.settlement.domain.BatchStatus;
 import com.evolutionary.settlement.domain.ProfitShareAccrual;
 import com.evolutionary.settlement.domain.ProfitSharingRule;
 import com.evolutionary.settlement.domain.SettlementBatch;
@@ -75,10 +73,10 @@ class RunSettlementBatchTest {
 
         SettlementBatch batch = runBatch.execute(T0, T7, T7);
 
-        assertEquals(BatchStatus.CLOSED, batch.status());
+        assertEquals(SettlementBatch.Status.CLOSED, batch.status());
         assertTrue(
                 accruals.findByOrderId("O1").stream()
-                        .allMatch(a -> a.status() == AccrualStatus.SETTLED));
+                        .allMatch(a -> a.status() == ProfitShareAccrual.Status.SETTLED));
         assertTrue(
                 accruals.findByOrderId("O1").stream()
                         .allMatch(a -> batch.id().equals(a.batchId())));
@@ -119,12 +117,12 @@ class RunSettlementBatchTest {
 
         assertTrue(
                 accruals.findByOrderId("O1").stream()
-                        .noneMatch(a -> a.status() == AccrualStatus.SETTLED));
+                        .noneMatch(a -> a.status() == ProfitShareAccrual.Status.SETTLED));
         assertTrue(
                 accruals.findByOrderId("O2").stream()
                         .allMatch(
                                 a ->
-                                        a.status() == AccrualStatus.SETTLED
+                                        a.status() == ProfitShareAccrual.Status.SETTLED
                                                 && batch.id().equals(a.batchId())));
         long ledgerTotal =
                 ledger.findAll().stream()
@@ -178,7 +176,7 @@ class RunSettlementBatchTest {
         public List<ProfitShareAccrual> findPendingCreatedBetween(
                 Instant periodStart, Instant periodEnd) {
             return byId.values().stream()
-                    .filter(a -> a.status() == AccrualStatus.PENDING)
+                    .filter(a -> a.status() == ProfitShareAccrual.Status.PENDING)
                     .filter(
                             a ->
                                     !a.createdAt().isBefore(periodStart)

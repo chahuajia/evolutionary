@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.credit.application.CreditLedgerDebtRepository;
 import com.evolutionary.credit.domain.CreditLedgerDebt;
-import com.evolutionary.credit.domain.DebtStatus;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +41,7 @@ class JpaCreditLedgerDebtRepositoryTest {
         assertEquals("U-T", found.userId());
         assertEquals("O-1", found.orderId());
         assertEquals(3_000, found.amount().cents());
-        assertEquals(DebtStatus.OPEN, found.status());
+        assertEquals(CreditLedgerDebt.Status.OPEN, found.status());
         assertEquals(createdAt, found.createdAt());
         assertNull(found.billedStatementId());
         assertNull(found.paidAt());
@@ -62,7 +61,7 @@ class JpaCreditLedgerDebtRepositoryTest {
         List<CreditLedgerDebt> billed = debts.findByBilledStatementId("STMT-T");
         assertEquals(1, billed.size());
         assertEquals("D-2", billed.get(0).id());
-        assertEquals(DebtStatus.BILLED, billed.get(0).status());
+        assertEquals(CreditLedgerDebt.Status.BILLED, billed.get(0).status());
         assertEquals("STMT-T", billed.get(0).billedStatementId());
     }
 
@@ -74,11 +73,11 @@ class JpaCreditLedgerDebtRepositoryTest {
         debts.save(CreditLedgerDebt.open("D-4", "U-T", "O-4", Money.cny(200), at));
         debts.save(CreditLedgerDebt.open("D-5", "U-X", "O-5", Money.cny(300), at));
 
-        List<CreditLedgerDebt> openOfUT = debts.findByUserIdAndStatus("U-T", DebtStatus.OPEN);
+        List<CreditLedgerDebt> openOfUT = debts.findByUserIdAndStatus("U-T", CreditLedgerDebt.Status.OPEN);
         assertEquals(2, openOfUT.size());
         assertTrue(openOfUT.stream().allMatch(d -> d.userId().equals("U-T")));
 
-        List<CreditLedgerDebt> allOpen = debts.findByStatus(DebtStatus.OPEN);
+        List<CreditLedgerDebt> allOpen = debts.findByStatus(CreditLedgerDebt.Status.OPEN);
         assertEquals(3, allOpen.size());
 
         List<CreditLedgerDebt> byOrder = debts.findByOrderId("O-5");

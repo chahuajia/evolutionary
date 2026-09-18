@@ -24,7 +24,6 @@ import com.evolutionary.mall.domain.MallOrder;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.MallSku;
 import com.evolutionary.mall.domain.UserCoupon;
-import com.evolutionary.mall.domain.UserCouponStatus;
 import com.evolutionary.operator.infrastructure.InMemoryAuditLogRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -173,7 +172,7 @@ class CouponCheckoutTest {
 
         assertEquals(500, order.discountTotal().cents());
         assertEquals(4_500, order.paidAmount().cents());
-        assertEquals(UserCouponStatus.USED, userCoupons.findById("UC1").orElseThrow().status());
+        assertEquals(UserCoupon.Status.USED, userCoupons.findById("UC1").orElseThrow().status());
         List<CouponRedemption> reds = redemptions.findByOrderId(order.id());
         assertEquals(1, reds.size());
         assertEquals(500, reds.get(0).discountAmount().cents());

@@ -2,7 +2,6 @@ package com.evolutionary.commerce.infrastructure;
 
 import com.evolutionary.commerce.application.BatteryAssetRepository;
 import com.evolutionary.commerce.domain.BatteryAsset;
-import com.evolutionary.commerce.domain.BatteryAssetStatus;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +17,7 @@ public final class JpaBatteryAssetRepository implements BatteryAssetRepository {
 
     @Override
     public Optional<BatteryAsset> findAnyIdle() {
-        return jpa.findFirstByStatus(BatteryAssetStatus.IDLE).map(JpaBatteryAssetRepository::toDomain);
+        return jpa.findFirstByStatus(BatteryAsset.Status.IDLE).map(JpaBatteryAssetRepository::toDomain);
     }
 
     @Override

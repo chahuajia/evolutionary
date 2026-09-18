@@ -1,6 +1,7 @@
 package com.evolutionary.credit.infrastructure;
 
-import com.evolutionary.credit.domain.DebtStatus;
+
+import com.evolutionary.credit.domain.CreditLedgerDebt;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -31,7 +32,7 @@ public class CreditLedgerDebtJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private DebtStatus status;
+    private CreditLedgerDebt.Status status;
 
     @Column(nullable = false)
     private Instant createdAt;
@@ -50,7 +51,7 @@ public class CreditLedgerDebtJpaEntity {
             String orderId,
             long amountCents,
             String amountCurrency,
-            DebtStatus status,
+            CreditLedgerDebt.Status status,
             Instant createdAt,
             String billedStatementId,
             Instant paidAt) {
@@ -85,7 +86,7 @@ public class CreditLedgerDebtJpaEntity {
         return amountCurrency;
     }
 
-    public DebtStatus getStatus() {
+    public CreditLedgerDebt.Status getStatus() {
         return status;
     }
 

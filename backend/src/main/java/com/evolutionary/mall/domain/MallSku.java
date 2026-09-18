@@ -10,12 +10,21 @@ import java.util.Objects;
  */
 public final class MallSku {
 
+    /**
+     * 商城 SKU 上架状态。
+     */
+    public enum Status {
+        ON_SALE,
+        OFF_SALE
+    }
+
+
     private final String id;
     private final String merchantOrgId;
     private final String name;
     private final Money price;
     private final int stock;
-    private final MallSkuStatus status;
+    private final MallSku.Status status;
 
     private MallSku(
             String id,
@@ -23,7 +32,7 @@ public final class MallSku {
             String name,
             Money price,
             int stock,
-            MallSkuStatus status) {
+            MallSku.Status status) {
         this.id = id;
         this.merchantOrgId = merchantOrgId;
         this.name = name;
@@ -39,7 +48,7 @@ public final class MallSku {
             String name,
             Money price,
             int stock,
-            MallSkuStatus status) {
+            MallSku.Status status) {
         return new MallSku(
                 id,
                 merchantOrgId,
@@ -69,11 +78,11 @@ public final class MallSku {
                 name,
                 Objects.requireNonNull(price, "price"),
                 stock,
-                MallSkuStatus.ON_SALE);
+                MallSku.Status.ON_SALE);
     }
 
     public boolean isOnSale() {
-        return status == MallSkuStatus.ON_SALE;
+        return status == MallSku.Status.ON_SALE;
     }
 
     /** 扣减库存；不足时返回错误。 */
@@ -91,7 +100,7 @@ public final class MallSku {
     }
 
     public MallSku takeOffSale() {
-        return new MallSku(id, merchantOrgId, name, price, stock, MallSkuStatus.OFF_SALE);
+        return new MallSku(id, merchantOrgId, name, price, stock, MallSku.Status.OFF_SALE);
     }
 
     public String id() {
@@ -114,7 +123,7 @@ public final class MallSku {
         return stock;
     }
 
-    public MallSkuStatus status() {
+    public MallSku.Status status() {
         return status;
     }
 }

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.evolutionary.settlement.application.ProfitShareAccrualRepository;
-import com.evolutionary.settlement.domain.AccrualStatus;
 import com.evolutionary.settlement.domain.ProfitShareAccrual;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +44,7 @@ class JpaProfitShareAccrualRepositoryTest {
         assertEquals(500L, found.amountCents());
         assertEquals("CNY", found.currency());
         assertEquals(1, found.ruleVersion());
-        assertEquals(AccrualStatus.PENDING, found.status());
+        assertEquals(ProfitShareAccrual.Status.PENDING, found.status());
         assertEquals(T0, found.createdAt());
         assertTrue(jpa.findById("A-1").isPresent());
     }
@@ -94,7 +93,7 @@ class JpaProfitShareAccrualRepositoryTest {
                         500L,
                         "CNY",
                         1,
-                        AccrualStatus.SETTLED,
+                        ProfitShareAccrual.Status.SETTLED,
                         periodStart.plusSeconds(10),
                         periodStart.plusSeconds(20),
                         "B-1",

@@ -8,7 +8,6 @@ import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerInvariant;
 import com.evolutionary.commerce.domain.LedgerRefType;
 import com.evolutionary.commerce.domain.Order;
-import com.evolutionary.commerce.domain.OrderStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,7 +49,7 @@ public final class RefundOrder {
         Objects.requireNonNull(orderId, "orderId");
 
         Order order = orders.get(orderId);
-        if (order.status() != OrderStatus.PAID) {
+        if (order.status() != Order.Status.PAID) {
             return DomainOutcome.err(DomainErrorCode.ORDER_NOT_REFUNDABLE, "订单不是 PAID 状态");
         }
 

@@ -1,6 +1,7 @@
 package com.evolutionary.settlement.infrastructure;
 
-import com.evolutionary.settlement.domain.AccrualStatus;
+
+import com.evolutionary.settlement.domain.ProfitShareAccrual;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,5 +13,5 @@ public interface ProfitShareAccrualJpaRepository
 
     List<ProfitShareAccrualJpaEntity>
             findByStatusAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
-                    AccrualStatus status, Instant periodStart, Instant periodEnd);
+                    ProfitShareAccrual.Status status, Instant periodStart, Instant periodEnd);
 }

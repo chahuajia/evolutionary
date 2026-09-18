@@ -1,6 +1,7 @@
 package com.evolutionary.settlement.infrastructure;
 
-import com.evolutionary.settlement.domain.AccrualStatus;
+
+import com.evolutionary.settlement.domain.ProfitShareAccrual;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -34,7 +35,7 @@ public class ProfitShareAccrualJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private AccrualStatus status;
+    private ProfitShareAccrual.Status status;
 
     @Column(nullable = false)
     private Instant createdAt;
@@ -54,7 +55,7 @@ public class ProfitShareAccrualJpaEntity {
             long amountCents,
             String currency,
             int ruleVersion,
-            AccrualStatus status,
+            ProfitShareAccrual.Status status,
             Instant createdAt,
             Instant settledAt,
             String batchId,
@@ -96,7 +97,7 @@ public class ProfitShareAccrualJpaEntity {
         return ruleVersion;
     }
 
-    public AccrualStatus getStatus() {
+    public ProfitShareAccrual.Status getStatus() {
         return status;
     }
 

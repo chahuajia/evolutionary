@@ -6,7 +6,6 @@ import com.evolutionary.commerce.domain.Account;
 import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.Money;
-import com.evolutionary.settlement.domain.AccrualStatus;
 import com.evolutionary.settlement.domain.ProfitShareAccrual;
 import com.evolutionary.settlement.domain.SettlementBatch;
 import java.time.Instant;
@@ -64,7 +63,7 @@ public final class RunSettlementBatch {
 
         List<ProfitShareAccrual> pending =
                 accruals.findPendingCreatedBetween(periodStart, periodEnd).stream()
-                        .filter(a -> a.status() == AccrualStatus.PENDING)
+                        .filter(a -> a.status() == ProfitShareAccrual.Status.PENDING)
                         .toList();
 
         Map<String, Long> byOrg =

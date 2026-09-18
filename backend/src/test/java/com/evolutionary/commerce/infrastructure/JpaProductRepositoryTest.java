@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.evolutionary.commerce.application.ProductRepository;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Product;
-import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.domain.SwapLimit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +39,7 @@ class JpaProductRepositoryTest {
                         Money.cny(3_000),
                         30,
                         SwapLimit.finite(10),
-                        ProductStatus.PUBLISHED));
+                        Product.Status.PUBLISHED));
 
         Product found = products.get("P-JPA-1");
         assertEquals("P-JPA-1", found.id());
@@ -48,7 +47,7 @@ class JpaProductRepositoryTest {
         assertEquals(3_000, found.price().cents());
         assertEquals(30, found.durationDays());
         assertEquals(10, found.swapLimit().finiteOrNull());
-        assertEquals(ProductStatus.PUBLISHED, found.status());
+        assertEquals(Product.Status.PUBLISHED, found.status());
         assertTrue(jpa.findById("P-JPA-1").isPresent());
     }
 
@@ -61,7 +60,7 @@ class JpaProductRepositoryTest {
                         "ORG-JPA",
                         "计量按电量",
                         Money.cny(50),
-                        ProductStatus.PUBLISHED));
+                        Product.Status.PUBLISHED));
 
         Product found = products.get("P-JPA-M");
         assertTrue(found.isMetered());

@@ -10,12 +10,22 @@ import java.util.Objects;
  */
 public final class Organization {
 
+    /**
+     * 组织状态（对齐 IDL Organization.Status）。
+     */
+    public enum Status {
+        PENDING,
+        ACTIVE,
+        SUSPENDED
+    }
+
+
     private final String id;
     private final String name;
     private final String parentId;
     private final List<OrgCapability> capabilities;
     private final List<String> regionScope;
-    private final OrgStatus status;
+    private final Organization.Status status;
 
     private Organization(
             String id,
@@ -23,7 +33,7 @@ public final class Organization {
             String parentId,
             List<OrgCapability> capabilities,
             List<String> regionScope,
-            OrgStatus status) {
+            Organization.Status status) {
         this.id = id;
         this.name = name;
         this.parentId = parentId;
@@ -33,7 +43,7 @@ public final class Organization {
     }
 
     public static Organization createRoot(String id, String name, List<String> regionScope) {
-        return create(id, name, null, List.of(OrgCapability.OPERATOR), regionScope, OrgStatus.ACTIVE);
+        return create(id, name, null, List.of(OrgCapability.OPERATOR), regionScope, Organization.Status.ACTIVE);
     }
 
     public static Organization createChild(
@@ -42,7 +52,7 @@ public final class Organization {
             throw new IllegalArgumentException("子组织必须有 parentId");
         }
         return create(
-                id, name, parentId, List.of(OrgCapability.OPERATOR), regionScope, OrgStatus.ACTIVE);
+                id, name, parentId, List.of(OrgCapability.OPERATOR), regionScope, Organization.Status.ACTIVE);
     }
 
     public static Organization create(
@@ -51,7 +61,7 @@ public final class Organization {
             String parentId,
             List<OrgCapability> capabilities,
             List<String> regionScope,
-            OrgStatus status) {
+            Organization.Status status) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("org id 不能为空");
         }
@@ -65,7 +75,7 @@ public final class Organization {
     }
 
     public boolean isActive() {
-        return status == OrgStatus.ACTIVE;
+        return status == Organization.Status.ACTIVE;
     }
 
     public boolean hasCapability(OrgCapability capability) {
@@ -122,7 +132,7 @@ public final class Organization {
         return regionScope;
     }
 
-    public OrgStatus status() {
+    public Organization.Status status() {
         return status;
     }
 }

@@ -7,12 +7,23 @@ import java.util.Objects;
 /** 周期账单（P6-3）。 */
 public final class BillingStatement {
 
+    /**
+     * 账单状态。
+     */
+    public enum Status {
+        OPEN,
+        DUE,
+        PAID,
+        OVERDUE
+    }
+
+
     private final String id;
     private final String userId;
     private final Instant periodStart;
     private final Instant periodEnd;
     private final Money totalDue;
-    private final StatementStatus status;
+    private final BillingStatement.Status status;
     private final Instant dueDate;
     private final Instant createdAt;
     private final Instant paidAt;
@@ -23,7 +34,7 @@ public final class BillingStatement {
             Instant periodStart,
             Instant periodEnd,
             Money totalDue,
-            StatementStatus status,
+            BillingStatement.Status status,
             Instant dueDate,
             Instant createdAt,
             Instant paidAt) {
@@ -53,7 +64,7 @@ public final class BillingStatement {
                 Objects.requireNonNull(periodStart, "periodStart"),
                 periodEnd,
                 Objects.requireNonNull(totalDue, "totalDue"),
-                StatementStatus.DUE,
+                BillingStatement.Status.DUE,
                 due,
                 Objects.requireNonNull(createdAt, "createdAt"),
                 null);
@@ -66,7 +77,7 @@ public final class BillingStatement {
             Instant periodStart,
             Instant periodEnd,
             Money totalDue,
-            StatementStatus status,
+            BillingStatement.Status status,
             Instant dueDate,
             Instant createdAt,
             Instant paidAt) {
@@ -83,7 +94,7 @@ public final class BillingStatement {
     }
 
     public BillingStatement markPaid(Instant at) {
-        if (status != StatementStatus.DUE && status != StatementStatus.OVERDUE) {
+        if (status != BillingStatement.Status.DUE && status != BillingStatement.Status.OVERDUE) {
             throw new IllegalStateException("仅 DUE/OVERDUE 可还款");
         }
         return new BillingStatement(
@@ -92,14 +103,14 @@ public final class BillingStatement {
                 periodStart,
                 periodEnd,
                 totalDue,
-                StatementStatus.PAID,
+                BillingStatement.Status.PAID,
                 dueDate,
                 createdAt,
                 Objects.requireNonNull(at, "paidAt"));
     }
 
     public BillingStatement markOverdue() {
-        if (status != StatementStatus.DUE) {
+        if (status != BillingStatement.Status.DUE) {
             throw new IllegalStateException("仅 DUE 可逾期");
         }
         return new BillingStatement(
@@ -108,14 +119,14 @@ public final class BillingStatement {
                 periodStart,
                 periodEnd,
                 totalDue,
-                StatementStatus.OVERDUE,
+                BillingStatement.Status.OVERDUE,
                 dueDate,
                 createdAt,
                 null);
     }
 
     public boolean isPastDue(Instant at) {
-        return (status == StatementStatus.DUE || status == StatementStatus.OVERDUE)
+        return (status == BillingStatement.Status.DUE || status == BillingStatement.Status.OVERDUE)
                 && at.isAfter(dueDate);
     }
 
@@ -139,7 +150,7 @@ public final class BillingStatement {
         return totalDue;
     }
 
-    public StatementStatus status() {
+    public BillingStatement.Status status() {
         return status;
     }
 

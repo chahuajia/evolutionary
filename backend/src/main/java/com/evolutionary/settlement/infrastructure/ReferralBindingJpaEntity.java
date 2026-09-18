@@ -1,6 +1,7 @@
 package com.evolutionary.settlement.infrastructure;
 
-import com.evolutionary.settlement.domain.ReferralStatus;
+
+import com.evolutionary.settlement.domain.ReferralBinding;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -28,7 +29,7 @@ public class ReferralBindingJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ReferralStatus status;
+    private ReferralBinding.Status status;
 
     protected ReferralBindingJpaEntity() {}
 
@@ -37,7 +38,7 @@ public class ReferralBindingJpaEntity {
             String promoterOrgId,
             Instant boundAt,
             Instant expiresAt,
-            ReferralStatus status) {
+            ReferralBinding.Status status) {
         this.userId = userId;
         this.promoterOrgId = promoterOrgId;
         this.boundAt = boundAt;
@@ -61,7 +62,7 @@ public class ReferralBindingJpaEntity {
         return expiresAt;
     }
 
-    public ReferralStatus getStatus() {
+    public ReferralBinding.Status getStatus() {
         return status;
     }
 }

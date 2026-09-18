@@ -1,6 +1,7 @@
 package com.evolutionary.commerce.infrastructure;
 
-import com.evolutionary.commerce.domain.OrderStatus;
+
+import com.evolutionary.commerce.domain.Order;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -27,7 +28,7 @@ public class OrderJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private OrderStatus status;
+    private Order.Status status;
 
     @Column(nullable = false)
     private long paidCents;
@@ -49,7 +50,7 @@ public class OrderJpaEntity {
             String userId,
             String productId,
             String orgId,
-            OrderStatus status,
+            Order.Status status,
             long paidCents,
             String paidCurrency,
             Instant createdAt,
@@ -83,7 +84,7 @@ public class OrderJpaEntity {
         return orgId;
     }
 
-    public OrderStatus getStatus() {
+    public Order.Status getStatus() {
         return status;
     }
 

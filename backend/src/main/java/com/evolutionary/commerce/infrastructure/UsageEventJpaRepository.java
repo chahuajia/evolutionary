@@ -1,6 +1,7 @@
 package com.evolutionary.commerce.infrastructure;
 
-import com.evolutionary.commerce.domain.UsageEventStatus;
+
+import com.evolutionary.commerce.domain.UsageEvent;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,10 +9,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UsageEventJpaRepository extends JpaRepository<UsageEventJpaEntity, String> {
 
     Optional<UsageEventJpaEntity> findFirstByBatteryIdAndStatus(
-            String batteryId, UsageEventStatus status);
+            String batteryId, UsageEvent.Status status);
 
-    List<UsageEventJpaEntity> findByUserIdAndStatus(String userId, UsageEventStatus status);
+    List<UsageEventJpaEntity> findByUserIdAndStatus(String userId, UsageEvent.Status status);
 
     Optional<UsageEventJpaEntity> findFirstByEntitlementIdAndStatus(
-            String entitlementId, UsageEventStatus status);
+            String entitlementId, UsageEvent.Status status);
 }

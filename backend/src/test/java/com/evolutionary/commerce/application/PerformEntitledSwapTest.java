@@ -4,13 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import com.evolutionary.commerce.domain.BatteryAsset;
-import com.evolutionary.commerce.domain.BatteryAssetStatus;
 import com.evolutionary.commerce.domain.DomainErrorCode;
 import com.evolutionary.commerce.domain.DomainOutcome;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.UsageEvent;
-import com.evolutionary.commerce.domain.UsageEventStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -48,7 +45,7 @@ class PerformEntitledSwapTest {
                         "P-1",
                         T0.minusSeconds(3600),
                         T0.plusSeconds(86_400),
-                        EntitlementStatus.ACTIVE));
+                        Entitlement.Status.ACTIVE));
         batteries.put(BatteryAsset.createIdle("BAT-1", "ORG-1", "vendor", "model"));
     }
 
@@ -59,8 +56,8 @@ class PerformEntitledSwapTest {
 
         assertInstanceOf(DomainOutcome.Ok.class, outcome);
         UsageEvent event = ((DomainOutcome.Ok<UsageEvent>) outcome).value();
-        assertEquals(UsageEventStatus.COMPLETED, event.status());
-        assertEquals(BatteryAssetStatus.IDLE, batteries.get("BAT-1").status());
+        assertEquals(UsageEvent.Status.COMPLETED, event.status());
+        assertEquals(BatteryAsset.Status.IDLE, batteries.get("BAT-1").status());
     }
 
     @Test
@@ -74,7 +71,7 @@ class PerformEntitledSwapTest {
                         "P-1",
                         T0.minusSeconds(10_000),
                         T0.minusSeconds(1),
-                        EntitlementStatus.ACTIVE));
+                        Entitlement.Status.ACTIVE));
 
         DomainOutcome<UsageEvent> outcome = swap.execute("U-1", "E-2", "CAB-1");
 
@@ -141,7 +138,7 @@ class PerformEntitledSwapTest {
         public List<Entitlement> findActiveByUser(String userId) {
             return byId.values().stream()
                     .filter(e -> e.userId().equals(userId))
-                    .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                    .filter(e -> e.status() == Entitlement.Status.ACTIVE)
                     .toList();
         }
     }

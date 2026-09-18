@@ -1,5 +1,7 @@
 package com.evolutionary.mall.application;
 
+
+import com.evolutionary.commerce.domain.Order;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,7 +20,6 @@ import com.evolutionary.commerce.domain.LedgerInvariant;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.UsageEvent;
 import com.evolutionary.mall.domain.MallOrder;
-import com.evolutionary.mall.domain.MallOrderStatus;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.MallSku;
 import java.time.Clock;
@@ -89,7 +90,7 @@ class PurchaseMallOrderTest {
         assertInstanceOf(MallOutcome.Ok.class, outcome);
         MallOrder order = ((MallOutcome.Ok<MallOrder>) outcome).value();
 
-        assertEquals(MallOrderStatus.PAID, order.status());
+        assertEquals(MallOrder.Status.PAID, order.status());
         assertEquals(S1_PRICE_CENTS, order.paidAmount().cents());
         assertEquals(Currency.CNY, order.paidAmount().currency());
         assertEquals(1, order.lines().size());

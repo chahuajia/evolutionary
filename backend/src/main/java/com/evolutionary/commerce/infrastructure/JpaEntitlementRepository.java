@@ -2,7 +2,6 @@ package com.evolutionary.commerce.infrastructure;
 
 import com.evolutionary.commerce.application.EntitlementRepository;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -47,11 +46,11 @@ public final class JpaEntitlementRepository implements EntitlementRepository {
 
     @Override
     public List<Entitlement> findActiveByUser(String userId) {
-        return findByUserIdAndStatus(userId, EntitlementStatus.ACTIVE);
+        return findByUserIdAndStatus(userId, Entitlement.Status.ACTIVE);
     }
 
     @Override
-    public List<Entitlement> findByUserIdAndStatus(String userId, EntitlementStatus status) {
+    public List<Entitlement> findByUserIdAndStatus(String userId, Entitlement.Status status) {
         List<Entitlement> result = new ArrayList<>();
         for (EntitlementJpaEntity row : jpa.findByUserIdAndStatus(userId, status)) {
             result.add(toDomain(row));

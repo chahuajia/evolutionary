@@ -1,7 +1,6 @@
 package com.evolutionary.settlement.infrastructure;
 
 import com.evolutionary.settlement.application.ProfitShareAccrualRepository;
-import com.evolutionary.settlement.domain.AccrualStatus;
 import com.evolutionary.settlement.domain.ProfitShareAccrual;
 import java.time.Instant;
 import java.util.List;
@@ -38,7 +37,7 @@ public final class JpaProfitShareAccrualRepository implements ProfitShareAccrual
     public List<ProfitShareAccrual> findPendingCreatedBetween(
             Instant periodStart, Instant periodEnd) {
         return jpa.findByStatusAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
-                        AccrualStatus.PENDING, periodStart, periodEnd)
+                        ProfitShareAccrual.Status.PENDING, periodStart, periodEnd)
                 .stream()
                 .map(JpaProfitShareAccrualRepository::toDomain)
                 .toList();

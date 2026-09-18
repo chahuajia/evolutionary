@@ -1,6 +1,7 @@
 package com.evolutionary.credit.infrastructure;
 
-import com.evolutionary.credit.domain.CreditStatus;
+
+import com.evolutionary.credit.domain.CreditProfile;
 import com.evolutionary.credit.domain.ScoreTier;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,7 +32,7 @@ public class CreditProfileJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CreditStatus status;
+    private CreditProfile.Status status;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -48,7 +49,7 @@ public class CreditProfileJpaEntity {
             String creditLimitCurrency,
             long usedCreditCents,
             String usedCreditCurrency,
-            CreditStatus status,
+            CreditProfile.Status status,
             ScoreTier scoreTier,
             int policyVersion) {
         this.userId = userId;
@@ -81,7 +82,7 @@ public class CreditProfileJpaEntity {
         return usedCreditCurrency;
     }
 
-    public CreditStatus getStatus() {
+    public CreditProfile.Status getStatus() {
         return status;
     }
 

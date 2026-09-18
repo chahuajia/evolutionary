@@ -16,11 +16,9 @@ import com.evolutionary.commerce.domain.AccountType;
 import com.evolutionary.commerce.domain.BatteryAsset;
 import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.MeteringMode;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Product;
-import com.evolutionary.commerce.domain.ProductStatus;
 import java.time.Clock;
 import java.time.Instant;
 import org.springframework.boot.ApplicationRunner;
@@ -97,7 +95,7 @@ public class CommerceConfig {
                             "P-1",
                             now.minusSeconds(3600),
                             now.plusSeconds(86_400),
-                            EntitlementStatus.ACTIVE));
+                            Entitlement.Status.ACTIVE));
             // 切片12a / AC-14：FINITE 与 E-1 并存，默认选卡优先次卡
             entitlements.save(
                     Entitlement.rehydrate(
@@ -107,13 +105,13 @@ public class CommerceConfig {
                             "P-FINITE",
                             now.minusSeconds(3600),
                             now.plusSeconds(86_400),
-                            EntitlementStatus.ACTIVE,
+                            Entitlement.Status.ACTIVE,
                             5));
             batteries.save(BatteryAsset.createIdle("BAT-1", "ORG-1", "vendor", "model"));
 
             products.save(
                     Product.createMetered(
-                            "P-M1", "ORG-1", "计量按电量", Money.cny(50), ProductStatus.PUBLISHED));
+                            "P-M1", "ORG-1", "计量按电量", Money.cny(50), Product.Status.PUBLISHED));
             entitlements.save(
                     Entitlement.rehydrate(
                             "E-M1",
@@ -122,7 +120,7 @@ public class CommerceConfig {
                             "P-M1",
                             now.minusSeconds(3600),
                             null,
-                            EntitlementStatus.ACTIVE,
+                            Entitlement.Status.ACTIVE,
                             null,
                             MeteringMode.PAY_AS_YOU_GO));
             batteries.save(BatteryAsset.createIdle("BAT-M1", "ORG-1", "vendor", "model"));

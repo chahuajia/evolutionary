@@ -10,10 +10,20 @@ import java.util.Objects;
  */
 public final class SettlementBatch {
 
+    /**
+     * 结算批状态。
+     */
+    public enum Status {
+        OPEN,
+        CLOSED,
+        PAID
+    }
+
+
     private final String id;
     private final Instant periodStart;
     private final Instant periodEnd;
-    private final BatchStatus status;
+    private final SettlementBatch.Status status;
     private final Instant createdAt;
     private final Instant closedAt;
 
@@ -21,7 +31,7 @@ public final class SettlementBatch {
             String id,
             Instant periodStart,
             Instant periodEnd,
-            BatchStatus status,
+            SettlementBatch.Status status,
             Instant createdAt,
             Instant closedAt) {
         this.id = id;
@@ -37,7 +47,7 @@ public final class SettlementBatch {
             String id,
             Instant periodStart,
             Instant periodEnd,
-            BatchStatus status,
+            SettlementBatch.Status status,
             Instant createdAt,
             Instant closedAt) {
         return new SettlementBatch(
@@ -60,21 +70,21 @@ public final class SettlementBatch {
                 requireId(id),
                 start,
                 end,
-                BatchStatus.OPEN,
+                SettlementBatch.Status.OPEN,
                 Objects.requireNonNull(createdAt, "createdAt"),
                 null);
     }
 
     /** 关账：OPEN → CLOSED。 */
     public SettlementBatch close(Instant closedAt) {
-        if (status != BatchStatus.OPEN) {
+        if (status != SettlementBatch.Status.OPEN) {
             throw new IllegalStateException("仅 OPEN 批可关账");
         }
         return new SettlementBatch(
                 id,
                 periodStart,
                 periodEnd,
-                BatchStatus.CLOSED,
+                SettlementBatch.Status.CLOSED,
                 createdAt,
                 Objects.requireNonNull(closedAt, "closedAt"));
     }
@@ -91,7 +101,7 @@ public final class SettlementBatch {
         return periodEnd;
     }
 
-    public BatchStatus status() {
+    public SettlementBatch.Status status() {
         return status;
     }
 

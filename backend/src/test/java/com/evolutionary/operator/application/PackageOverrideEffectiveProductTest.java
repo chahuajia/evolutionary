@@ -12,7 +12,6 @@ import com.evolutionary.operator.domain.OperatorOutcome;
 import com.evolutionary.operator.domain.OrgAuthorization;
 import com.evolutionary.operator.domain.Organization;
 import com.evolutionary.operator.domain.OverridableField;
-import com.evolutionary.operator.domain.OverrideStatus;
 import com.evolutionary.operator.domain.PackageOverride;
 import com.evolutionary.operator.domain.PackageTemplate;
 import com.evolutionary.operator.domain.TemplateBaseProduct;
@@ -83,7 +82,7 @@ class PackageOverrideEffectiveProductTest {
                         "U-SZ", l2.id(), "T1", "OV-1", Map.of("price", 2800L));
         assertInstanceOf(OperatorOutcome.Ok.class, activated);
         PackageOverride ov = ((OperatorOutcome.Ok<PackageOverride>) activated).value();
-        assertEquals(OverrideStatus.ACTIVE, ov.status());
+        assertEquals(PackageOverride.Status.ACTIVE, ov.status());
         assertEquals(2800L, ov.patches().priceCents().orElseThrow());
 
         EffectiveProduct after = resolve.execute(l2.id(), "T1");
@@ -127,7 +126,7 @@ class PackageOverrideEffectiveProductTest {
                 revoke.execute("U-SZ", l2.id(), "OV-1");
         assertInstanceOf(OperatorOutcome.Ok.class, revoked);
         assertEquals(
-                OverrideStatus.REVOKED,
+                PackageOverride.Status.REVOKED,
                 ((OperatorOutcome.Ok<PackageOverride>) revoked).value().status());
 
         assertEquals(3000, resolve.execute(l2.id(), "T1").priceCents());

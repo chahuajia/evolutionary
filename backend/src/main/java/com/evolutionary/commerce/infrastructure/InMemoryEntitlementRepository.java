@@ -2,7 +2,6 @@ package com.evolutionary.commerce.infrastructure;
 
 import com.evolutionary.commerce.application.EntitlementRepository;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,12 +35,12 @@ public final class InMemoryEntitlementRepository implements EntitlementRepositor
     public List<Entitlement> findActiveByUser(String userId) {
         return byId.values().stream()
                 .filter(e -> e.userId().equals(userId))
-                .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                .filter(e -> e.status() == Entitlement.Status.ACTIVE)
                 .toList();
     }
 
     @Override
-    public List<Entitlement> findByUserIdAndStatus(String userId, EntitlementStatus status) {
+    public List<Entitlement> findByUserIdAndStatus(String userId, Entitlement.Status status) {
         return byId.values().stream()
                 .filter(e -> e.userId().equals(userId))
                 .filter(e -> e.status() == status)

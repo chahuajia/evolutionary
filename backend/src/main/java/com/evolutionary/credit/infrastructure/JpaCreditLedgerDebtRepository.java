@@ -4,7 +4,6 @@ import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.credit.application.CreditLedgerDebtRepository;
 import com.evolutionary.credit.domain.CreditLedgerDebt;
-import com.evolutionary.credit.domain.DebtStatus;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
@@ -40,14 +39,14 @@ public final class JpaCreditLedgerDebtRepository implements CreditLedgerDebtRepo
     }
 
     @Override
-    public List<CreditLedgerDebt> findByUserIdAndStatus(String userId, DebtStatus status) {
+    public List<CreditLedgerDebt> findByUserIdAndStatus(String userId, CreditLedgerDebt.Status status) {
         return jpa.findByUserIdAndStatus(userId, status).stream()
                 .map(JpaCreditLedgerDebtRepository::toDomain)
                 .toList();
     }
 
     @Override
-    public List<CreditLedgerDebt> findByStatus(DebtStatus status) {
+    public List<CreditLedgerDebt> findByStatus(CreditLedgerDebt.Status status) {
         return jpa.findByStatus(status).stream()
                 .map(JpaCreditLedgerDebtRepository::toDomain)
                 .toList();

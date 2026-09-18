@@ -2,7 +2,6 @@ package com.evolutionary.credit.infrastructure;
 
 import com.evolutionary.credit.application.CreditLedgerDebtRepository;
 import com.evolutionary.credit.domain.CreditLedgerDebt;
-import com.evolutionary.credit.domain.DebtStatus;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,14 +23,14 @@ public final class InMemoryCreditLedgerDebtRepository implements CreditLedgerDeb
     }
 
     @Override
-    public List<CreditLedgerDebt> findByUserIdAndStatus(String userId, DebtStatus status) {
+    public List<CreditLedgerDebt> findByUserIdAndStatus(String userId, CreditLedgerDebt.Status status) {
         return byId.values().stream()
                 .filter(d -> d.userId().equals(userId) && d.status() == status)
                 .toList();
     }
 
     @Override
-    public List<CreditLedgerDebt> findByStatus(DebtStatus status) {
+    public List<CreditLedgerDebt> findByStatus(CreditLedgerDebt.Status status) {
         return byId.values().stream().filter(d -> d.status() == status).toList();
     }
 

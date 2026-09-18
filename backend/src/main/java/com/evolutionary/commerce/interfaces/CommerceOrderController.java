@@ -7,7 +7,6 @@ import com.evolutionary.credit.application.CreditLedgerDebtRepository;
 import com.evolutionary.credit.application.CreditProfileRepository;
 import com.evolutionary.credit.domain.CreditLedgerDebt;
 import com.evolutionary.credit.domain.CreditProfile;
-import com.evolutionary.credit.domain.DebtStatus;
 import com.evolutionary.settlement.application.OrderRefundedFact;
 import com.evolutionary.settlement.application.ReverseAccrualsOnRefund;
 import com.evolutionary.settlement.domain.SettlementException;
@@ -76,7 +75,7 @@ public class CommerceOrderController {
     /** 信用购接线：OPEN debt → WRITTEN_OFF，并 repay usedCredit。 */
     private void reverseCreditIfPresent(String orderId, String userId) {
         for (CreditLedgerDebt debt : debts.findByOrderId(orderId)) {
-            if (debt.status() != DebtStatus.OPEN) {
+            if (debt.status() != CreditLedgerDebt.Status.OPEN) {
                 continue;
             }
             debts.save(debt.writeOff());

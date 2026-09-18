@@ -2,7 +2,6 @@ package com.evolutionary.settlement.infrastructure;
 
 import com.evolutionary.settlement.application.ReferralBindingRepository;
 import com.evolutionary.settlement.domain.ReferralBinding;
-import com.evolutionary.settlement.domain.ReferralStatus;
 import java.util.Optional;
 import org.springframework.stereotype.Component;
 
@@ -30,7 +29,7 @@ public final class JpaReferralBindingRepository implements ReferralBindingReposi
     @Override
     public Optional<ReferralBinding> findActiveByUserId(String userId) {
         return jpa.findById(userId)
-                .filter(row -> row.getStatus() == ReferralStatus.ACTIVE)
+                .filter(row -> row.getStatus() == ReferralBinding.Status.ACTIVE)
                 .map(JpaReferralBindingRepository::toDomain);
     }
 

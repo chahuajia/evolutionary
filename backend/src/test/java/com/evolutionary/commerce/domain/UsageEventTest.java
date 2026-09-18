@@ -24,7 +24,7 @@ class UsageEventTest {
     void complete() {
         UsageEvent completed =
                 UsageEvent.start("UE-1", "U-1", "E-1", "BAT-1", "CAB-1", T0).complete(T0.plusSeconds(10));
-        assertEquals(UsageEventStatus.COMPLETED, completed.status());
+        assertEquals(UsageEvent.Status.COMPLETED, completed.status());
     }
 
     @Test

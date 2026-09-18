@@ -7,7 +7,6 @@ import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.credit.application.CreditProfileRepository;
 import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditProfile;
-import com.evolutionary.credit.domain.CreditStatus;
 import com.evolutionary.credit.domain.ScoreTier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,7 +38,7 @@ class JpaCreditProfileRepositoryTest {
         assertEquals("U-T", found.userId());
         assertEquals(10_000, found.creditLimit().cents());
         assertEquals(0, found.usedCredit().cents());
-        assertEquals(CreditStatus.GOOD, found.status());
+        assertEquals(CreditProfile.Status.GOOD, found.status());
         assertEquals(ScoreTier.A, found.scoreTier());
         assertEquals(1, found.policyVersion());
         assertTrue(jpa.findById("U-T").isPresent());
@@ -56,7 +55,7 @@ class JpaCreditProfileRepositoryTest {
         CreditProfile found = profiles.get("U-T2");
         assertEquals(3_000, found.usedCredit().cents());
         assertEquals(10_000, found.creditLimit().cents());
-        assertEquals(CreditStatus.GOOD, found.status());
+        assertEquals(CreditProfile.Status.GOOD, found.status());
         assertEquals(ScoreTier.B, found.scoreTier());
         assertEquals(2, found.policyVersion());
     }

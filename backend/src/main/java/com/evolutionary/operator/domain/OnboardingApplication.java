@@ -6,10 +6,20 @@ import java.util.Objects;
 /** 能力入驻申请（运营商/商家共享框架）。 */
 public final class OnboardingApplication {
 
+    /**
+     * 入驻申请状态。
+     */
+    public enum Status {
+        SUBMITTED,
+        APPROVED,
+        REJECTED
+    }
+
+
     private final String id;
     private final String orgId;
     private final OrgCapability capability;
-    private final OnboardingStatus status;
+    private final OnboardingApplication.Status status;
     private final Instant submittedAt;
     private final Instant reviewedAt;
 
@@ -17,7 +27,7 @@ public final class OnboardingApplication {
             String id,
             String orgId,
             OrgCapability capability,
-            OnboardingStatus status,
+            OnboardingApplication.Status status,
             Instant submittedAt,
             Instant reviewedAt) {
         this.id = id;
@@ -41,20 +51,20 @@ public final class OnboardingApplication {
                 id,
                 orgId,
                 capability,
-                OnboardingStatus.SUBMITTED,
+                OnboardingApplication.Status.SUBMITTED,
                 Objects.requireNonNull(submittedAt, "submittedAt"),
                 null);
     }
 
     public OnboardingApplication approve(Instant reviewedAt) {
-        if (status != OnboardingStatus.SUBMITTED) {
+        if (status != OnboardingApplication.Status.SUBMITTED) {
             throw new IllegalStateException("仅 submitted 可批准");
         }
         return new OnboardingApplication(
                 id,
                 orgId,
                 capability,
-                OnboardingStatus.APPROVED,
+                OnboardingApplication.Status.APPROVED,
                 submittedAt,
                 Objects.requireNonNull(reviewedAt, "reviewedAt"));
     }
@@ -71,7 +81,7 @@ public final class OnboardingApplication {
         return capability;
     }
 
-    public OnboardingStatus status() {
+    public OnboardingApplication.Status status() {
         return status;
     }
 

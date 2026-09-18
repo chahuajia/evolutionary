@@ -1,6 +1,7 @@
 package com.evolutionary.commerce.infrastructure;
 
-import com.evolutionary.commerce.domain.ProductStatus;
+
+import com.evolutionary.commerce.domain.Product;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -35,7 +36,7 @@ public class ProductJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProductStatus status;
+    private Product.Status status;
 
     private Long meteredRateCents;
 
@@ -51,7 +52,7 @@ public class ProductJpaEntity {
             String priceCurrency,
             int durationDays,
             Integer swapLimitFinite,
-            ProductStatus status,
+            Product.Status status,
             Long meteredRateCents,
             String meteredRateCurrency) {
         this.id = id;
@@ -94,7 +95,7 @@ public class ProductJpaEntity {
         return swapLimitFinite;
     }
 
-    public ProductStatus getStatus() {
+    public Product.Status getStatus() {
         return status;
     }
 

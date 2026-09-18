@@ -11,11 +11,21 @@ import java.util.Objects;
  */
 public final class PackageTemplate {
 
+    /**
+     * 套餐模板状态（对齐 IDL PackageTemplate.Status）。
+     */
+    public enum Status {
+        DRAFT,
+        PUBLISHED,
+        DEPRECATED
+    }
+
+
     private final String id;
     private final String ownerOrgId;
     private final int version;
     private final TemplateBaseProduct baseProduct;
-    private final TemplateStatus status;
+    private final PackageTemplate.Status status;
     private final String inheritedFrom;
     private final List<OverridableField> allowedOverrideFields;
     private final Instant publishedAt;
@@ -25,7 +35,7 @@ public final class PackageTemplate {
             String ownerOrgId,
             int version,
             TemplateBaseProduct baseProduct,
-            TemplateStatus status,
+            PackageTemplate.Status status,
             String inheritedFrom,
             List<OverridableField> allowedOverrideFields,
             Instant publishedAt) {
@@ -71,7 +81,7 @@ public final class PackageTemplate {
                 ownerOrgId,
                 version,
                 baseProduct,
-                TemplateStatus.DRAFT,
+                PackageTemplate.Status.DRAFT,
                 inheritedFrom,
                 allowedOverrideFields,
                 null);
@@ -80,7 +90,7 @@ public final class PackageTemplate {
     /** draft → published；记录 publishedAt。 */
     public OperatorOutcome<PackageTemplate> publish(Instant at) {
         Objects.requireNonNull(at, "at");
-        if (status != TemplateStatus.DRAFT) {
+        if (status != PackageTemplate.Status.DRAFT) {
             return OperatorOutcome.err(OperatorErrorCode.TEMPLATE_NOT_DRAFT, "仅草稿可发布");
         }
         return OperatorOutcome.ok(
@@ -89,7 +99,7 @@ public final class PackageTemplate {
                         ownerOrgId,
                         version,
                         baseProduct,
-                        TemplateStatus.PUBLISHED,
+                        PackageTemplate.Status.PUBLISHED,
                         inheritedFrom,
                         allowedOverrideFields,
                         at));
@@ -100,7 +110,7 @@ public final class PackageTemplate {
      */
     public OperatorOutcome<PackageTemplate> replaceBaseProduct(TemplateBaseProduct next) {
         Objects.requireNonNull(next, "next");
-        if (status != TemplateStatus.DRAFT) {
+        if (status != PackageTemplate.Status.DRAFT) {
             return OperatorOutcome.err(
                     OperatorErrorCode.TEMPLATE_IMMUTABLE, "已发布模板不可原地修改，请新建下一版本草稿");
         }
@@ -124,7 +134,7 @@ public final class PackageTemplate {
     public OperatorOutcome<PackageTemplate> createNextVersionDraft(
             String newId, TemplateBaseProduct nextBase) {
         Objects.requireNonNull(nextBase, "nextBase");
-        if (status != TemplateStatus.PUBLISHED) {
+        if (status != PackageTemplate.Status.PUBLISHED) {
             return OperatorOutcome.err(
                     OperatorErrorCode.TEMPLATE_NOT_PUBLISHED, "仅已发布模板可派生下一版本");
         }
@@ -139,11 +149,11 @@ public final class PackageTemplate {
     }
 
     public boolean isPublished() {
-        return status == TemplateStatus.PUBLISHED;
+        return status == PackageTemplate.Status.PUBLISHED;
     }
 
     public boolean isDraft() {
-        return status == TemplateStatus.DRAFT;
+        return status == PackageTemplate.Status.DRAFT;
     }
 
     public String id() {
@@ -162,7 +172,7 @@ public final class PackageTemplate {
         return baseProduct;
     }
 
-    public TemplateStatus status() {
+    public PackageTemplate.Status status() {
         return status;
     }
 

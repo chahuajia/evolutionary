@@ -1,7 +1,6 @@
 package com.evolutionary.operator.application;
 
 import com.evolutionary.operator.domain.OnboardingApplication;
-import com.evolutionary.operator.domain.OnboardingStatus;
 import com.evolutionary.operator.domain.OperatorErrorCode;
 import com.evolutionary.operator.domain.OperatorOutcome;
 import com.evolutionary.operator.domain.OrgCapability;
@@ -47,7 +46,7 @@ public final class ApproveOperatorDownline {
             return OperatorOutcome.err(
                     OperatorErrorCode.CAPABILITY_DENIED, "仅 OPERATOR 下线入驻可由运营商批准");
         }
-        if (app.status() != OnboardingStatus.SUBMITTED) {
+        if (app.status() != OnboardingApplication.Status.SUBMITTED) {
             return OperatorOutcome.err(
                     OperatorErrorCode.CAPABILITY_DENIED, "入驻申请非 submitted 状态");
         }

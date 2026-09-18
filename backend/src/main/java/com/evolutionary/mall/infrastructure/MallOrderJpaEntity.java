@@ -1,6 +1,9 @@
 package com.evolutionary.mall.infrastructure;
 
-import com.evolutionary.mall.domain.MallOrderStatus;
+
+
+import com.evolutionary.commerce.domain.Order;
+import com.evolutionary.mall.domain.MallOrder;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -30,7 +33,7 @@ public class MallOrderJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MallOrderStatus status;
+    private MallOrder.Status status;
 
     private Long usePointsCents;
 
@@ -61,7 +64,7 @@ public class MallOrderJpaEntity {
             String id,
             String userId,
             String merchantOrgId,
-            MallOrderStatus status,
+            MallOrder.Status status,
             Long usePointsCents,
             Long useBalanceCents,
             Long discountCents,
@@ -98,7 +101,7 @@ public class MallOrderJpaEntity {
         return merchantOrgId;
     }
 
-    public MallOrderStatus getStatus() {
+    public MallOrder.Status getStatus() {
         return status;
     }
 

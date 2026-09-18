@@ -1,6 +1,7 @@
 package com.evolutionary.commerce.infrastructure;
 
-import com.evolutionary.commerce.domain.EntitlementStatus;
+
+import com.evolutionary.commerce.domain.Entitlement;
 import com.evolutionary.commerce.domain.MeteringMode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,7 +36,7 @@ public class EntitlementJpaEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private EntitlementStatus status;
+    private Entitlement.Status status;
 
     /** null = UNLIMITED。 */
     private Integer remainingSwaps;
@@ -53,7 +54,7 @@ public class EntitlementJpaEntity {
             String productId,
             Instant validFrom,
             Instant validUntil,
-            EntitlementStatus status,
+            Entitlement.Status status,
             Integer remainingSwaps,
             MeteringMode meteringMode) {
         this.id = id;
@@ -91,7 +92,7 @@ public class EntitlementJpaEntity {
         return validUntil;
     }
 
-    public EntitlementStatus getStatus() {
+    public Entitlement.Status getStatus() {
         return status;
     }
 

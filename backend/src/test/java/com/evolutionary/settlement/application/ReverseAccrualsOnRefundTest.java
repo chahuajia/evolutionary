@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.evolutionary.settlement.domain.AccrualStatus;
 import com.evolutionary.settlement.domain.ProfitShareAccrual;
 import com.evolutionary.settlement.domain.SettlementErrorCode;
 import com.evolutionary.settlement.domain.SettlementException;
@@ -41,7 +40,7 @@ class ReverseAccrualsOnRefundTest {
 
         assertEquals(6, written.size()); // 3 冲销 + 3 reversal 行
         List<ProfitShareAccrual> forOrder = accruals.findByOrderId("O1");
-        assertTrue(forOrder.stream().allMatch(a -> a.status() == AccrualStatus.REVERSED));
+        assertTrue(forOrder.stream().allMatch(a -> a.status() == ProfitShareAccrual.Status.REVERSED));
         assertEquals(
                 3,
                 forOrder.stream().filter(a -> a.reversalOf() != null).count());
@@ -95,7 +94,7 @@ class ReverseAccrualsOnRefundTest {
         public List<ProfitShareAccrual> findPendingCreatedBetween(
                 Instant periodStart, Instant periodEnd) {
             return byId.values().stream()
-                    .filter(a -> a.status() == AccrualStatus.PENDING)
+                    .filter(a -> a.status() == ProfitShareAccrual.Status.PENDING)
                     .filter(
                             a ->
                                     !a.createdAt().isBefore(periodStart)

@@ -5,7 +5,6 @@ import com.evolutionary.mall.domain.MerchantProfile;
 import com.evolutionary.operator.domain.AuditAction;
 import com.evolutionary.operator.domain.AuditLog;
 import com.evolutionary.operator.domain.OnboardingApplication;
-import com.evolutionary.operator.domain.OnboardingStatus;
 import com.evolutionary.operator.domain.OperatorErrorCode;
 import com.evolutionary.operator.domain.OperatorOutcome;
 import com.evolutionary.operator.domain.OrgCapability;
@@ -54,7 +53,7 @@ public final class ApproveMerchantOnboarding {
             return OperatorOutcome.err(
                     OperatorErrorCode.CAPABILITY_DENIED, "仅 MERCHANT 入驻可由本用例批准");
         }
-        if (app.status() != OnboardingStatus.SUBMITTED) {
+        if (app.status() != OnboardingApplication.Status.SUBMITTED) {
             return OperatorOutcome.err(
                     OperatorErrorCode.CAPABILITY_DENIED, "入驻申请非 submitted 状态");
         }

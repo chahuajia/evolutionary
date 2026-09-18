@@ -5,7 +5,6 @@ import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditErrorCode;
 import com.evolutionary.credit.domain.CreditLedgerDebt;
 import com.evolutionary.credit.domain.CreditOutcome;
-import com.evolutionary.credit.domain.DebtStatus;
 import com.evolutionary.operator.application.AuditLogRepository;
 import com.evolutionary.operator.domain.AuditAction;
 import com.evolutionary.operator.domain.AuditLog;
@@ -51,7 +50,7 @@ public final class RunMonthlyBilling {
         Objects.requireNonNull(periodEnd, "periodEnd");
 
         List<CreditLedgerDebt> open =
-                debts.findByUserIdAndStatus(userId, DebtStatus.OPEN);
+                debts.findByUserIdAndStatus(userId, CreditLedgerDebt.Status.OPEN);
         if (open.isEmpty()) {
             return CreditOutcome.err(CreditErrorCode.CREDIT_NOT_AVAILABLE, "无待出账负债");
         }
