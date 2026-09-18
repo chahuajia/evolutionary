@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+/** 进程内信用政策仓储（单测用；生产由 {@link JpaCreditPolicyRepository} 接管）。 */
 public final class InMemoryCreditPolicyRepository implements CreditPolicyRepository {
 
     private final Map<Integer, CreditPolicy> byVersion = new ConcurrentHashMap<>();
