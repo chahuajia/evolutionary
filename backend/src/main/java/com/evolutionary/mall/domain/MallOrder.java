@@ -92,6 +92,35 @@ public final class MallOrder {
                 null);
     }
 
+    /** 从持久化层重建聚合（跳过 create 不变量）。 */
+    public static MallOrder rehydrate(
+            String id,
+            String userId,
+            String merchantOrgId,
+            List<MallOrderLine> lines,
+            MallOrderStatus status,
+            PaymentIntent paymentIntent,
+            Money discountTotal,
+            Money paidAmount,
+            Instant createdAt,
+            Instant paidAt) {
+        Objects.requireNonNull(lines, "lines");
+        if (lines.isEmpty()) {
+            throw new IllegalArgumentException("lines 不能为空");
+        }
+        return new MallOrder(
+                id,
+                userId,
+                merchantOrgId,
+                lines,
+                Objects.requireNonNull(status, "status"),
+                paymentIntent,
+                discountTotal,
+                Objects.requireNonNull(paidAmount, "paidAmount"),
+                Objects.requireNonNull(createdAt, "createdAt"),
+                paidAt);
+    }
+
     /** CREATED → PAID。调用方不得据此创建 Entitlement（INV-16）。 */
     public MallOrder pay(Instant at) {
         if (status != MallOrderStatus.CREATED) {
