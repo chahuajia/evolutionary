@@ -21,6 +21,7 @@
 | `POST /operator/overrides/{overrideId}/revoke` | 先激活 OV-1；所属 ORG-L2 → REVOKED；非所属 → 422 | `OperatorConfig` |
 | `GET /operator/orgs/{orgId}/templates/{id}/effective-product` | L2 覆盖后有效价；无覆盖/撤销后继承模板原价 | `OperatorConfig` |
 | `POST /commerce/orders/{orderId}/refund` | 信用购/余额购 PAID 订单 → REFUNDED + 权益 REVOKED | `CommerceConfig` + `RefundOrder` |
+| `GET /commerce/users/{userId}/wallet` | U1 余额 ACC-U1-BAL + 积分 ACC-U1-PTS（≥0¢） | `CommerceConfig` + `ResolveUserWallet` |
 
 ## 已接通（正式可跑）
 

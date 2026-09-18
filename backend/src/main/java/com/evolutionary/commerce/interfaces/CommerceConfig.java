@@ -8,6 +8,7 @@ import com.evolutionary.commerce.application.OrderRepository;
 import com.evolutionary.commerce.application.PerformEntitledSwap;
 import com.evolutionary.commerce.application.ProductRepository;
 import com.evolutionary.commerce.application.RefundOrder;
+import com.evolutionary.commerce.application.ResolveUserWallet;
 import com.evolutionary.commerce.application.UsageEventRepository;
 import com.evolutionary.commerce.domain.Account;
 import com.evolutionary.commerce.domain.AccountOwnerType;
@@ -89,11 +90,18 @@ public class CommerceConfig {
                 orders, entitlements, usages, accounts, ledger, Clock.systemUTC());
     }
 
+    /** 切片27b：消费者钱包读模型。 */
+    @Bean
+    ResolveUserWallet resolveUserWallet(AccountRepository accounts) {
+        return new ResolveUserWallet(accounts);
+    }
+
     /**
      * 正式种子：E-1 UNLIMITED + E-FINITE FINITE ACTIVE（U1）+ BAT-1；计量独立面 P-M1 / E-M1 /
      * BAT-M1 + ORG-1 SETTLEMENT。
      *
-     * <p>用户余额 ACC-U1-BAL 由 CreditConfig 种子；计量结算走 ORG-1。E-FINITE 供 AC-14 默认选卡。
+     * <p>用户余额 ACC-U1-BAL 由 CreditConfig 种子；ACC-U1-PTS 本种子（切片27b）；计量结算走 ORG-1。
+     * E-FINITE 供 AC-14 默认选卡。
      */
     @Bean
     ApplicationRunner seedEntitledSwap(
@@ -147,6 +155,15 @@ public class CommerceConfig {
                             AccountOwnerType.ORG,
                             "ORG-1",
                             AccountType.SETTLEMENT,
+                            Currency.CNY,
+                            0));
+            // 切片27b：U1 积分账户（余额仍由 CreditConfig ACC-U1-BAL）
+            accounts.save(
+                    Account.open(
+                            "ACC-U1-PTS",
+                            AccountOwnerType.USER,
+                            "U1",
+                            AccountType.POINTS,
                             Currency.CNY,
                             0));
         };
