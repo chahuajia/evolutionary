@@ -128,6 +128,43 @@ export async function postCreditPurchase(
   return parsePurchaseResult(raw);
 }
 
+export type MonthlyBillingRequest = {
+  userId: string;
+  /** 账期起：YYYY-MM-DD 或 ISO-8601 Instant */
+  periodStart: string;
+  /** 账期止：YYYY-MM-DD 或 ISO-8601 Instant */
+  periodEnd: string;
+};
+
+/** 日期/Instant → Spring Instant.parse 可接受的 ISO-8601 */
+function toIsoInstant(raw: string, field: string): string {
+  const v = raw.trim();
+  if (!v) throw new Error(`${field} required`);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return `${v}T00:00:00Z`;
+  // 已是 Instant / 带偏移的日期时间则原样提交，由后端校验
+  return v;
+}
+
+/** POST /credit/profiles/{userId}/monthly-billing — 返回新账单 */
+export async function postMonthlyBilling(
+  req: MonthlyBillingRequest,
+): Promise<BillingStatement> {
+  const base = resolveCreditApiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/credit/profiles/${encodeURIComponent(req.userId)}/monthly-billing`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        periodStart: toIsoInstant(req.periodStart, "periodStart"),
+        periodEnd: toIsoInstant(req.periodEnd, "periodEnd"),
+      }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return parseStatement(raw);
+}
+
 function parsePurchaseResult(raw: Record<string, unknown>): CreditPurchaseResult {
   const order =
     raw.order != null && typeof raw.order === "object"
