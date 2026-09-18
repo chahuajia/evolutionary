@@ -25,6 +25,7 @@ type NavItem = { href: string; label: string; hint: string };
 const NAV_BY_ROLE: Record<ConsoleRole, readonly NavItem[]> = {
   consumer: [
     { href: "/", label: "换电履约", hint: "站点 · 权益" },
+    { href: "/wallet", label: "钱包", hint: "余额 · 积分" },
     { href: "/credit", label: "信用", hint: "购 · 账 · 退" },
     { href: "/mall", label: "商城", hint: "券 · 下单" },
   ],
@@ -48,7 +49,7 @@ const ROLE_UI: Record<
   consumer: {
     brandSub: "消费者端",
     home: "/",
-    topbar: "消费者端：换电履约、信用账户与商城促销。",
+    topbar: "消费者端：换电履约、钱包、信用账户与商城促销。",
   },
   merchant: {
     brandSub: "商家端",
