@@ -1,8 +1,7 @@
 "use client";
 
 /**
- * 带券结账客户端岛 — 可先领券再 POST /mall/orders/checkout-with-coupons（切片16b）。
- * 默认 U1 / M1 / S1；成功展示 paidAmountCents。
+ * 带券结账客户端岛 — 先领券再 POST checkout-with-coupons（AC-42..44）。
  */
 
 import { FormEvent, useState } from "react";
@@ -15,163 +14,90 @@ import {
   postCheckoutWithCoupons,
   postClaimCoupon,
   type CheckoutWithCouponsResult,
-  type ClaimCouponResult,
 } from "@/domains/mall/infrastructure/mall-gateway";
 import styles from "./page.module.css";
 
-function parseCouponIds(raw: string): string[] {
-  return raw
-    .split(/[,，\s]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
 export function CouponCheckoutPanel() {
   const [userId, setUserId] = useState(DEFAULT_MALL_USER);
-  const [merchantOrgId, setMerchantOrgId] = useState(DEFAULT_MALL_MERCHANT);
-  const [skuId, setSkuId] = useState(DEFAULT_MALL_SKU);
-  const [qty, setQty] = useState(1);
-  const [campaignId, setCampaignId] = useState(DEFAULT_MALL_CAMPAIGN);
-  const [templateId, setTemplateId] = useState(DEFAULT_MALL_TEMPLATE);
-  const [userCouponIdsText, setUserCouponIdsText] = useState("");
-  const [claimBusy, setClaimBusy] = useState(false);
-  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [couponId, setCouponId] = useState("");
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [claim, setClaim] = useState<ClaimCouponResult | null>(null);
   const [result, setResult] = useState<CheckoutWithCouponsResult | null>(null);
 
-  async function onClaim(e: FormEvent) {
-    e.preventDefault();
-    setClaimBusy(true);
+  async function claimFirst() {
+    setBusy(true);
     setError(null);
-    setClaim(null);
     try {
-      const r = await postClaimCoupon({
-        campaignId: campaignId.trim() || DEFAULT_MALL_CAMPAIGN,
+      const c = await postClaimCoupon({
+        campaignId: DEFAULT_MALL_CAMPAIGN,
         userId: userId.trim() || DEFAULT_MALL_USER,
-        templateId: templateId.trim() || DEFAULT_MALL_TEMPLATE,
+        templateId: DEFAULT_MALL_TEMPLATE,
       });
-      setClaim(r);
-      setUserCouponIdsText((prev) => {
-        const ids = parseCouponIds(prev);
-        if (ids.includes(r.id)) return prev;
-        return ids.length ? `${prev.trim()},${r.id}` : r.id;
-      });
+      setCouponId(c.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setClaimBusy(false);
+      setBusy(false);
     }
   }
 
-  async function onCheckout(e: FormEvent) {
+  async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    setCheckoutBusy(true);
+    setBusy(true);
     setError(null);
     setResult(null);
     try {
+      const ids = couponId.trim() ? [couponId.trim()] : [];
       const r = await postCheckoutWithCoupons({
         userId: userId.trim() || DEFAULT_MALL_USER,
-        merchantOrgId: merchantOrgId.trim() || DEFAULT_MALL_MERCHANT,
-        skuId: skuId.trim() || DEFAULT_MALL_SKU,
-        qty,
-        userCouponIds: parseCouponIds(userCouponIdsText),
+        merchantOrgId: DEFAULT_MALL_MERCHANT,
+        skuId: DEFAULT_MALL_SKU,
+        qty: 1,
+        userCouponIds: ids,
       });
       setResult(r);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setCheckoutBusy(false);
+      setBusy(false);
     }
   }
 
   return (
     <section className={styles.panel}>
-      <h2>带券结账（HTTP · 切片16b）</h2>
-
-      <form className={styles.form} onSubmit={onClaim}>
-        <label>
-          campaignId（可选先领券）
-          <input
-            value={campaignId}
-            onChange={(e) => setCampaignId(e.target.value)}
-          />
-        </label>
-        <label>
-          templateId
-          <input
-            value={templateId}
-            onChange={(e) => setTemplateId(e.target.value)}
-          />
-        </label>
-        <button type="submit" disabled={claimBusy || checkoutBusy}>
-          {claimBusy ? "领取中…" : "先领券"}
-        </button>
-      </form>
-
-      {claim ? (
-        <p>
-          已领券 {claim.id} · {claim.status}
-        </p>
-      ) : null}
-
-      <form className={styles.form} onSubmit={onCheckout}>
+      <h2>带券结账（HTTP · AC-42..44）</h2>
+      <form className={styles.form} onSubmit={onSubmit}>
         <label>
           userId
           <input value={userId} onChange={(e) => setUserId(e.target.value)} />
         </label>
         <label>
-          merchantOrgId
+          userCouponId
           <input
-            value={merchantOrgId}
-            onChange={(e) => setMerchantOrgId(e.target.value)}
+            value={couponId}
+            onChange={(e) => setCouponId(e.target.value)}
+            placeholder="先点领券或粘贴券 id"
           />
         </label>
-        <label>
-          skuId
-          <input value={skuId} onChange={(e) => setSkuId(e.target.value)} />
-        </label>
-        <label>
-          qty
-          <input
-            type="number"
-            min={1}
-            value={qty}
-            onChange={(e) => setQty(Number(e.target.value) || 1)}
-          />
-        </label>
-        <label>
-          userCouponIds（逗号分隔）
-          <input
-            value={userCouponIdsText}
-            onChange={(e) => setUserCouponIdsText(e.target.value)}
-            placeholder="领券后自动填入"
-          />
-        </label>
-        <button type="submit" disabled={checkoutBusy || claimBusy}>
-          {checkoutBusy ? "结账中…" : "带券结账"}
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button type="button" disabled={busy} onClick={claimFirst}>
+            先领券
+          </button>
+          <button type="submit" disabled={busy}>
+            {busy ? "结账中…" : "带券结账"}
+          </button>
+        </div>
       </form>
-
       {error ? (
         <p className={styles.error} role="alert">
           {error}
         </p>
       ) : null}
-
       {result ? (
-        <dl className={styles.dl}>
-          <dt>订单</dt>
-          <dd>{result.orderId}</dd>
-          <dt>状态</dt>
-          <dd>{result.status}</dd>
-          <dt>paidAmountCents</dt>
-          <dd>{result.paidAmountCents}</dd>
-          <dt>SKU</dt>
-          <dd>
-            {result.skuId}×{result.qty}
-          </dd>
-        </dl>
+        <p>
+          {result.orderId} · {result.status} · 实付 {result.paidAmountCents}¢ ·
+          优惠 {result.discountCents}¢
+        </p>
       ) : null}
     </section>
   );

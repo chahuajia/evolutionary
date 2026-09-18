@@ -126,6 +126,47 @@ function parsePurchase(raw: Record<string, unknown>): PurchaseMallOrderResult {
   };
 }
 
+export type CheckoutWithCouponsRequest = {
+  userId: string;
+  merchantOrgId?: string;
+  skuId?: string;
+  qty?: number;
+  userCouponIds: string[];
+};
+
+export type CheckoutWithCouponsResult = PurchaseMallOrderResult & {
+  discountCents: number;
+};
+
+/**
+ * POST /mall/orders/checkout-with-coupons
+ */
+export async function postCheckoutWithCoupons(
+  req: CheckoutWithCouponsRequest,
+): Promise<CheckoutWithCouponsResult> {
+  const base = resolveMallApiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/mall/orders/checkout-with-coupons`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: req.userId,
+        merchantOrgId: req.merchantOrgId ?? DEFAULT_MALL_MERCHANT,
+        skuId: req.skuId ?? DEFAULT_MALL_SKU,
+        qty: req.qty ?? 1,
+        userCouponIds: req.userCouponIds,
+      }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  const baseResult = parsePurchase(raw);
+  return {
+    ...baseResult,
+    discountCents: Number(raw.discountCents ?? 0),
+  };
+}
+
 /** POST /mall/orders/checkout-with-coupons 成功读模型（AC-42+ · 切片16b） */
 export type CheckoutWithCouponsResult = PurchaseMallOrderResult;
 
