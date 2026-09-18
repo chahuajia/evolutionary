@@ -10,9 +10,9 @@ export default function SettlementPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Settlement"
+        eyebrow="分润结算"
         title="分润结算"
-        description="信用购成功后自动记 PENDING 意向；此处跑批关账，或手工记意向 / 冲销验证。"
+        description="信用购成功后自动记 PENDING 意向；店主看本店、运营商看全网。此处跑批关账，或手工记意向 / 冲销验证。"
       />
       <div className={styles.surface}>
         <SettlementPanel />

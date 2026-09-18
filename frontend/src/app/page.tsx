@@ -27,7 +27,7 @@ export default async function Home() {
   return (
     <>
       <PageHeader
-        eyebrow="Fulfillment"
+        eyebrow="消费者 · 履约"
         title="换电履约"
         description="先选站完成基础换电，再用权益 / 默认选卡 / 计量路径覆盖信用购后的履约场景。"
       />
