@@ -3,6 +3,7 @@
  * 浏览器经 Next `/api` rewrite；RSC 直连 BACKEND_ORIGIN。
  */
 
+import { apiBase } from "@/shared/http/api-base";
 import { fetchJson } from "@/shared/http/fetch-json";
 
 /** 与 19a DevSeed 对齐：入驻申请 APP-M1 */
@@ -22,13 +23,6 @@ export const DEFAULT_OVERRIDE_ID = "OV-1";
 export const DEFAULT_OVERRIDE_PRICE_CENTS = 2800;
 
 const TIMEOUT_MS = 8000;
-
-function resolveOperatorApiBase(): string {
-  if (typeof window === "undefined") {
-    return process.env.BACKEND_ORIGIN ?? "http://localhost:8080";
-  }
-  return process.env.NEXT_PUBLIC_API_BASE ?? "/api";
-}
 
 /** POST /admin/onboarding/{applicationId}/approve 成功读模型（AC-40 · 26a 对齐） */
 export type ApproveOnboardingResult = {
@@ -52,7 +46,7 @@ export async function postApproveOnboarding(
   const applicationId =
     req.applicationId.trim() || DEFAULT_ONBOARDING_APPLICATION_ID;
   const shopName = req.shopName.trim() || DEFAULT_SHOP_NAME;
-  const base = resolveOperatorApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/admin/onboarding/${encodeURIComponent(applicationId)}/approve`,
     {
@@ -103,7 +97,7 @@ export async function postPublishPackageTemplate(
   const actorUserId =
     req.actorUserId.trim() || DEFAULT_PUBLISH_ACTOR_USER_ID;
   const actorOrgId = req.actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID;
-  const base = resolveOperatorApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/operator/templates/${encodeURIComponent(templateId)}/publish`,
     {
@@ -182,7 +176,7 @@ export async function postActivatePackageOverride(
   if (Object.keys(patches).length === 0) {
     patches.price = DEFAULT_OVERRIDE_PRICE_CENTS;
   }
-  const base = resolveOperatorApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/operator/templates/${encodeURIComponent(templateId)}/overrides`,
     {
@@ -263,7 +257,7 @@ export async function getEffectiveProduct(
 ): Promise<EffectiveProductResult> {
   const orgId = req.orgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID;
   const templateId = req.templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID;
-  const base = resolveOperatorApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/operator/orgs/${encodeURIComponent(orgId)}/templates/${encodeURIComponent(templateId)}/effective-product`,
     {

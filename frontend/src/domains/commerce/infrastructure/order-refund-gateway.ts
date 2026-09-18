@@ -3,16 +3,10 @@
  * RSC 直连 Spring；浏览器经 Next `/api` rewrite。
  */
 
+import { apiBase } from "@/shared/http/api-base";
 import { fetchJson } from "@/shared/http/fetch-json";
 
 const TIMEOUT_MS = 8000;
-
-function resolveApiBase(): string {
-  if (typeof window === "undefined") {
-    return process.env.BACKEND_ORIGIN ?? "http://localhost:8080";
-  }
-  return process.env.NEXT_PUBLIC_API_BASE ?? "/api";
-}
 
 /** POST /commerce/orders/{orderId}/refund 成功读模型（对齐 RefundResult） */
 export type RefundOrderResult = {
@@ -31,7 +25,7 @@ export async function postRefundOrder(
 ): Promise<RefundOrderResult> {
   const id = orderId.trim();
   if (!id) throw new Error("orderId required");
-  const base = resolveApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/commerce/orders/${encodeURIComponent(id)}/refund`,
     {

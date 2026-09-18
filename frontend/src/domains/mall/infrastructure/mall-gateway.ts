@@ -3,6 +3,7 @@
  * 浏览器经 Next `/api` rewrite；RSC 直连 BACKEND_ORIGIN。
  */
 
+import { apiBase } from "@/shared/http/api-base";
 import { fetchJson } from "@/shared/http/fetch-json";
 
 export const DEFAULT_MALL_USER = "U1";
@@ -10,13 +11,6 @@ export const DEFAULT_MALL_CAMPAIGN = "CAMP-OK";
 export const DEFAULT_MALL_TEMPLATE = "T-C1";
 
 const TIMEOUT_MS = 8000;
-
-function resolveMallApiBase(): string {
-  if (typeof window === "undefined") {
-    return process.env.BACKEND_ORIGIN ?? "http://localhost:8080";
-  }
-  return process.env.NEXT_PUBLIC_API_BASE ?? "/api";
-}
 
 /** POST /mall/campaigns/{campaignId}/claims 成功读模型 */
 export type ClaimCouponResult = {
@@ -40,7 +34,7 @@ export async function postClaimCoupon(
   req: ClaimCouponRequest,
 ): Promise<ClaimCouponResult> {
   const campaignId = req.campaignId ?? DEFAULT_MALL_CAMPAIGN;
-  const base = resolveMallApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/mall/campaigns/${encodeURIComponent(campaignId)}/claims`,
     {
@@ -94,7 +88,7 @@ export type PurchaseMallOrderRequest = {
 export async function postPurchaseMallOrder(
   req: PurchaseMallOrderRequest,
 ): Promise<PurchaseMallOrderResult> {
-  const base = resolveMallApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(`${base}/mall/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -144,7 +138,7 @@ export type CheckoutWithCouponsResult = PurchaseMallOrderResult & {
 export async function postCheckoutWithCoupons(
   req: CheckoutWithCouponsRequest,
 ): Promise<CheckoutWithCouponsResult> {
-  const base = resolveMallApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/mall/orders/checkout-with-coupons`,
     {

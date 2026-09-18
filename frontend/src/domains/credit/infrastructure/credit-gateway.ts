@@ -10,27 +10,17 @@ import {
   type CreditProfile,
   type ScoreTier,
 } from "@/lib/credit/types";
+import { apiBase } from "@/shared/http/api-base";
 import { fetchJson } from "@/shared/http/fetch-json";
 
 export const DEFAULT_CREDIT_USER = "U1";
 
 const TIMEOUT_MS = 8000;
 
-/**
- * Server Component 无相对 URL host；直连 BACKEND_ORIGIN。
- * 客户端仍走同域 `/api` → rewrite。
- */
-function resolveCreditApiBase(): string {
-  if (typeof window === "undefined") {
-    return process.env.BACKEND_ORIGIN ?? "http://localhost:8080";
-  }
-  return process.env.NEXT_PUBLIC_API_BASE ?? "/api";
-}
-
 export async function fetchCreditProfile(
   userId: string = DEFAULT_CREDIT_USER,
 ): Promise<CreditProfile> {
-  const base = resolveCreditApiBase();
+  const base = apiBase();
   let raw: Record<string, unknown>;
   try {
     raw = await fetchJson<Record<string, unknown>>(
@@ -53,7 +43,7 @@ export async function fetchCreditProfile(
 export async function fetchCreditStatements(
   userId: string = DEFAULT_CREDIT_USER,
 ): Promise<readonly BillingStatement[]> {
-  const base = resolveCreditApiBase();
+  const base = apiBase();
   let raw: unknown[];
   try {
     raw = await fetchJson<unknown[]>(
@@ -80,7 +70,7 @@ export type CreditRepayRequest = {
 export async function postCreditRepay(
   req: CreditRepayRequest,
 ): Promise<unknown> {
-  const base = resolveCreditApiBase();
+  const base = apiBase();
   const { userId, statementId, amountCents } = req;
   return fetchJson(
     `${base}/credit/profiles/${encodeURIComponent(userId)}/repay`,
@@ -112,7 +102,7 @@ export type CreditPurchaseResult = {
 export async function postCreditPurchase(
   req: CreditPurchaseRequest,
 ): Promise<CreditPurchaseResult> {
-  const base = resolveCreditApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/credit/purchases`,
     {
@@ -149,7 +139,7 @@ function toIsoInstant(raw: string, field: string): string {
 export async function postMonthlyBilling(
   req: MonthlyBillingRequest,
 ): Promise<BillingStatement> {
-  const base = resolveCreditApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/credit/profiles/${encodeURIComponent(req.userId)}/monthly-billing`,
     {
@@ -174,7 +164,7 @@ export type ApplyCreditPolicyRequest = {
 export async function postApplyCreditPolicy(
   req: ApplyCreditPolicyRequest,
 ): Promise<CreditProfile> {
-  const base = resolveCreditApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/credit/profiles/${encodeURIComponent(req.userId)}/apply-policy`,
     {

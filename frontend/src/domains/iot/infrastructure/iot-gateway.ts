@@ -13,6 +13,7 @@
  * 路径：POST /iot/batteries/{id}/triage-outdated-soc（与 detect-comm-lost 同风格）
  */
 
+import { apiBase } from "@/shared/http/api-base";
 import { fetchJson } from "@/shared/http/fetch-json";
 
 export const DEFAULT_IOT_BATTERY = "BAT-IOT-1";
@@ -22,13 +23,6 @@ export const DEFAULT_TELEMETRY_SOC = 75;
 export const DEFAULT_TELEMETRY_VOLTAGE_MILLI = 4150;
 
 const TIMEOUT_MS = 8000;
-
-function resolveIotApiBase(): string {
-  if (typeof window === "undefined") {
-    return process.env.BACKEND_ORIGIN ?? "http://localhost:8080";
-  }
-  return process.env.NEXT_PUBLIC_API_BASE ?? "/api";
-}
 
 /** POST /iot/batteries/{id}/detect-comm-lost 读模型 */
 export type DetectCommLostResult = {
@@ -48,7 +42,7 @@ export type DetectCommLostResult = {
 export async function postDetectCommLost(
   batteryId: string = DEFAULT_IOT_BATTERY,
 ): Promise<DetectCommLostResult> {
-  const base = resolveIotApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/iot/batteries/${encodeURIComponent(batteryId)}/detect-comm-lost`,
     {
@@ -107,7 +101,7 @@ export async function postTelemetry(
     voltageMilli: DEFAULT_TELEMETRY_VOLTAGE_MILLI,
   },
 ): Promise<TelemetryResult> {
-  const base = resolveIotApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/iot/batteries/${encodeURIComponent(batteryId)}/telemetry`,
     {
@@ -166,7 +160,7 @@ export type TriageOutdatedSocResult = {
 export async function postTriageOutdatedSoc(
   batteryId: string = DEFAULT_IOT_BATTERY,
 ): Promise<TriageOutdatedSocResult> {
-  const base = resolveIotApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(
     `${base}/iot/batteries/${encodeURIComponent(batteryId)}/triage-outdated-soc`,
     {
@@ -218,7 +212,7 @@ export type MaintenanceTicketItem = {
 export async function fetchMaintenanceTickets(
   batteryId: string = DEFAULT_IOT_BATTERY,
 ): Promise<MaintenanceTicketItem[]> {
-  const base = resolveIotApiBase();
+  const base = apiBase();
   const raw = await fetchJson<unknown>(
     `${base}/iot/batteries/${encodeURIComponent(batteryId)}/tickets`,
     {

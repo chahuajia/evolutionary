@@ -3,16 +3,10 @@
  * 契约对齐 21a：orgId / amountCents；batch 字段 id。
  */
 
+import { apiBase } from "@/shared/http/api-base";
 import { fetchJson } from "@/shared/http/fetch-json";
 
 const TIMEOUT_MS = 8000;
-
-function resolveApiBase(): string {
-  if (typeof window === "undefined") {
-    return process.env.BACKEND_ORIGIN ?? "http://localhost:8080";
-  }
-  return process.env.NEXT_PUBLIC_API_BASE ?? "/api";
-}
 
 export type SettlementBatchResult = {
   id: string;
@@ -44,7 +38,7 @@ export async function postRunSettlementBatch(req: {
   periodStart: string;
   periodEnd: string;
 }): Promise<SettlementBatchResult> {
-  const base = resolveApiBase();
+  const base = apiBase();
   const raw = await fetchJson<Record<string, unknown>>(`${base}/settlement/batches`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -67,7 +61,7 @@ export async function postRunSettlementBatch(req: {
 export async function postAccrueSettlement(
   req: AccrueRequest,
 ): Promise<AccrualView[]> {
-  const base = resolveApiBase();
+  const base = apiBase();
   const raw = await fetchJson<unknown[]>(`${base}/settlement/accruals`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
