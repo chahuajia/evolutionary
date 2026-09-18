@@ -8,7 +8,7 @@ import com.evolutionary.commerce.domain.Currency;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** 进程内账户仓储（还款路径最小实现）。 */
+/** 进程内账户仓储（单测用；生产由 {@link JpaAccountRepository} 接管）。 */
 public final class InMemoryAccountRepository implements AccountRepository {
 
     private final Map<String, Account> byId = new ConcurrentHashMap<>();
