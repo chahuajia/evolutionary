@@ -16,6 +16,7 @@
 | `POST /mall/orders` | SKU S1（M1 · 1000¢ · stock20）+ ACC-M1-SETTLE | `MallConfig` |
 | `POST /mall/orders/checkout-with-coupons` | claim CAMP-OK + T-C1 FIXED_OFF 500（minSpend 3000¢ → qty≥3） | `MallConfig` |
 | `POST /admin/onboarding/{id}/approve` | APP-M1（MERCHANT · SUBMITTED · ORG-NEW） | `AdminConfig` + `OperatorConfig` 种子 |
+| `POST /operator/onboarding/{id}/approve-downline` | APP-DL1（OPERATOR · SUBMITTED · ORG-DL1 · parent ORG-L1）；APP-M1 → 403 | `OperatorConfig` |
 | `POST /operator/templates/{id}/publish` | ORG-L1 + T-DRAFT-1（OPERATOR）；T-DRAFT-M（ORG-NEW 负例） | `OperatorConfig` |
 | `POST /operator/templates/{id}/overrides` | ORG-L2 + T-PUB-1（已发布）；非后代 ORG-NEW → 422 | `OperatorConfig` |
 | `POST /operator/overrides/{overrideId}/revoke` | 先激活 OV-1；所属 ORG-L2 → REVOKED；非所属 → 422 | `OperatorConfig` |
@@ -35,6 +36,7 @@
 | IoT 影子 / COMM_LOST / 遥测 / triage / 工单 | `/iot` → `/api/iot/...` | `IotController` |
 | 商城领券 / 下单 / 带券结账 | `/mall` → `/api/mall/...` | `MallController` |
 | 商家入驻批准 | — | `AdminController` + AdminConfig + OperatorConfig APP-M1 |
+| 运营商下线入驻批准 | — | `OperatorController` + ApproveOperatorDownline APP-DL1 |
 | 套餐模板发布 | — | `OperatorController` + PublishPackageTemplate T-DRAFT-1 |
 | 套餐覆盖 / 有效价 / 撤销 | — | `OperatorController` + Activate / RevokePackageOverride / ResolveEffectiveProduct |
 | 订单退款 | — | `POST /commerce/orders/{orderId}/refund` · `CommerceOrderController` |
@@ -172,6 +174,15 @@ curl -s -X POST http://localhost:8080/mall/orders/checkout-with-coupons \
 curl -s -X POST http://localhost:8080/admin/onboarding/APP-M1/approve \
   -H "Content-Type: application/json" \
   -d '{"shopName":"黑鸟旗舰店"}'
+```
+
+## 新接通（运营商批下线 · wave25 / 29a）
+
+```bash
+# APP-DL1 → ORG-DL1 OPERATOR + parent ORG-L1；对 APP-M1 → 403 CAPABILITY_DENIED
+curl -s -X POST http://localhost:8080/operator/onboarding/APP-DL1/approve-downline \
+  -H "Content-Type: application/json" \
+  -d '{"actorUserId":"U-ADMIN","actorOrgId":"ORG-L1"}'
 ```
 
 ## 新接通（套餐模板发布 · wave19 / 23a · AC-24）

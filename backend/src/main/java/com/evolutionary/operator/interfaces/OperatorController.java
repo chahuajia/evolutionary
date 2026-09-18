@@ -1,11 +1,14 @@
 package com.evolutionary.operator.interfaces;
 
 import com.evolutionary.operator.application.ActivatePackageOverride;
+import com.evolutionary.operator.application.ApproveOperatorDownline;
 import com.evolutionary.operator.application.PublishPackageTemplate;
 import com.evolutionary.operator.application.ResolveEffectiveProduct;
 import com.evolutionary.operator.application.RevokePackageOverride;
 import com.evolutionary.operator.domain.EffectiveProduct;
 import com.evolutionary.operator.domain.OperatorOutcome;
+import com.evolutionary.operator.domain.OrgCapability;
+import com.evolutionary.operator.domain.Organization;
 import com.evolutionary.operator.domain.PackageOverride;
 import com.evolutionary.operator.domain.PackageTemplate;
 import java.time.Instant;
@@ -19,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 运营 HTTP（套餐发布 AC-24 · 覆盖/有效价/撤销 AC-26/27/31；商家入驻已迁 /admin）。 */
+/** 运营 HTTP（套餐 · 覆盖 · 批下线 OPERATOR；商家入驻在 /admin）。 */
 @RestController
 @RequestMapping("/operator")
 public class OperatorController {
@@ -28,16 +31,44 @@ public class OperatorController {
     private final ActivatePackageOverride activatePackageOverride;
     private final RevokePackageOverride revokePackageOverride;
     private final ResolveEffectiveProduct resolveEffectiveProduct;
+    private final ApproveOperatorDownline approveOperatorDownline;
 
     public OperatorController(
             PublishPackageTemplate publishPackageTemplate,
             ActivatePackageOverride activatePackageOverride,
             RevokePackageOverride revokePackageOverride,
-            ResolveEffectiveProduct resolveEffectiveProduct) {
+            ResolveEffectiveProduct resolveEffectiveProduct,
+            ApproveOperatorDownline approveOperatorDownline) {
         this.publishPackageTemplate = publishPackageTemplate;
         this.activatePackageOverride = activatePackageOverride;
         this.revokePackageOverride = revokePackageOverride;
         this.resolveEffectiveProduct = resolveEffectiveProduct;
+        this.approveOperatorDownline = approveOperatorDownline;
+    }
+
+    /** 切片29a：运营商批准 OPERATOR 下线入驻（非 MERCHANT）。 */
+    @PostMapping("/onboarding/{applicationId}/approve-downline")
+    public ResponseEntity<?> approveDownline(
+            @PathVariable String applicationId, @RequestBody DownlineApproveRequest body) {
+        if (body == null
+                || body.actorUserId() == null
+                || body.actorUserId().isBlank()
+                || body.actorOrgId() == null
+                || body.actorOrgId().isBlank()) {
+            throw new IllegalArgumentException("actorUserId and actorOrgId required");
+        }
+        OperatorOutcome<Organization> outcome =
+                approveOperatorDownline.execute(
+                        body.actorUserId().trim(),
+                        body.actorOrgId().trim(),
+                        applicationId.trim());
+        if (outcome instanceof OperatorOutcome.Ok<Organization> ok) {
+            return ResponseEntity.ok(toDownlineView(ok.value()));
+        }
+        OperatorOutcome.Err<Organization> err = (OperatorOutcome.Err<Organization>) outcome;
+        OperatorApiErrorTranslator.Translated translated =
+                OperatorApiErrorTranslator.translate(err);
+        return ResponseEntity.status(translated.status()).body(translated.body());
     }
 
     /** 切片23a / AC-24：发布草稿套餐模板 → published。 */
@@ -169,6 +200,16 @@ public class OperatorController {
                 product.priceCents(),
                 product.durationDays());
     }
+
+    private static DownlineView toDownlineView(Organization org) {
+        return new DownlineView(
+                org.id(), org.name(), org.parentId(), org.hasCapability(OrgCapability.OPERATOR));
+    }
+
+    public record DownlineApproveRequest(String actorUserId, String actorOrgId) {}
+
+    public record DownlineView(
+            String orgId, String name, String parentOrgId, boolean operatorCapability) {}
 
     public record PublishRequest(String actorUserId, String actorOrgId) {}
 

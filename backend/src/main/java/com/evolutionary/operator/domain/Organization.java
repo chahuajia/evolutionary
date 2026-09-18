@@ -82,6 +82,17 @@ public final class Organization {
         return new Organization(id, name, parentId, next, regionScope, status);
     }
 
+    /** 挂上级组织（仅当尚无 parentId）。 */
+    public Organization withParent(String newParentId) {
+        if (newParentId == null || newParentId.isBlank()) {
+            throw new IllegalArgumentException("parentId 不能为空");
+        }
+        if (parentId != null) {
+            return this;
+        }
+        return new Organization(id, name, newParentId, capabilities, regionScope, status);
+    }
+
     /** 仅 MERCHANT、无 OPERATOR 时不可发套餐模板。 */
     public boolean canPublishPackageTemplate() {
         return hasCapability(OrgCapability.OPERATOR);
