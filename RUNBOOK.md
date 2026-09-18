@@ -11,7 +11,7 @@
 | `GET /credit/profiles/U1` | U1 limit=10000 used=3000（分）| `CreditConfig` |
 | `POST /credit/purchases` | P-CREDIT-1 FIXED 3000¢（非计量）+ U1 good | `CreditConfig` |
 | `POST /credit/profiles/U1/monthly-billing` | OPEN Debt → Statement DUE（需先 purchases） | `RunMonthlyBilling` |
-| `POST /entitled-swaps` | E-1 ACTIVE（U1）+ BAT-1 idle；计量 E-M1 / P-M1 / BAT-M1；默认选卡 E-FINITE | `CommerceConfig` |
+| `POST /entitled-swaps` | E-1 ACTIVE（U1）+ BAT-1 idle；计量 E-M1 / P-M1 / BAT-M1；默认选卡 E-FINITE；用量落库表 `usage_events` | `CommerceConfig` + `JpaUsageEventRepository` |
 | `POST /iot/.../detect-comm-lost` | BAT-IOT-1 shadow lastSeen 过期（>5min） | `IotConfig` |
 | `POST /mall/campaigns/CAMP-OK/claims` | CAMP-OK 预算 5000¢ + T-C1 | `MallConfig` |
 | `POST /mall/orders` | SKU S1（M1 · 1000¢ · stock20）+ ACC-M1-SETTLE | `MallConfig` |
@@ -261,7 +261,7 @@ curl -s -X POST http://localhost:8080/entitled-swaps -H "Content-Type: applicati
 | 优先级 | 项 | 现状 |
 | :--- | :--- | :--- |
 | P0 | `ApproveMerchantOnboarding` / `/admin` | ✅ 切片30b：成功同事务 `ONBOARDING_APPROVE` |
-| P1 | `UsageEvent` | 有端口，InMemory，重启丢 |
+| P1 | `UsageEvent` | ✅ 切片31a：落库表 `usage_events` |
 | P1 | IoT `IdempotentCommandGateway` | 仅内存 ack |
 | P1 | 信用逾期/降额 | 无运营审计行 |
 | P2 | 领券 / 月结跑批 | 无独立操作审计 |

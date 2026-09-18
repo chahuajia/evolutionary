@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** 进程内用量事件仓储（非计量换电路径最小实现）。 */
+/** 进程内用量事件仓储（单测用；生产由 {@link JpaUsageEventRepository} 接管）。 */
 public final class InMemoryUsageEventRepository implements UsageEventRepository {
 
     private final Map<String, UsageEvent> byId = new ConcurrentHashMap<>();

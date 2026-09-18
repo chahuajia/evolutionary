@@ -26,7 +26,6 @@ import com.evolutionary.commerce.infrastructure.InMemoryBatteryAssetRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryEntitlementRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryLedgerRepository;
 import com.evolutionary.commerce.infrastructure.InMemoryProductRepository;
-import com.evolutionary.commerce.infrastructure.InMemoryUsageEventRepository;
 import java.time.Clock;
 import java.time.Instant;
 import org.springframework.boot.ApplicationRunner;
@@ -61,10 +60,7 @@ public class CommerceConfig {
         return new InMemoryBatteryAssetRepository();
     }
 
-    @Bean
-    UsageEventRepository usageEventRepository() {
-        return new InMemoryUsageEventRepository();
-    }
+    /** UsageEventRepository → {@code JpaUsageEventRepository}（表 usage_events）。 */
 
     @Bean
     PerformEntitledSwap performEntitledSwap(
