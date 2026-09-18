@@ -16,7 +16,7 @@
 | `POST /mall/campaigns/CAMP-OK/claims` | CAMP-OK 预算 5000¢ + T-C1 | `MallConfig` |
 | `POST /mall/orders` | SKU S1（M1 · 1000¢ · stock20）+ ACC-M1-SETTLE | `MallConfig` |
 | `POST /mall/orders/checkout-with-coupons` | claim CAMP-OK + T-C1 FIXED_OFF 500（minSpend 3000¢ → qty≥3） | `MallConfig` |
-| `POST /admin/onboarding/{id}/approve` | APP-M1（MERCHANT · SUBMITTED · ORG-NEW） | `AdminConfig` + `OperatorConfig` 种子 |
+| `POST /admin/onboarding/{id}/approve` | APP-M1（MERCHANT · SUBMITTED · ORG-NEW）；成功写 AuditLog ONBOARDING_APPROVE | `AdminConfig` + `OperatorConfig` 种子 |
 | `POST /operator/onboarding/{id}/approve-downline` | APP-DL1（OPERATOR · SUBMITTED · ORG-DL1 · parent ORG-L1）；APP-M1 → 403 | `OperatorConfig` |
 | `POST /operator/templates/{id}/publish` | ORG-L1 + T-DRAFT-1（OPERATOR）；T-DRAFT-M（ORG-NEW 负例） | `OperatorConfig` |
 | `POST /operator/templates/{id}/overrides` | ORG-L2 + T-PUB-1（已发布）；非后代 ORG-NEW → 422 | `OperatorConfig` |
@@ -36,7 +36,7 @@
 | 权益换电（非计量 / 计量 / 默认选卡） | `/` 岛 → `/api/entitled-swaps` | `EntitledSwapController` |
 | IoT 影子 / COMM_LOST / 遥测 / triage / 工单 | `/iot` → `/api/iot/...` | `IotController` |
 | 商城领券 / 下单 / 带券结账 | `/mall` → `/api/mall/...` | `MallController` |
-| 商家入驻批准 | — | `AdminController` + AdminConfig + OperatorConfig APP-M1 |
+| 商家入驻批准 | — | `AdminController` + AdminConfig + OperatorConfig APP-M1；成功写 `ONBOARDING_APPROVE` AuditLog（切片30b） |
 | 运营商下线入驻批准 | — | `OperatorController` + ApproveOperatorDownline APP-DL1 |
 | 套餐模板发布 | — | `OperatorController` + PublishPackageTemplate T-DRAFT-1 |
 | 套餐覆盖 / 有效价 / 撤销 | — | `OperatorController` + Activate / RevokePackageOverride / ResolveEffectiveProduct |
@@ -260,7 +260,7 @@ curl -s -X POST http://localhost:8080/entitled-swaps -H "Content-Type: applicati
 
 | 优先级 | 项 | 现状 |
 | :--- | :--- | :--- |
-| P0 | `ApproveMerchantOnboarding` / `/admin` | 无 AuditLog |
+| P0 | `ApproveMerchantOnboarding` / `/admin` | ✅ 切片30b：成功同事务 `ONBOARDING_APPROVE` |
 | P1 | `UsageEvent` | 有端口，InMemory，重启丢 |
 | P1 | IoT `IdempotentCommandGateway` | 仅内存 ack |
 | P1 | 信用逾期/降额 | 无运营审计行 |
