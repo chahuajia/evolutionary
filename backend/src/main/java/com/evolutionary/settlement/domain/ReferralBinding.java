@@ -31,6 +31,24 @@ public final class ReferralBinding {
         this.status = status;
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static ReferralBinding rehydrate(
+            String userId,
+            String promoterOrgId,
+            Instant boundAt,
+            Instant expiresAt,
+            ReferralStatus status) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("userId 不能为空");
+        }
+        return new ReferralBinding(
+                userId,
+                Objects.requireNonNull(promoterOrgId, "promoterOrgId"),
+                Objects.requireNonNull(boundAt, "boundAt"),
+                Objects.requireNonNull(expiresAt, "expiresAt"),
+                Objects.requireNonNull(status, "status"));
+    }
+
     public static ReferralBinding bind(String userId, String promoterOrgId, Instant boundAt) {
         if (userId == null || userId.isBlank()) {
             throw new IllegalArgumentException("userId 不能为空");
