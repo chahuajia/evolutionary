@@ -41,6 +41,8 @@ public class IotConfig {
         return new InMemoryTelemetryStore();
     }
 
+    // CommandDispatchLogRepository → JpaCommandDispatchLogRepository（表 command_dispatch_logs）
+
     @Bean
     ApplyTelemetryToShadow applyTelemetryToShadow(
             DeviceShadowRepository shadows, TelemetryStore telemetryStore) {
