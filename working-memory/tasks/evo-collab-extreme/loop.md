@@ -1,37 +1,30 @@
 ﻿# evo-collab-extreme（双轴极端 · 无人值守完成）
 
-**更新**：2026-09-18 11:00  
+**更新**：2026-09-18 11:12  
 **模式**：extreme **v9**（≤2）  
-**波次**：wave22 ✅ · wave23 · `dispatched=2 recovered=0`  
-**合入**：26a `b266e4a` 总后台入驻 · 26b `459b03f` 四端壳  
+**波次**：wave23 ✅ · wave24 · `dispatched=2 recovered=0`  
+**合入**：27b 钱包读 · 27a apiBase+credit 三层（父接管 commit）  
 **idle**：0 / 3  
 **分支**：`topic/fe-ddd-rsc`
 
-## 完成判据（MVP）
+## MVP
 
-| 端 | 最小能力 | 状态 |
-| :--- | :--- | :--- |
-| 消费者 | 换电·信用·钱包·商城C | 钱包待 |
-| 商家 | 入驻进度占位 | ✅ 占位 |
-| 运营商 | 套餐/设备/分润（无商家审批） | ✅ |
-| 总后台 | 平台批商家入驻 | ✅ |
+| 端 | 状态 |
+| :--- | :--- |
+| 总后台批入驻 / 四端壳 | ✅ |
+| apiBase + credit 试点 | ✅ |
+| 钱包 HTTP | ✅ · FE 待 |
+| 商家 B | 占位 → 本波加厚 |
+| 运营商批下线 / 撤销 FE | 待 |
 
-## Backlog
-
-| # | 切片 | 状态 |
-| :--- | :--- | :--- |
-| W22 | 总后台+四端 | ✅ |
-| W23 | 27a `apiBase`去重+credit 三层试点 · 27b 钱包读 HTTP | 🔄 |
-| W24 | 商家 B 加厚 | 待 |
-| W25 | 运营商批下线 | 待 |
-| W26 | FE 撤销覆盖 | 待 |
-
-## 本波 wave23
+## 本波 wave24
 
 | 路 | worktree | 目标 |
 | :-- | :--- | :--- |
-| 27a FE | `../evo-wt-27a-fe` | `shared/http/api-base` + 全 gateway；credit `domain`+`application` 薄试点 |
-| 27b BE | `../evo-wt-27b-be` | `GET` 用户余额/积分读模型 |
+| 28a FE | `../evo-wt-28a-fe` | `/wallet` + gateway（`GET /commerce/users/{id}/wallet`）+ 消费者 NAV |
+| 28b FE | `../evo-wt-28b-fe` | `/merchant` 加厚（入驻说明/平台审批文案；勿动 app-shell 若 28a 已改则只改 merchant/**） |
+
+28a 独占 `app-shell`；28b 禁改 app-shell。
 
 ## 停止
 
