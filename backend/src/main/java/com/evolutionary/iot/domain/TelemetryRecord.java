@@ -31,6 +31,21 @@ public final class TelemetryRecord {
                 event.reportedAt());
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static TelemetryRecord rehydrate(
+            String id,
+            String batteryId,
+            int soc,
+            long voltageMilli,
+            Instant recordedAt) {
+        return new TelemetryRecord(
+                Objects.requireNonNull(id, "id"),
+                Objects.requireNonNull(batteryId, "batteryId"),
+                soc,
+                voltageMilli,
+                Objects.requireNonNull(recordedAt, "recordedAt"));
+    }
+
     public String id() {
         return id;
     }
