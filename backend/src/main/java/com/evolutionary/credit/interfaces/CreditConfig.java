@@ -26,7 +26,6 @@ import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditPolicy;
 import com.evolutionary.credit.domain.CreditProfile;
 import com.evolutionary.credit.domain.ScoreTier;
-import com.evolutionary.credit.infrastructure.InMemoryBillingStatementRepository;
 import com.evolutionary.credit.infrastructure.InMemoryCreditLedgerDebtRepository;
 import com.evolutionary.operator.application.AuditLogRepository;
 import java.time.Clock;
@@ -43,10 +42,7 @@ public class CreditConfig {
 
     /** CreditPolicyRepository → {@code JpaCreditPolicyRepository}（表 credit_policies）。 */
 
-    @Bean
-    BillingStatementRepository billingStatementRepository() {
-        return new InMemoryBillingStatementRepository();
-    }
+    /** BillingStatementRepository → {@code JpaBillingStatementRepository}（表 billing_statements）。 */
 
     @Bean
     CreditLedgerDebtRepository creditLedgerDebtRepository() {
