@@ -3,6 +3,9 @@ import {
   canDetectCommLost,
   canMeterWithShadow,
   isShadowFresh,
+  isShadowInMaintenance,
+  parseLockState,
+  parseShadowStatus,
   toDeviceShadowView,
 } from "./device-shadow-view";
 
@@ -22,6 +25,19 @@ describe("canDetectCommLost", () => {
   });
 });
 
+describe("parseShadowStatus / parseLockState", () => {
+  it("accepts contract values", () => {
+    expect(parseShadowStatus("IDLE")).toBe("IDLE");
+    expect(parseShadowStatus("MAINTENANCE")).toBe("MAINTENANCE");
+    expect(parseLockState("UNLOCKED")).toBe("UNLOCKED");
+  });
+
+  it("throws on unknown", () => {
+    expect(() => parseShadowStatus("ONLINE")).toThrow(/未知影子业务态/);
+    expect(() => parseLockState("HALF")).toThrow(/未知锁态/);
+  });
+});
+
 describe("toDeviceShadowView", () => {
   it("stale blocks metered swap", () => {
     const view = toDeviceShadowView({
@@ -35,17 +51,23 @@ describe("toDeviceShadowView", () => {
     expect(view.meteredSwapAllowed).toBe(false);
     expect(view.commLostDetectUseful).toBe(true);
     expect(view.blockMessage).toContain("禁止按电量计费");
+    expect(view.status).toBeNull();
   });
 
-  it("fresh allows metered swap", () => {
+  it("fresh allows metered swap and labels status", () => {
     const view = toDeviceShadowView({
       batteryId: "BAT-1",
       soc: 80,
       voltageMilli: 42000,
       stale: false,
       lastSeenAt: "2026-01-01T00:00:00Z",
+      status: "IDLE",
+      lockState: "UNLOCKED",
     });
     expect(view.meteredSwapAllowed).toBe(true);
     expect(view.blockMessage).toBeNull();
+    expect(view.statusLabel).toBe("空闲");
+    expect(view.lockStateLabel).toBe("未锁");
+    expect(isShadowInMaintenance("MAINTENANCE")).toBe(true);
   });
 });

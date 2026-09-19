@@ -125,6 +125,8 @@ function TriageResultView({ view }: { view: TriageView }) {
           {shadow.fresh ? "fresh" : "stale"}
         </span>
         {shadow.meteredSwapAllowed ? " · 可计量换电" : " · 禁计量换电"}
+        {shadow.statusLabel ? ` · ${shadow.statusLabel}` : ""}
+        {shadow.lockStateLabel ? ` · ${shadow.lockStateLabel}` : ""}
       </dd>
 
       {shadow.blockMessage ? (

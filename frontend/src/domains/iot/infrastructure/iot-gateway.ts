@@ -80,13 +80,15 @@ export type TelemetryPayload = {
   voltageMilli: number;
 };
 
-/** POST /iot/batteries/{id}/telemetry 读模型（影子摘要） */
+/** POST /iot/batteries/{id}/telemetry 读模型（影子摘要 · 对齐 ShadowView） */
 export type TelemetryResult = {
   batteryId: string;
   soc: number;
   voltageMilli: number;
   stale: boolean;
   lastSeenAt: string | null;
+  status: string | null;
+  lockState: string | null;
 };
 
 /**
@@ -126,8 +128,24 @@ function parseTelemetryResult(
     raw.lastSeenAt == null || String(raw.lastSeenAt).length === 0
       ? null
       : String(raw.lastSeenAt);
+  const status =
+    raw.status == null || String(raw.status).length === 0
+      ? null
+      : String(raw.status);
+  const lockState =
+    raw.lockState == null || String(raw.lockState).length === 0
+      ? null
+      : String(raw.lockState);
 
-  return { batteryId, soc, voltageMilli, stale, lastSeenAt };
+  return {
+    batteryId,
+    soc,
+    voltageMilli,
+    stale,
+    lastSeenAt,
+    status,
+    lockState,
+  };
 }
 
 /** TriageOutdatedSoc.NextStep（BE 枚举名） */
@@ -140,6 +158,8 @@ export type TriageShadowSummary = {
   voltageMilli: number;
   stale: boolean;
   lastSeenAt: string | null;
+  status: string | null;
+  lockState: string | null;
 };
 
 /**

@@ -122,6 +122,16 @@ function ShadowResultView({ view }: { view: DeviceShadowView }) {
         </span>
       </dd>
 
+      {view.statusLabel ? (
+        <>
+          <dt>业务态</dt>
+          <dd>
+            {view.statusLabel}
+            {view.lockStateLabel ? ` · ${view.lockStateLabel}` : ""}
+          </dd>
+        </>
+      ) : null}
+
       <dt>计量换电</dt>
       <dd>{view.meteredSwapAllowed ? "允许" : "禁止"}</dd>
 
