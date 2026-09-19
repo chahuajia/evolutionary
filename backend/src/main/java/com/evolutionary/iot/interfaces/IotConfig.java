@@ -8,7 +8,6 @@ import com.evolutionary.iot.application.MaintenanceTicketRepository;
 import com.evolutionary.iot.application.TelemetryStore;
 import com.evolutionary.iot.application.TriageOutdatedSoc;
 import com.evolutionary.iot.domain.DeviceShadow;
-import com.evolutionary.iot.infrastructure.InMemoryAlertStore;
 import com.evolutionary.iot.infrastructure.InMemoryMaintenanceTicketRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -21,10 +20,7 @@ public class IotConfig {
 
     /** DeviceShadowRepository → {@code JpaDeviceShadowRepository}（表 device_shadows）。 */
 
-    @Bean
-    AlertStore alertStore() {
-        return new InMemoryAlertStore();
-    }
+    // AlertStore → JpaAlertStore（表 battery_alerts）
 
     @Bean
     MaintenanceTicketRepository maintenanceTicketRepository() {
