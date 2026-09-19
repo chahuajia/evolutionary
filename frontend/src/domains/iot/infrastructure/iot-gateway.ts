@@ -92,6 +92,21 @@ export type TelemetryResult = {
 };
 
 /**
+ * GET /iot/batteries/{batteryId}/shadow
+ * 对齐 ShadowView；404 时由 fetchJson 抛错。
+ */
+export async function fetchDeviceShadow(
+  batteryId: string = DEFAULT_IOT_BATTERY,
+): Promise<TelemetryResult> {
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/iot/batteries/${encodeURIComponent(batteryId)}/shadow`,
+    { timeoutMs: TIMEOUT_MS },
+  );
+  return parseTelemetryResult(raw, batteryId);
+}
+
+/**
  * POST /iot/batteries/{batteryId}/telemetry
  * 错误经 fetchJson 已拼 suggestion。
  */
