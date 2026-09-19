@@ -13,6 +13,10 @@ import type {
 } from "@/domains/swap/infrastructure/station-gateway";
 import { toStationView } from "@/domains/swap/domain/station-view";
 import {
+  parseBatteryStatus,
+  toBatteryView,
+} from "@/domains/battery/domain/battery-view";
+import {
   fetchSwapLogs,
   resolveApiBase,
 } from "@/domains/swap/infrastructure/station-gateway";
@@ -21,8 +25,12 @@ import styles from "./page.module.css";
 
 const TIMEOUT_MS = 8000;
 
-type BatteryView = { id: string; status: string };
-type StationView = { id: string; name: string; batteries: BatteryView[] };
+type StationBatteryDto = { id: string; status: string };
+type StationDetailDto = {
+  id: string;
+  name: string;
+  batteries: StationBatteryDto[];
+};
 type SwapResult = { stationId: string; outgoingId: string; incomingId: string };
 
 type Props = {
@@ -44,7 +52,7 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
   const apiBase = resolveApiBase();
   const [stationId, setStationId] = useState(initialStationId);
   const [incomingBatteryId, setIncomingBatteryId] = useState("B-user-1");
-  const [station, setStation] = useState<StationView | null>(null);
+  const [station, setStation] = useState<StationDetailDto | null>(null);
   const [lastSwap, setLastSwap] = useState<SwapResult | null>(null);
   const [swapLogs, setSwapLogs] = useState<readonly SwapLog[]>([]);
   const [error, setError] = useState<string | null>(listError);
@@ -70,7 +78,7 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const body = await fetchJson<StationView>(
+      const body = await fetchJson<StationDetailDto>(
         `${apiBase}/stations/${encodeURIComponent(stationId)}`,
         { timeoutMs: TIMEOUT_MS },
       );
@@ -100,7 +108,7 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
       );
       setLastSwap(swap);
       try {
-        const next = await fetchJson<StationView>(
+        const next = await fetchJson<StationDetailDto>(
           `${apiBase}/stations/${encodeURIComponent(stationId)}`,
           { timeoutMs: TIMEOUT_MS },
         );
@@ -209,11 +217,19 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
             {station.name}（{station.id}）
           </h2>
           <ul>
-            {station.batteries.map((b) => (
-              <li key={b.id}>
-                {b.id} — {b.status}
-              </li>
-            ))}
+            {station.batteries.map((b) => {
+              const bat = toBatteryView({
+                id: b.id,
+                status: parseBatteryStatus(b.status),
+              });
+              return (
+                <li key={bat.id}>
+                  {bat.id} — {bat.statusLabel}
+                  {bat.swapOutAllowed ? " · 可换出" : ""}
+                  {bat.blockMessage ? ` · ${bat.blockMessage}` : ""}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
