@@ -1,21 +1,26 @@
 package com.evolutionary.mall.interfaces;
 
+import com.evolutionary.mall.application.CampaignRepository;
 import com.evolutionary.mall.application.CheckoutMallOrderWithCoupons;
 import com.evolutionary.mall.application.ClaimCouponFromCampaign;
+import com.evolutionary.mall.application.MallSkuRepository;
 import com.evolutionary.mall.application.PurchaseMallOrder;
+import com.evolutionary.mall.domain.Campaign;
 import com.evolutionary.mall.domain.MallOrder;
 import com.evolutionary.mall.domain.MallOutcome;
+import com.evolutionary.mall.domain.MallSku;
 import com.evolutionary.mall.domain.UserCoupon;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 商城 HTTP（活动领券 AC-45 · 下单支付 AC-41 · 带券结账 AC-42..44）。 */
+/** 商城 HTTP（活动领券 AC-45 · 下单支付 AC-41 · 带券结账 AC-42..44 · SKU/活动只读）。 */
 @RestController
 @RequestMapping("/mall")
 public class MallController {
@@ -23,14 +28,39 @@ public class MallController {
     private final ClaimCouponFromCampaign claimCouponFromCampaign;
     private final PurchaseMallOrder purchaseMallOrder;
     private final CheckoutMallOrderWithCoupons checkoutMallOrderWithCoupons;
+    private final MallSkuRepository skus;
+    private final CampaignRepository campaigns;
 
     public MallController(
             ClaimCouponFromCampaign claimCouponFromCampaign,
             PurchaseMallOrder purchaseMallOrder,
-            CheckoutMallOrderWithCoupons checkoutMallOrderWithCoupons) {
+            CheckoutMallOrderWithCoupons checkoutMallOrderWithCoupons,
+            MallSkuRepository skus,
+            CampaignRepository campaigns) {
         this.claimCouponFromCampaign = claimCouponFromCampaign;
         this.purchaseMallOrder = purchaseMallOrder;
         this.checkoutMallOrderWithCoupons = checkoutMallOrderWithCoupons;
+        this.skus = skus;
+        this.campaigns = campaigns;
+    }
+
+    /** 只读：供前端展示门对齐 stock / ON_SALE。 */
+    @GetMapping("/skus/{skuId}")
+    public ResponseEntity<?> getSku(@PathVariable String skuId) {
+        try {
+            return ResponseEntity.ok(toSkuView(skus.get(skuId.trim())));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /** 只读：供前端展示门对齐 ACTIVE / budgetRemaining。 */
+    @GetMapping("/campaigns/{campaignId}")
+    public ResponseEntity<?> getCampaign(@PathVariable String campaignId) {
+        return campaigns
+                .findById(campaignId.trim())
+                .map(c -> ResponseEntity.ok(toCampaignView(c)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/campaigns/{campaignId}/claims")
@@ -142,6 +172,27 @@ public class MallController {
                 qty);
     }
 
+    private static SkuView toSkuView(MallSku s) {
+        return new SkuView(
+                s.id(),
+                s.merchantOrgId(),
+                s.name(),
+                s.price().cents(),
+                s.stock(),
+                s.status().name());
+    }
+
+    private static CampaignView toCampaignView(Campaign c) {
+        return new CampaignView(
+                c.id(),
+                c.ownerOrgId(),
+                c.name(),
+                c.budgetTotal().cents(),
+                c.budgetRemaining().cents(),
+                c.status().name(),
+                c.couponTemplateIds());
+    }
+
     public record ClaimRequest(String userId, String templateId) {}
 
     public record PurchaseRequest(String userId, String merchantOrgId, String skuId, Integer qty) {}
@@ -164,4 +215,21 @@ public class MallController {
             long discountCents,
             String skuId,
             int qty) {}
+
+    public record SkuView(
+            String id,
+            String merchantOrgId,
+            String name,
+            long priceCents,
+            int stock,
+            String status) {}
+
+    public record CampaignView(
+            String id,
+            String ownerOrgId,
+            String name,
+            long budgetTotalCents,
+            long budgetRemainingCents,
+            String status,
+            List<String> couponTemplateIds) {}
 }

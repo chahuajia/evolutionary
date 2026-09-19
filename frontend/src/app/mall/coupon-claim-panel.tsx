@@ -2,13 +2,14 @@
 
 /**
  * 商城领券客户端岛 — 默认 CAMP-OK / U1 / T-C1；成功展示券 id/status。
+ * GET /mall/campaigns/{id} 对齐 ACTIVE / budgetRemaining。
  */
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
-  canClaimCoupon,
-  campaignClaimBlockMessage,
+  parseCampaignStatus,
   toCampaignView,
+  type CampaignView,
 } from "@/domains/mall/domain/campaign-view";
 import {
   parseUserCouponStatus,
@@ -19,52 +20,76 @@ import {
   DEFAULT_MALL_CAMPAIGN,
   DEFAULT_MALL_TEMPLATE,
   DEFAULT_MALL_USER,
+  fetchCampaign,
   postClaimCoupon,
 } from "@/domains/mall/infrastructure/mall-gateway";
 import styles from "./page.module.css";
 
-/**
- * 无 GET Campaign 前：默认种子活动视为 ACTIVE、预算未知不卡。
- * 非默认 campaignId 仍提交后端，由服务端守卫判活。
- */
-const SEED_ACTIVE = "ACTIVE" as const;
-const SEED_BUDGET_UNKNOWN = Number.MAX_SAFE_INTEGER;
+/** 种子 T-C1 面额 500¢（对齐 MallConfig）；其它模板未知时只卡状态。 */
+const SEED_TEMPLATE_FACE_CENTS = 500;
 
 export function CouponClaimPanel() {
   const [campaignId, setCampaignId] = useState(DEFAULT_MALL_CAMPAIGN);
   const [userId, setUserId] = useState(DEFAULT_MALL_USER);
   const [templateId, setTemplateId] = useState(DEFAULT_MALL_TEMPLATE);
+  const [campaign, setCampaign] = useState<CampaignView | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<UserCouponView | null>(null);
 
-  const seedGate = useMemo(() => {
-    const isDefault =
-      (campaignId.trim() || DEFAULT_MALL_CAMPAIGN) === DEFAULT_MALL_CAMPAIGN;
-    if (!isDefault) {
-      return { claimAllowed: true as boolean, blockMessage: null as string | null };
+  const faceCents =
+    (templateId.trim() || DEFAULT_MALL_TEMPLATE) === DEFAULT_MALL_TEMPLATE
+      ? SEED_TEMPLATE_FACE_CENTS
+      : 0;
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = campaignId.trim() || DEFAULT_MALL_CAMPAIGN;
+    setLoadError(null);
+    fetchCampaign(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setCampaign(
+          toCampaignView(
+            {
+              id: dto.id,
+              ownerOrgId: dto.ownerOrgId,
+              name: dto.name,
+              budgetRemainingCents: dto.budgetRemainingCents,
+              status: parseCampaignStatus(dto.status),
+            },
+            faceCents,
+          ),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setCampaign(null);
+        setLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [campaignId, faceCents]);
+
+  const gate = useMemo(() => {
+    if (!campaign) {
+      return {
+        claimAllowed: false,
+        blockMessage: loadError ?? "正在加载活动…",
+      };
     }
     return {
-      claimAllowed: canClaimCoupon(SEED_ACTIVE, SEED_BUDGET_UNKNOWN, 0),
-      blockMessage: campaignClaimBlockMessage(
-        SEED_ACTIVE,
-        SEED_BUDGET_UNKNOWN,
-        0,
-      ),
-      preview: toCampaignView({
-        id: DEFAULT_MALL_CAMPAIGN,
-        ownerOrgId: "seed",
-        name: "默认活动",
-        budgetRemainingCents: SEED_BUDGET_UNKNOWN,
-        status: SEED_ACTIVE,
-      }),
+      claimAllowed: campaign.claimAllowed,
+      blockMessage: campaign.blockMessage,
     };
-  }, [campaignId]);
+  }, [campaign, loadError]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!seedGate.claimAllowed) {
-      setError(seedGate.blockMessage ?? "活动不可领券");
+    if (!gate.claimAllowed) {
+      setError(gate.blockMessage ?? "活动不可领券");
       return;
     }
     setBusy(true);
@@ -84,6 +109,21 @@ export function CouponClaimPanel() {
           status: parseUserCouponStatus(r.status),
         }),
       );
+      const dto = await fetchCampaign(
+        campaignId.trim() || DEFAULT_MALL_CAMPAIGN,
+      );
+      setCampaign(
+        toCampaignView(
+          {
+            id: dto.id,
+            ownerOrgId: dto.ownerOrgId,
+            name: dto.name,
+            budgetRemainingCents: dto.budgetRemainingCents,
+            status: parseCampaignStatus(dto.status),
+          },
+          faceCents,
+        ),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -94,10 +134,11 @@ export function CouponClaimPanel() {
   return (
     <section className={styles.panel}>
       <h2>活动领券</h2>
-      {"preview" in seedGate && seedGate.preview ? (
+      {campaign ? (
         <p className={styles.note} role="status">
-          种子活动 {seedGate.preview.id} · {seedGate.preview.status}
-          {seedGate.preview.claimAllowed ? " · 可领券" : ""}
+          {campaign.id} · {campaign.name} · {campaign.status} · 预算余{" "}
+          {campaign.budgetRemainingCents}¢
+          {campaign.claimAllowed ? " · 可领券" : ""}
         </p>
       ) : null}
       <form className={styles.form} onSubmit={onSubmit}>
@@ -119,10 +160,16 @@ export function CouponClaimPanel() {
             onChange={(e) => setTemplateId(e.target.value)}
           />
         </label>
-        <button type="submit" disabled={busy || !seedGate.claimAllowed}>
+        <button type="submit" disabled={busy || !gate.claimAllowed}>
           {busy ? "领取中…" : "领券"}
         </button>
       </form>
+
+      {!gate.claimAllowed && gate.blockMessage ? (
+        <p className={styles.note} role="status">
+          {gate.blockMessage}
+        </p>
+      ) : null}
 
       {error ? (
         <p className={styles.error} role="alert">

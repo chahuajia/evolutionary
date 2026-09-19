@@ -160,3 +160,68 @@ export async function postCheckoutWithCoupons(
     discountCents: Number(raw.discountCents ?? 0),
   };
 }
+
+/** GET /mall/skus/{skuId} 读模型 */
+export type MallSkuDto = {
+  id: string;
+  merchantOrgId: string;
+  name: string;
+  priceCents: number;
+  stock: number;
+  status: string;
+};
+
+/** GET /mall/skus/{skuId} */
+export async function fetchMallSku(
+  skuId: string = DEFAULT_MALL_SKU,
+): Promise<MallSkuDto> {
+  const base = apiBase();
+  const id = skuId.trim() || DEFAULT_MALL_SKU;
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/mall/skus/${encodeURIComponent(id)}`,
+    { method: "GET", timeoutMs: TIMEOUT_MS },
+  );
+  return {
+    id: String(raw.id ?? id),
+    merchantOrgId: String(raw.merchantOrgId ?? ""),
+    name: String(raw.name ?? ""),
+    priceCents: Number(raw.priceCents ?? 0),
+    stock: Number(raw.stock ?? 0),
+    status: String(raw.status ?? ""),
+  };
+}
+
+/** GET /mall/campaigns/{campaignId} 读模型 */
+export type CampaignDto = {
+  id: string;
+  ownerOrgId: string;
+  name: string;
+  budgetTotalCents: number;
+  budgetRemainingCents: number;
+  status: string;
+  couponTemplateIds: string[];
+};
+
+/** GET /mall/campaigns/{campaignId} */
+export async function fetchCampaign(
+  campaignId: string = DEFAULT_MALL_CAMPAIGN,
+): Promise<CampaignDto> {
+  const base = apiBase();
+  const id = campaignId.trim() || DEFAULT_MALL_CAMPAIGN;
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/mall/campaigns/${encodeURIComponent(id)}`,
+    { method: "GET", timeoutMs: TIMEOUT_MS },
+  );
+  const templates = Array.isArray(raw.couponTemplateIds)
+    ? raw.couponTemplateIds.map((t) => String(t))
+    : [];
+  return {
+    id: String(raw.id ?? id),
+    ownerOrgId: String(raw.ownerOrgId ?? ""),
+    name: String(raw.name ?? ""),
+    budgetTotalCents: Number(raw.budgetTotalCents ?? 0),
+    budgetRemainingCents: Number(raw.budgetRemainingCents ?? 0),
+    status: String(raw.status ?? ""),
+    couponTemplateIds: templates,
+  };
+}

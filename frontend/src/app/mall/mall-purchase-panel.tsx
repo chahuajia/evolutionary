@@ -2,16 +2,18 @@
 
 /**
  * 商城下单客户端岛 — POST /mall/orders（AC-41 · S1 / M1）。
+ * GET /mall/skus/{id} 对齐库存与上架态。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   toMallOrderView,
   type MallOrderView,
 } from "@/domains/mall/domain/mall-order-view";
 import {
-  canPurchaseSku,
-  skuPurchaseBlockMessage,
+  parseMallSkuStatus,
+  toMallSkuView,
+  type MallSkuView,
 } from "@/domains/mall/domain/mall-sku-view";
 import {
   canTradeWithMerchant,
@@ -21,13 +23,11 @@ import {
   DEFAULT_MALL_MERCHANT,
   DEFAULT_MALL_SKU,
   DEFAULT_MALL_USER,
+  fetchMallSku,
   postPurchaseMallOrder,
 } from "@/domains/mall/infrastructure/mall-gateway";
 import styles from "./page.module.css";
 
-/** 无 GET SKU 前：种子默认上架；库存未知时不在前端卡库存。 */
-const SEED_SKU_STATUS = "ON_SALE" as const;
-const SEED_STOCK_UNKNOWN = Number.MAX_SAFE_INTEGER;
 /** 无 GET MerchantProfile 前：默认商家视为 ACTIVE。 */
 const SEED_MERCHANT_STATUS = "ACTIVE" as const;
 
@@ -36,26 +36,69 @@ export function MallPurchasePanel() {
   const [merchantOrgId, setMerchantOrgId] = useState(DEFAULT_MALL_MERCHANT);
   const [skuId, setSkuId] = useState(DEFAULT_MALL_SKU);
   const [qty, setQty] = useState(1);
+  const [skuView, setSkuView] = useState<MallSkuView | null>(null);
+  const [skuLoadError, setSkuLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MallOrderView | null>(null);
 
-  const skuOk = canPurchaseSku(SEED_SKU_STATUS, SEED_STOCK_UNKNOWN, qty);
+  useEffect(() => {
+    let cancelled = false;
+    const id = skuId.trim() || DEFAULT_MALL_SKU;
+    setSkuLoadError(null);
+    fetchMallSku(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setSkuView(
+          toMallSkuView(
+            {
+              id: dto.id,
+              merchantOrgId: dto.merchantOrgId,
+              name: dto.name,
+              priceCents: dto.priceCents,
+              stock: dto.stock,
+              status: parseMallSkuStatus(dto.status),
+            },
+            qty,
+          ),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSkuView(null);
+        setSkuLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [skuId, qty]);
+
   const merchantOk =
     (merchantOrgId.trim() || DEFAULT_MALL_MERCHANT) !== DEFAULT_MALL_MERCHANT
       ? true
       : canTradeWithMerchant(SEED_MERCHANT_STATUS);
-  const purchaseAllowed = skuOk && merchantOk;
-  const blockMessage = !skuOk
-    ? skuPurchaseBlockMessage(SEED_SKU_STATUS, SEED_STOCK_UNKNOWN, qty)
-    : !merchantOk
-      ? merchantTradeBlockMessage(SEED_MERCHANT_STATUS)
-      : null;
+
+  const gate = useMemo(() => {
+    if (!skuView) {
+      return {
+        purchaseAllowed: false,
+        blockMessage: skuLoadError ?? "正在加载 SKU…",
+      };
+    }
+    const skuOk = skuView.purchaseAllowed;
+    const purchaseAllowed = skuOk && merchantOk;
+    const blockMessage = !skuOk
+      ? skuView.blockMessage
+      : !merchantOk
+        ? merchantTradeBlockMessage(SEED_MERCHANT_STATUS)
+        : null;
+    return { purchaseAllowed, blockMessage };
+  }, [skuView, merchantOk, skuLoadError]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!purchaseAllowed) {
-      setError(blockMessage ?? "不可购买");
+    if (!gate.purchaseAllowed) {
+      setError(gate.blockMessage ?? "不可购买");
       return;
     }
     setBusy(true);
@@ -69,6 +112,21 @@ export function MallPurchasePanel() {
         qty,
       });
       setResult(toMallOrderView(r));
+      // 购后刷新库存
+      const dto = await fetchMallSku(skuId.trim() || DEFAULT_MALL_SKU);
+      setSkuView(
+        toMallSkuView(
+          {
+            id: dto.id,
+            merchantOrgId: dto.merchantOrgId,
+            name: dto.name,
+            priceCents: dto.priceCents,
+            stock: dto.stock,
+            status: parseMallSkuStatus(dto.status),
+          },
+          qty,
+        ),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -79,6 +137,12 @@ export function MallPurchasePanel() {
   return (
     <section className={styles.panel}>
       <h2>商城下单（HTTP · AC-41）</h2>
+      <p className={styles.note}>
+        GET /mall/skus 对齐库存与上架
+        {skuView
+          ? ` · ${skuView.name} · 库存 ${skuView.stock} · ${skuView.status}`
+          : ""}
+      </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
           userId
@@ -104,13 +168,13 @@ export function MallPurchasePanel() {
             onChange={(e) => setQty(Number(e.target.value) || 0)}
           />
         </label>
-        <button type="submit" disabled={busy || !purchaseAllowed}>
+        <button type="submit" disabled={busy || !gate.purchaseAllowed}>
           {busy ? "下单中…" : "余额购买"}
         </button>
       </form>
-      {!purchaseAllowed && blockMessage ? (
+      {!gate.purchaseAllowed && gate.blockMessage ? (
         <p className={styles.note} role="status">
-          {blockMessage}
+          {gate.blockMessage}
         </p>
       ) : null}
       {error ? (
