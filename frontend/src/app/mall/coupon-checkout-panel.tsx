@@ -142,8 +142,9 @@ export function CouponCheckoutPanel() {
       ) : null}
       {result ? (
         <p>
-          {result.orderId} · {result.status} · 实付 ¥{result.paidAmountYuan} ·
-          优惠 ¥{result.discountYuan}
+          {result.orderId} · {result.status} · 实付 ¥{result.paidAmountYuan}
+          {result.hasDiscount ? ` · 优惠 ¥${result.discountYuan}` : ""}
+          {result.entitlementForbidden ? " · 不可开换电权益" : ""}
         </p>
       ) : null}
     </section>

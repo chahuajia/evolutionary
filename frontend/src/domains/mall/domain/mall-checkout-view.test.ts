@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { toCheckoutView } from "./mall-checkout-view";
+import { hasCheckoutDiscount, toCheckoutView } from "./mall-checkout-view";
+
+describe("hasCheckoutDiscount", () => {
+  it("is true only when discount cents > 0", () => {
+    expect(hasCheckoutDiscount(0)).toBe(false);
+    expect(hasCheckoutDiscount(50)).toBe(true);
+    expect(hasCheckoutDiscount(-1)).toBe(false);
+  });
+});
 
 describe("toCheckoutView", () => {
   it("converts paidAmountCents 199 to paidAmountYuan 1.99", () => {
@@ -15,6 +23,8 @@ describe("toCheckoutView", () => {
     });
 
     expect(view.paidAmountYuan).toBe("1.99");
+    expect(view.hasDiscount).toBe(false);
+    expect(view.entitlementForbidden).toBe(true);
   });
 
   it("converts discountCents 50 to discountYuan 0.50", () => {
@@ -30,6 +40,22 @@ describe("toCheckoutView", () => {
     });
 
     expect(view.discountYuan).toBe("0.50");
+    expect(view.hasDiscount).toBe(true);
+  });
+
+  it("parses status and rejects unknown", () => {
+    expect(() =>
+      toCheckoutView({
+        orderId: "ord-x",
+        userId: "u-1",
+        merchantOrgId: "M1",
+        status: "PENDING",
+        paidAmountCents: 1,
+        skuId: "S1",
+        qty: 1,
+        discountCents: 0,
+      }),
+    ).toThrow(/未知商城订单状态/);
   });
 
   it("passes through all order fields", () => {
@@ -54,5 +80,6 @@ describe("toCheckoutView", () => {
     expect(view.qty).toBe(3);
     expect(view.discountCents).toBe(50);
     expect(view.discountYuan).toBe("0.50");
+    expect(view.blockMessage).toContain("INV-16");
   });
 });
