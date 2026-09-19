@@ -249,3 +249,35 @@ export async function fetchMerchantProfile(
     status: String(raw.status ?? ""),
   };
 }
+
+/** GET /mall/coupon-templates/{templateId} 读模型 */
+export type CouponTemplateDto = {
+  id: string;
+  issuerOrgId: string;
+  kind: string;
+  value: number;
+  faceBudgetCents: number;
+  campaignId: string;
+  mutexGroup: string;
+};
+
+/** GET /mall/coupon-templates/{templateId} */
+export async function fetchCouponTemplate(
+  templateId: string = DEFAULT_MALL_TEMPLATE,
+): Promise<CouponTemplateDto> {
+  const base = apiBase();
+  const id = templateId.trim() || DEFAULT_MALL_TEMPLATE;
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/mall/coupon-templates/${encodeURIComponent(id)}`,
+    { method: "GET", timeoutMs: TIMEOUT_MS },
+  );
+  return {
+    id: String(raw.id ?? id),
+    issuerOrgId: String(raw.issuerOrgId ?? ""),
+    kind: String(raw.kind ?? ""),
+    value: Number(raw.value ?? 0),
+    faceBudgetCents: Number(raw.faceBudgetCents ?? raw.value ?? 0),
+    campaignId: String(raw.campaignId ?? ""),
+    mutexGroup: String(raw.mutexGroup ?? ""),
+  };
+}

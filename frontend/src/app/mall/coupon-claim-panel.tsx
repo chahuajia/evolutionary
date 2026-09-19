@@ -2,7 +2,7 @@
 
 /**
  * 商城领券客户端岛 — 默认 CAMP-OK / U1 / T-C1；成功展示券 id/status。
- * GET /mall/campaigns/{id} 对齐 ACTIVE / budgetRemaining。
+ * GET Campaign + CouponTemplate 对齐 ACTIVE / budgetRemaining / faceBudget。
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -21,29 +21,46 @@ import {
   DEFAULT_MALL_TEMPLATE,
   DEFAULT_MALL_USER,
   fetchCampaign,
+  fetchCouponTemplate,
   postClaimCoupon,
 } from "@/domains/mall/infrastructure/mall-gateway";
 import styles from "./page.module.css";
-
-/** 种子 T-C1 面额 500¢（对齐 MallConfig）；其它模板未知时只卡状态。 */
-const SEED_TEMPLATE_FACE_CENTS = 500;
 
 export function CouponClaimPanel() {
   const [campaignId, setCampaignId] = useState(DEFAULT_MALL_CAMPAIGN);
   const [userId, setUserId] = useState(DEFAULT_MALL_USER);
   const [templateId, setTemplateId] = useState(DEFAULT_MALL_TEMPLATE);
   const [campaign, setCampaign] = useState<CampaignView | null>(null);
+  const [faceCents, setFaceCents] = useState<number | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<UserCouponView | null>(null);
 
-  const faceCents =
-    (templateId.trim() || DEFAULT_MALL_TEMPLATE) === DEFAULT_MALL_TEMPLATE
-      ? SEED_TEMPLATE_FACE_CENTS
-      : 0;
+  useEffect(() => {
+    let cancelled = false;
+    const tid = templateId.trim() || DEFAULT_MALL_TEMPLATE;
+    setLoadError(null);
+    fetchCouponTemplate(tid)
+      .then((dto) => {
+        if (cancelled) return;
+        setFaceCents(dto.faceBudgetCents);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setFaceCents(null);
+        setLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [templateId]);
 
   useEffect(() => {
+    if (faceCents == null) {
+      setCampaign(null);
+      return;
+    }
     let cancelled = false;
     const id = campaignId.trim() || DEFAULT_MALL_CAMPAIGN;
     setLoadError(null);
@@ -74,21 +91,21 @@ export function CouponClaimPanel() {
   }, [campaignId, faceCents]);
 
   const gate = useMemo(() => {
-    if (!campaign) {
+    if (faceCents == null || !campaign) {
       return {
         claimAllowed: false,
-        blockMessage: loadError ?? "正在加载活动…",
+        blockMessage: loadError ?? "正在加载活动/模板…",
       };
     }
     return {
       claimAllowed: campaign.claimAllowed,
       blockMessage: campaign.blockMessage,
     };
-  }, [campaign, loadError]);
+  }, [campaign, faceCents, loadError]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!gate.claimAllowed) {
+    if (!gate.claimAllowed || faceCents == null) {
       setError(gate.blockMessage ?? "活动不可领券");
       return;
     }
@@ -134,10 +151,10 @@ export function CouponClaimPanel() {
   return (
     <section className={styles.panel}>
       <h2>活动领券</h2>
-      {campaign ? (
+      {campaign && faceCents != null ? (
         <p className={styles.note} role="status">
           {campaign.id} · {campaign.name} · {campaign.status} · 预算余{" "}
-          {campaign.budgetRemainingCents}¢
+          {campaign.budgetRemainingCents}¢ · 面额 {faceCents}¢
           {campaign.claimAllowed ? " · 可领券" : ""}
         </p>
       ) : null}
