@@ -3,9 +3,10 @@
 /**
  * 客户端岛：表单 / 站详情 / 换电 POST / 换电日志。
  * 站列表由 RSC 首屏注入；刷新列表走 router.refresh()。
+ * 换电提交卡门：站 selectable ∧ 站内至少一块 swapOutAllowed。
  */
 
-import { FormEvent, useCallback, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type {
   StationSummary,
@@ -15,6 +16,7 @@ import { toStationView } from "@/domains/swap/domain/station-view";
 import {
   parseBatteryStatus,
   toBatteryView,
+  type BatteryView,
 } from "@/domains/battery/domain/battery-view";
 import {
   fetchSwapLogs,
@@ -58,21 +60,53 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
   const [error, setError] = useState<string | null>(listError);
   const [busy, setBusy] = useState(false);
 
+  const batteryViews: BatteryView[] | null = useMemo(() => {
+    if (!station) return null;
+    return station.batteries.map((b) =>
+      toBatteryView({
+        id: b.id,
+        status: parseBatteryStatus(b.status),
+      }),
+    );
+  }, [station]);
+
+  const swapGate = useMemo(() => {
+    const summary = stations.find((s) => s.id === stationId.trim());
+    if (summary) {
+      const view = toStationView(summary);
+      if (!view.selectable) {
+        return {
+          swapAllowed: false,
+          blockMessage: `${view.name} 不可换出，请另选站点`,
+        };
+      }
+    }
+    if (batteryViews) {
+      const anyOut = batteryViews.some((b) => b.swapOutAllowed);
+      if (!anyOut) {
+        return {
+          swapAllowed: false,
+          blockMessage:
+            batteryViews.find((b) => b.blockMessage)?.blockMessage ??
+            "站内无 AVAILABLE 电池可换出",
+        };
+      }
+    }
+    return { swapAllowed: true, blockMessage: null as string | null };
+  }, [stations, stationId, batteryViews]);
+
   const refreshList = useCallback(() => {
     setError(null);
     router.refresh();
   }, [router]);
 
-  const loadSwapLogs = useCallback(
-    async (id: string) => {
-      try {
-        setSwapLogs(await fetchSwapLogs(id));
-      } catch {
-        /* 日志失败不阻断主流程 */
-      }
-    },
-    [],
-  );
+  const loadSwapLogs = useCallback(async (id: string) => {
+    try {
+      setSwapLogs(await fetchSwapLogs(id));
+    } catch {
+      /* 日志失败不阻断主流程 */
+    }
+  }, []);
 
   const loadStation = useCallback(async () => {
     setBusy(true);
@@ -93,6 +127,10 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
 
   async function onSwap(e: FormEvent) {
     e.preventDefault();
+    if (!swapGate.swapAllowed) {
+      setError(swapGate.blockMessage ?? "不可换电");
+      return;
+    }
     setBusy(true);
     setError(null);
     setLastSwap(null);
@@ -148,7 +186,10 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
                         ? styles.stationPickActive
                         : styles.stationPick
                     }
-                    onClick={() => setStationId(view.id)}
+                    onClick={() => {
+                      setStationId(view.id);
+                      setStation(null);
+                    }}
                   >
                     {view.name}（{view.id}）— {view.availabilityLabel} · 电池{" "}
                     {view.batteryCount}
@@ -161,11 +202,20 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
       </section>
 
       <form className={styles.form} onSubmit={onSwap}>
+        <p className={styles.note}>
+          换出须站可选且站内有 AVAILABLE 电池（canSwapOutBattery）
+          {batteryViews
+            ? ` · 可换出 ${batteryViews.filter((b) => b.swapOutAllowed).length}/${batteryViews.length}`
+            : " · 先「刷新站点」拉详情门"}
+        </p>
         <label>
           站点 ID
           <input
             value={stationId}
-            onChange={(e) => setStationId(e.target.value)}
+            onChange={(e) => {
+              setStationId(e.target.value);
+              setStation(null);
+            }}
           />
         </label>
         <label>
@@ -179,11 +229,17 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
           <button type="button" onClick={loadStation} disabled={busy}>
             刷新站点
           </button>
-          <button type="submit" disabled={busy}>
+          <button type="submit" disabled={busy || !swapGate.swapAllowed}>
             换电
           </button>
         </div>
       </form>
+
+      {!swapGate.swapAllowed && swapGate.blockMessage ? (
+        <p className={styles.note} role="status">
+          {swapGate.blockMessage}
+        </p>
+      ) : null}
 
       {error && <p className={styles.error}>{error}</p>}
 
@@ -211,25 +267,19 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
         </section>
       )}
 
-      {station && (
+      {station && batteryViews && (
         <section className={styles.panel}>
           <h2>
             {station.name}（{station.id}）
           </h2>
           <ul>
-            {station.batteries.map((b) => {
-              const bat = toBatteryView({
-                id: b.id,
-                status: parseBatteryStatus(b.status),
-              });
-              return (
-                <li key={bat.id}>
-                  {bat.id} — {bat.statusLabel}
-                  {bat.swapOutAllowed ? " · 可换出" : ""}
-                  {bat.blockMessage ? ` · ${bat.blockMessage}` : ""}
-                </li>
-              );
-            })}
+            {batteryViews.map((bat) => (
+              <li key={bat.id}>
+                {bat.id} — {bat.statusLabel}
+                {bat.swapOutAllowed ? " · 可换出" : ""}
+                {bat.blockMessage ? ` · ${bat.blockMessage}` : ""}
+              </li>
+            ))}
           </ul>
         </section>
       )}
