@@ -2,8 +2,6 @@
  * 总后台 — 平台批准商家入驻。
  */
 
-"use client";
-
 import { PageHeader } from "@/components/page-header";
 import {
   DEFAULT_ONBOARDING_APPLICATION_ID,
