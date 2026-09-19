@@ -8,7 +8,6 @@ import com.evolutionary.iot.application.MaintenanceTicketRepository;
 import com.evolutionary.iot.application.TelemetryStore;
 import com.evolutionary.iot.application.TriageOutdatedSoc;
 import com.evolutionary.iot.domain.DeviceShadow;
-import com.evolutionary.iot.infrastructure.InMemoryMaintenanceTicketRepository;
 import java.time.Clock;
 import java.time.Instant;
 import org.springframework.boot.ApplicationRunner;
@@ -22,11 +21,7 @@ public class IotConfig {
 
     // AlertStore → JpaAlertStore（表 battery_alerts）
 
-    @Bean
-    MaintenanceTicketRepository maintenanceTicketRepository() {
-        return new InMemoryMaintenanceTicketRepository();
-    }
-
+    // MaintenanceTicketRepository → JpaMaintenanceTicketRepository（表 maintenance_tickets）
     // TelemetryStore → JpaTelemetryStore（表 telemetry_records）
     // CommandDispatchLogRepository → JpaCommandDispatchLogRepository（表 command_dispatch_logs）
 
