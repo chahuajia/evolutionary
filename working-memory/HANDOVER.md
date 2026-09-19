@@ -178,5 +178,23 @@ KB 入口：`collaboration/AGENTS.md` 的**症状表**（不要拿 catalog 当�
 
 > **项目级 vs 任务级的判据**：讲"这个项目往哪走"→ `working-memory/` 根；
 > 讲"某一次任务"→ `tasks/<任务>/`。
-> 这不是洁癖：`tasks/` 下的内容会**随 worktree 复制多份**（本机曾有 25 份
-> `evo-collab-extreme/`），而项目级结论住在那里，换个 worktree 就找不到了。
+> 理由：**容器与内容匹配** —— 项目级结论住在任务目录里会被当成"那个任务的东西"，
+> 下次换任务就没人翻了。
+
+### ⚠️ 另一个更容易撞的坑：worktree 看不到分岔之后的提交
+
+**症状**：某个 worktree 里 `ls working-memory/tasks/.../` 只有旧文件，
+但 `git log` / `git show <分支>:<路径>` 明明看得到 —— 于是怀疑"文件丢了"。
+
+**根因**：那个 worktree checkout 的分支**从更早的 commit 岔出**，
+之后的提交不在它的树里。**与文件放在哪个目录无关。**
+
+实测（2026-09-19）：`evo-wt-46a-be` 停在 `3ceda84`，而目标文件提交在 `0f70a19` ——
+把文件从任务目录搬到 `working-memory/` 根，**46a 依然看不到**。
+
+**修法只有一个**：用它之前**重新基线到当前 HEAD**。
+```bash
+git -C evo-wt-XX-be reset --hard $(git -C evolutionary rev-parse HEAD)
+```
+wave42 派工前就是这么做的（旧基线 `374d5fd` 不含 enum 内嵌）。
+**这不是可选项，是派工前置的一部分。**
