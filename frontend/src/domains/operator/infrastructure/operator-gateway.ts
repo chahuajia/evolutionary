@@ -141,6 +141,45 @@ function parseApproveOperatorDownline(
   return { orgId, name, parentOrgId, operatorCapability, status };
 }
 
+/** GET /operator/templates/{id} 读模型 */
+export type PackageTemplateDto = {
+  templateId: string;
+  ownerOrgId: string;
+  version: number;
+  status: string;
+  inheritedFrom: string | null;
+};
+
+/**
+ * GET /operator/templates/{templateId}
+ */
+export async function fetchPackageTemplate(
+  templateId: string = DEFAULT_PACKAGE_TEMPLATE_ID,
+): Promise<PackageTemplateDto> {
+  const id = templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID;
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/operator/templates/${encodeURIComponent(id)}`,
+    { timeoutMs: TIMEOUT_MS },
+  );
+  const versionRaw = raw.version;
+  const version =
+    typeof versionRaw === "number"
+      ? versionRaw
+      : Number.parseInt(String(versionRaw ?? ""), 10);
+  const inheritedRaw = raw.inheritedFrom;
+  return {
+    templateId: String(raw.templateId ?? raw.id ?? id),
+    ownerOrgId: String(raw.ownerOrgId ?? ""),
+    version: Number.isFinite(version) ? version : 0,
+    status: String(raw.status ?? ""),
+    inheritedFrom:
+      inheritedRaw == null || inheritedRaw === ""
+        ? null
+        : String(inheritedRaw),
+  };
+}
+
 /** POST /operator/templates/{templateId}/publish 成功读模型（AC-24） */
 export type PublishPackageTemplateResult = {
   templateId: string;

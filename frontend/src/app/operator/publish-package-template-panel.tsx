@@ -4,7 +4,7 @@
  * 发布套餐模板客户端岛 — POST /operator/templates/{id}/publish（AC-24）。
  */
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toOrganizationView } from "@/domains/operator/domain/organization-view";
 import {
   parsePackageTemplateStatus,
@@ -15,6 +15,7 @@ import {
   DEFAULT_PACKAGE_TEMPLATE_ID,
   DEFAULT_PUBLISH_ACTOR_ORG_ID,
   DEFAULT_PUBLISH_ACTOR_USER_ID,
+  fetchPackageTemplate,
   postPublishPackageTemplate,
 } from "@/domains/operator/infrastructure/operator-gateway";
 import styles from "./page.module.css";
@@ -31,6 +32,33 @@ export function PublishPackageTemplatePanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<PackageTemplateView | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID;
+    setLoadError(null);
+    fetchPackageTemplate(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setView(
+          toPackageTemplateView({
+            id: dto.templateId,
+            ownerOrgId: dto.ownerOrgId,
+            version: dto.version,
+            status: parsePackageTemplateStatus(dto.status),
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setView(null);
+        setLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [templateId]);
 
   const actorGate = useMemo(() => {
     const id = actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID;
@@ -85,21 +113,24 @@ export function PublishPackageTemplatePanel() {
   }
 
   const publishBlocked =
-    !actorGate.canAct || (view != null && !view.publishAllowed);
+    !actorGate.canAct || view == null || !view.publishAllowed;
   const blockMessage = !actorGate.canAct
     ? actorGate.blockMessage
-    : view != null && !view.publishAllowed
-      ? view.blockMessage
-      : null;
+    : view == null
+      ? (loadError ?? "正在加载模板…")
+      : !view.publishAllowed
+        ? view.blockMessage
+        : null;
 
   return (
     <section className={styles.panel}>
       <h2>发布套餐模板（HTTP · AC-24）</h2>
       <p className={styles.note}>
-        操作方须 ACTIVE（对齐 canManage / isActive）
+        操作方须 ACTIVE（对齐 canManage / isActive）；GET 模板对齐 publishAllowed
         {"statusLabel" in actorGate && actorGate.statusLabel
           ? ` · 种子操作方=${actorGate.statusLabel}`
           : ""}
+        {view ? ` · ${view.id}=${view.status}` : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>

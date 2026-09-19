@@ -3,6 +3,7 @@ package com.evolutionary.operator.interfaces;
 import com.evolutionary.operator.application.ActivatePackageOverride;
 import com.evolutionary.operator.application.ApproveOperatorDownline;
 import com.evolutionary.operator.application.CreateNextVersionDraft;
+import com.evolutionary.operator.application.PackageTemplateRepository;
 import com.evolutionary.operator.application.PublishPackageTemplate;
 import com.evolutionary.operator.application.ResolveEffectiveProduct;
 import com.evolutionary.operator.application.RevokePackageOverride;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/operator")
 public class OperatorController {
 
+    private final PackageTemplateRepository templates;
     private final PublishPackageTemplate publishPackageTemplate;
     private final CreateNextVersionDraft createNextVersionDraft;
     private final ActivatePackageOverride activatePackageOverride;
@@ -37,18 +39,30 @@ public class OperatorController {
     private final ApproveOperatorDownline approveOperatorDownline;
 
     public OperatorController(
+            PackageTemplateRepository templates,
             PublishPackageTemplate publishPackageTemplate,
             CreateNextVersionDraft createNextVersionDraft,
             ActivatePackageOverride activatePackageOverride,
             RevokePackageOverride revokePackageOverride,
             ResolveEffectiveProduct resolveEffectiveProduct,
             ApproveOperatorDownline approveOperatorDownline) {
+        this.templates = templates;
         this.publishPackageTemplate = publishPackageTemplate;
         this.createNextVersionDraft = createNextVersionDraft;
         this.activatePackageOverride = activatePackageOverride;
         this.revokePackageOverride = revokePackageOverride;
         this.resolveEffectiveProduct = resolveEffectiveProduct;
         this.approveOperatorDownline = approveOperatorDownline;
+    }
+
+    /** 只读：供发布/派生面板对齐 publishAllowed / nextVersionAllowed。 */
+    @GetMapping("/templates/{templateId}")
+    public ResponseEntity<TemplateView> template(@PathVariable String templateId) {
+        return templates
+                .findById(templateId.trim())
+                .map(OperatorController::toTemplateView)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /** 切片29a：运营商批准 OPERATOR 下线入驻（非 MERCHANT）。 */

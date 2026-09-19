@@ -5,7 +5,7 @@
  * 源须 PUBLISHED（nextVersionAllowed）；默认 T-PUB-1 → T-NEXT-1。
  */
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toOrganizationView } from "@/domains/operator/domain/organization-view";
 import {
   parsePackageTemplateStatus,
@@ -20,13 +20,12 @@ import {
   DEFAULT_NEXT_VERSION_SOURCE_ID,
   DEFAULT_PUBLISH_ACTOR_ORG_ID,
   DEFAULT_PUBLISH_ACTOR_USER_ID,
+  fetchPackageTemplate,
   postCreateNextVersionDraft,
 } from "@/domains/operator/infrastructure/operator-gateway";
 import styles from "./page.module.css";
 
 const SEED_ACTOR_STATUS = "ACTIVE" as const;
-/** 无 GET 前：种子源模板视为已发布。 */
-const SEED_SOURCE_STATUS = "PUBLISHED" as const;
 
 export function NextVersionPanel() {
   const [sourceTemplateId, setSourceTemplateId] = useState(
@@ -51,7 +50,34 @@ export function NextVersionPanel() {
   const [sourceView, setSourceView] = useState<PackageTemplateView | null>(
     null,
   );
+  const [sourceLoadError, setSourceLoadError] = useState<string | null>(null);
   const [draftView, setDraftView] = useState<PackageTemplateView | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = sourceTemplateId.trim() || DEFAULT_NEXT_VERSION_SOURCE_ID;
+    setSourceLoadError(null);
+    fetchPackageTemplate(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setSourceView(
+          toPackageTemplateView({
+            id: dto.templateId,
+            ownerOrgId: dto.ownerOrgId,
+            version: dto.version,
+            status: parsePackageTemplateStatus(dto.status),
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSourceView(null);
+        setSourceLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sourceTemplateId]);
 
   const actorGate = useMemo(() => {
     const id = actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID;
@@ -72,28 +98,19 @@ export function NextVersionPanel() {
   }, [actorOrgId]);
 
   const sourceGate = useMemo(() => {
-    const id = sourceTemplateId.trim() || DEFAULT_NEXT_VERSION_SOURCE_ID;
-    if (id !== DEFAULT_NEXT_VERSION_SOURCE_ID) {
+    if (!sourceView) {
       return {
-        nextVersionAllowed: true,
-        blockMessage: null as string | null,
+        nextVersionAllowed: false,
+        blockMessage: sourceLoadError ?? "正在加载源模板…",
       };
     }
-    const view =
-      sourceView ??
-      toPackageTemplateView({
-        id,
-        ownerOrgId: DEFAULT_PUBLISH_ACTOR_ORG_ID,
-        version: 1,
-        status: parsePackageTemplateStatus(SEED_SOURCE_STATUS),
-      });
     return {
-      nextVersionAllowed: view.nextVersionAllowed,
-      blockMessage: view.nextVersionAllowed
+      nextVersionAllowed: sourceView.nextVersionAllowed,
+      blockMessage: sourceView.nextVersionAllowed
         ? null
-        : (view.blockMessage ?? "仅已发布模板可派生下一版本"),
+        : (sourceView.blockMessage ?? "仅已发布模板可派生下一版本"),
     };
-  }, [sourceTemplateId, sourceView]);
+  }, [sourceView, sourceLoadError]);
 
   const deriveBlocked = !actorGate.canAct || !sourceGate.nextVersionAllowed;
   const blockMessage = !actorGate.canAct
@@ -135,9 +152,9 @@ export function NextVersionPanel() {
       setSourceView(
         toPackageTemplateView({
           id: sourceTemplateId.trim() || DEFAULT_NEXT_VERSION_SOURCE_ID,
-          ownerOrgId: DEFAULT_PUBLISH_ACTOR_ORG_ID,
+          ownerOrgId: r.ownerOrgId || DEFAULT_PUBLISH_ACTOR_ORG_ID,
           version: Math.max(1, r.version - 1),
-          status: parsePackageTemplateStatus(SEED_SOURCE_STATUS),
+          status: parsePackageTemplateStatus("PUBLISHED"),
         }),
       );
     } catch (err) {
@@ -151,10 +168,11 @@ export function NextVersionPanel() {
     <section className={styles.panel}>
       <h2>派生下一版本（HTTP · AC-25）</h2>
       <p className={styles.note}>
-        仅 PUBLISHED 可派生（nextVersionAllowed）；操作方须 ACTIVE
+        仅 PUBLISHED 可派生（GET 模板 · nextVersionAllowed）；操作方须 ACTIVE
         {"statusLabel" in actorGate && actorGate.statusLabel
           ? ` · 种子操作方=${actorGate.statusLabel}`
           : ""}
+        {sourceView ? ` · 源 ${sourceView.id}=${sourceView.status}` : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
