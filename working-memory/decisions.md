@@ -2,6 +2,7 @@
 
 | 日期 | 决策 | 理由 | 状态 |
 | :--- | :--- | :--- | :--- |
+| 2026-09-19 | **事务边界放 interfaces，用例保持零框架**：`TransactionalPerformSwap` 包住 `PerformSwap`，Controller 注入包装类。跨两次写的操作（站库存 + 换电日志）由此原子化 | 三条：① `DomainFrameworkFreeTest` 拦 application 层的 `import org.springframework`，不为一个注解开口子；② **边界属驱动方不属用例** —— `@Transactional` 打在 Controller 方法上会让事务范围变成"一次 HTTP 请求"，换驱动方（CLI/消息）就静默失去原子性；③ 与 HANDOVER 既定决策一致 | 生效中（`26b4aba`） |
 | 2026-09-17 | **前端目标架构（纠偏）**：App Router 默认 **RSC**；服务端读模型用 `fetch`+cache；客户端仅交互岛；请求层独立（弱网/错误/重试）；目录按 **BC 视图模型**（`domains/{swap,credit}/`）而非纯 page 堆叠 | L2 压测阶段用全 CSR 壳换速度，已偏移 | 待实施（`topic/fe-ddd-rsc`） |
 | 2026-09-17 | **mall→commerce**：允许应用层依赖 commerce 的 **共享内核**（`Money`/`Account`/`Ledger*`）；禁止 mall 域依赖 commerce **换电聚合**（Order/Entitlement/Usage）——已由 `PurchaseMallOrder` 注释钉死 | 支付账本跨 BC；换电权益不进商城 | 生效中 |
 | 2026-09-17 | **Monorepo 不拆仓**；全局工作区 = 本仓根。拆 FE/BE 仓的门槛：独立发布/权限/团队 | 当前一人+agent，拆仓增加契约同步成本 | 生效中 |
