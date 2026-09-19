@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-19 22:45（v16；波次以 `loop.md` 为准）
+**写于**：2026-09-19 23:03（v17；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v15（22:19 仍写 HEAD `03df9e2` / 140/140 —— 已过时）
+**取代**：v16（22:45 仍写 HEAD `4393b0e` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `4393b0e`。前端 146/146。
-wave84 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `cf1d8fa`。前端 146/146。
+wave88 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -90,7 +90,11 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave80** | Checkout 卡商家 isActive | ✅ `2becbc1` · 前端 129/129 |
 | **wave81** | BillingStatement DUE/OVERDUE 可还 | ✅ `ec39819` |
 | **wave82** | UsageEvent STARTED 可完结 | ✅ `a901fbe` |
-| **wave83** | 还款岛 mark-overdue | ✅ `03df9e2` · 前端 **140/140** |
+| **wave83** | 还款岛 mark-overdue | ✅ `03df9e2` · 前端 140/140 |
+| **wave84** | Organization isActive · 批下线结果 | ✅ `4393b0e` · 前端 146/146 |
+| **wave85** | 发布/覆盖/撤销卡操作方 ACTIVE | ✅ `9af6599` |
+| **wave86–87** | 购买/还款岛 canCoverCents | ✅ `b749430` |
+| **wave88** | TelemetryFreshnessPort · 计量岛 GET shadow | ✅ `cf1d8fa` · 前端 **146/146** · BE 相关 IT 6/6 |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -126,7 +130,7 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **140/140** · HEAD `03df9e2`。父自选推进。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **146/146** · HEAD `cf1d8fa`。父自选推进。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---

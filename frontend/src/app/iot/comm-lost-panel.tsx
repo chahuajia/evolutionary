@@ -2,12 +2,18 @@
 
 /**
  * IoT COMM_LOST 诊断客户端岛 — 默认 BAT-IOT-1；展示 stale / COMM_LOST / ticket。
+ * GET shadow 对齐 canDetectCommLost：仅 stale 时检测有意义。
  */
 
-import { FormEvent, useState } from "react";
-import { canDetectCommLost } from "@/domains/iot/domain/device-shadow-view";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  canDetectCommLost,
+  toDeviceShadowView,
+  type DeviceShadowView,
+} from "@/domains/iot/domain/device-shadow-view";
 import {
   DEFAULT_IOT_BATTERY,
+  fetchDeviceShadow,
   postDetectCommLost,
   type DetectCommLostResult,
 } from "@/domains/iot/infrastructure/iot-gateway";
@@ -18,17 +24,83 @@ export function CommLostPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<DetectCommLostResult | null>(null);
+  const [shadowView, setShadowView] = useState<DeviceShadowView | null>(null);
+  const [shadowLoadError, setShadowLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
+    setShadowLoadError(null);
+    setResult(null);
+    fetchDeviceShadow(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setShadowView(
+          toDeviceShadowView({
+            batteryId: dto.batteryId,
+            soc: dto.soc,
+            voltageMilli: dto.voltageMilli,
+            stale: dto.stale,
+            lastSeenAt: dto.lastSeenAt,
+            status: dto.status,
+            lockState: dto.lockState,
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setShadowView(null);
+        setShadowLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [batteryId]);
+
+  const gate = useMemo(() => {
+    if (!shadowView) {
+      return {
+        detectAllowed: false,
+        blockMessage: shadowLoadError ?? "正在加载设备影子…",
+      };
+    }
+    if (!canDetectCommLost(shadowView.stale)) {
+      return {
+        detectAllowed: false,
+        blockMessage: "影子仍新鲜，检测不会抬 COMM_LOST",
+      };
+    }
+    return {
+      detectAllowed: true,
+      blockMessage: null as string | null,
+    };
+  }, [shadowView, shadowLoadError]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!gate.detectAllowed) {
+      setError(gate.blockMessage ?? "当前不可检测");
+      return;
+    }
     setBusy(true);
     setError(null);
     setResult(null);
     try {
-      const r = await postDetectCommLost(
-        batteryId.trim() || DEFAULT_IOT_BATTERY,
-      );
+      const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
+      const r = await postDetectCommLost(id);
       setResult(r);
+      const dto = await fetchDeviceShadow(id);
+      setShadowView(
+        toDeviceShadowView({
+          batteryId: dto.batteryId,
+          soc: dto.soc,
+          voltageMilli: dto.voltageMilli,
+          stale: dto.stale,
+          lastSeenAt: dto.lastSeenAt,
+          status: dto.status,
+          lockState: dto.lockState,
+        }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -40,7 +112,10 @@ export function CommLostPanel() {
     <section className={styles.panel}>
       <h2>通信丢失检测（HTTP）</h2>
       <p className={styles.note}>
-        对齐 DetectCommLost：仅影子 stale 时抬 COMM_LOST；新鲜影子检测不会抬告警。
+        GET shadow 对齐 DetectCommLost：仅 stale 时检测有意义
+        {shadowView
+          ? ` · ${shadowView.batteryId}=${shadowView.fresh ? "fresh" : "stale"}`
+          : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
@@ -50,10 +125,16 @@ export function CommLostPanel() {
             onChange={(e) => setBatteryId(e.target.value)}
           />
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy || !gate.detectAllowed}>
           {busy ? "检测中…" : "检测 COMM_LOST"}
         </button>
       </form>
+
+      {!gate.detectAllowed && gate.blockMessage ? (
+        <p className={styles.note} role="status">
+          {gate.blockMessage}
+        </p>
+      ) : null}
 
       {error ? (
         <p className={styles.error} role="alert">
@@ -79,29 +160,29 @@ function DetectResultView({ result }: { result: DetectCommLostResult }) {
       <dt>stale</dt>
       <dd>
         <span
-          className={`${styles.badge} ${
-            result.stale ? styles.badgeStale : styles.badgeFresh
-          }`}
+          className={result.stale ? styles.badgeStale : styles.badgeFresh}
         >
           {result.stale ? "stale" : "fresh"}
         </span>
-        {detectUseful ? " · 适合检测" : " · 新鲜，不会抬告警"}
+        {detectUseful ? " · 值得检测" : " · 检测无意义"}
       </dd>
 
-      <dt>告警</dt>
-      <dd>
-        {alertLabel ? (
-          <span className={`${styles.badge} ${styles.badgeLost}`}>
-            {alertLabel}
-          </span>
-        ) : (
-          "未触发"
-        )}
-        {result.raised ? " · raised" : ""}
-      </dd>
+      <dt>raised</dt>
+      <dd>{result.raised ? "是" : "否"}</dd>
 
-      <dt>ticket</dt>
-      <dd>{result.ticketId ?? "无"}</dd>
+      {alertLabel ? (
+        <>
+          <dt>alertType</dt>
+          <dd>{alertLabel}</dd>
+        </>
+      ) : null}
+
+      {result.ticketId ? (
+        <>
+          <dt>ticketId</dt>
+          <dd>{result.ticketId}</dd>
+        </>
+      ) : null}
     </dl>
   );
 }
