@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-19 21:23（v12；波次以 `loop.md` 为准）
+**写于**：2026-09-19 21:30（v13；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v11（21:15 仍写 HEAD `f1b4121` / 129/129 —— 波次已前进）
+**取代**：v12（21:23 仍写 HEAD `d504785` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `d504785`。前端 129/129。
-wave76 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `045fd1f`。前端 129/129。
+wave77 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -82,7 +82,8 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave71** | 电池状态机：仅 AVAILABLE 可换出 | ✅ `dc18798` · 前端 110/110 |
 | **wave72–73** | Entitlement ACTIVE 可换电 · Order PAID 可退 | ✅ `59aa36d` · 前端 122/122 |
 | **wave74** | 影子 ShadowStatus/LockState 展示 | ✅ `e931420` · 前端 124/124 |
-| **wave75** | SettlementBatch 仅 OPEN 可关账 | ✅ `f1b4121` · 前端 **129/129** |
+| **wave75** | SettlementBatch 仅 OPEN 可关账 | ✅ `f1b4121` · 前端 129/129 |
+| **wave76** | GET SKU/Campaign + 面板真接线 | ✅ `d504785` · 前端 **129/129** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -118,7 +119,7 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **129/129**。父自选推进。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **129/129** · HEAD `d504785`。父自选推进。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
