@@ -44,6 +44,13 @@ public final class JpaProfitShareAccrualRepository implements ProfitShareAccrual
     }
 
     @Override
+    public List<ProfitShareAccrual> findByOrgId(String orgId) {
+        return jpa.findByOrgIdOrderByCreatedAtAsc(orgId).stream()
+                .map(JpaProfitShareAccrualRepository::toDomain)
+                .toList();
+    }
+
+    @Override
     public List<ProfitShareAccrual> findAll() {
         return jpa.findAll().stream().map(JpaProfitShareAccrualRepository::toDomain).toList();
     }

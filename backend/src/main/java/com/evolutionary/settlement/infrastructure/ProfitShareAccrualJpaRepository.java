@@ -11,6 +11,8 @@ public interface ProfitShareAccrualJpaRepository
 
     List<ProfitShareAccrualJpaEntity> findByOrderId(String orderId);
 
+    List<ProfitShareAccrualJpaEntity> findByOrgIdOrderByCreatedAtAsc(String orgId);
+
     List<ProfitShareAccrualJpaEntity>
             findByStatusAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
                     ProfitShareAccrual.Status status, Instant periodStart, Instant periodEnd);

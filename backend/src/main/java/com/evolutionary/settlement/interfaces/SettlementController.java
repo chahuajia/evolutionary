@@ -1,6 +1,7 @@
 package com.evolutionary.settlement.interfaces;
 
 import com.evolutionary.settlement.application.AccrueOnOrderCompleted;
+import com.evolutionary.settlement.application.ProfitShareAccrualRepository;
 import com.evolutionary.settlement.application.OrderCompletedFact;
 import com.evolutionary.settlement.application.OrderRefundedFact;
 import com.evolutionary.settlement.application.ReverseAccrualsOnRefund;
@@ -15,9 +16,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <ul>
  *   <li>{@code POST /settlement/accruals} body {@code {orderId, orgId, amountCents, completedAt?,
  *       userId?, currency?}} → PENDING Accrual 列表
+ *   <li>{@code GET /settlement/accruals?orgId=} → 该组织全部 Accrual（**读侧**，供工作台列表）
  *   <li>{@code POST /settlement/batches} body {@code {periodStart, periodEnd}} → CLOSED Batch
  *   <li>{@code POST /settlement/orders/{orderId}/reverse-accruals} → REVERSED + reversal 行（AC-35）；已
  *       SETTLED → 422 {@code ORDER_NOT_REFUNDABLE_SETTLED}（AC-36）
@@ -39,18 +43,42 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/settlement")
 public class SettlementController {
 
+    private final ProfitShareAccrualRepository accruals;
     private final AccrueOnOrderCompleted accrueOnOrderCompleted;
     private final ReverseAccrualsOnRefund reverseAccrualsOnRefund;
     private final RunSettlementBatch runSettlementBatch;
     private final Clock clock = Clock.systemUTC();
 
     public SettlementController(
+            ProfitShareAccrualRepository accruals,
             AccrueOnOrderCompleted accrueOnOrderCompleted,
             ReverseAccrualsOnRefund reverseAccrualsOnRefund,
             RunSettlementBatch runSettlementBatch) {
+        this.accruals = accruals;
         this.accrueOnOrderCompleted = accrueOnOrderCompleted;
         this.reverseAccrualsOnRefund = reverseAccrualsOnRefund;
         this.runSettlementBatch = runSettlementBatch;
+    }
+
+    /**
+     * 读侧：某组织的全部意向（含已结算/已冲销）。
+     *
+     * <p>**为什么返回全部状态而不是只返 PENDING**：这是**展示**接口。
+     * 只返 PENDING 的话，界面上永远没有"为什么这条不能动"需要解释的东西 ——
+     * 展示不变量（`canSettleAccrual` 等）就成了死代码。
+     *
+     * <p>读写分离：本接口**只读**，不碰任何用例；写侧仍是上面三个 POST。
+     * （HANDOVER 决定：「读写分离先拆端口，不要 GoF Command」。）
+     */
+    @GetMapping("/accruals")
+    public ResponseEntity<List<AccrualView>> listAccruals(@RequestParam String orgId) {
+        if (orgId == null || orgId.isBlank()) {
+            throw new IllegalArgumentException("orgId required");
+        }
+        return ResponseEntity.ok(
+                accruals.findByOrgId(orgId.trim()).stream()
+                        .map(SettlementController::toAccrual)
+                        .toList());
     }
 
     @PostMapping("/accruals")

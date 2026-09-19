@@ -5,14 +5,28 @@
  */
 
 import { FormEvent, useState } from "react";
-import { toAccrualView } from "@/domains/settlement/domain/accrual-view";
+import {
+  toAccrualView,
+  type AccrualView,
+} from "@/domains/settlement/domain/accrual-view";
 import {
   postAccrueSettlement,
   postRunSettlementBatch,
 } from "@/domains/settlement/infrastructure/settlement-gateway";
 import styles from "../credit/page.module.css";
 
-export function SettlementPanel() {
+type SettlementPanelProps = {
+  /**
+   * 服务端读来的意向列表（RSC）。
+   *
+   * @remarks
+   * **只读** —— 写操作仍由本岛发 POST，成功后 `router.refresh()`
+   * 让服务端重取（本仓既有写法）。
+   */
+  readonly accruals?: readonly AccrualView[];
+};
+
+export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
   const [orderId, setOrderId] = useState("O-STL-UI");
   const [userId, setUserId] = useState("U1");
   const [orgId, setOrgId] = useState("ORG-L2");
@@ -136,6 +150,34 @@ export function SettlementPanel() {
         </p>
       ) : null}
       {result ? <p className={styles.note}>{result}</p> : null}
+
+      {/*
+        服务端读来的列表。**这里才是展示不变量的用武之地** ——
+        列表里有已结算/已冲销的行，界面必须说明"为什么它不能动"，
+        否则灰按钮让人猜。
+      */}
+      <section className={styles.panel}>
+        <h2>意向列表（RSC · 只读）</h2>
+        {accruals.length === 0 ? (
+          <p className={styles.note}>该组织暂无分润意向。</p>
+        ) : (
+          <ul className={styles.list}>
+            {accruals.map((a) => (
+              <li key={a.id} className={styles.item}>
+                <div className={styles.itemHead}>
+                  <span>{a.orderId}</span>
+                  <span>{a.status}</span>
+                </div>
+                <div className={styles.meta}>
+                  ¥{a.amountYuan} · 可结算 {a.settleAllowed ? "是" : "否"} ·
+                  可冲销 {a.reverseAllowed ? "是" : "否"}
+                  {a.blockMessage ? ` · ${a.blockMessage}` : ""}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </>
   );
 }

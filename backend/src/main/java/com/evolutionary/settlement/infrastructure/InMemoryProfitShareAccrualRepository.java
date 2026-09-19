@@ -43,4 +43,9 @@ public final class InMemoryProfitShareAccrualRepository implements ProfitShareAc
     public List<ProfitShareAccrual> findAll() {
         return List.copyOf(byId.values());
     }
+
+    @Override
+    public List<ProfitShareAccrual> findByOrgId(String orgId) {
+        return byId.values().stream().filter(a -> a.orgId().equals(orgId)).toList();
+    }
 }

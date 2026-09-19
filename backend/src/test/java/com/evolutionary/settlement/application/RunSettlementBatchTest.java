@@ -168,6 +168,11 @@ class RunSettlementBatchTest {
         }
 
         @Override
+        public List<ProfitShareAccrual> findByOrgId(String orgId) {
+            return byId.values().stream().filter(a -> a.orgId().equals(orgId)).toList();
+        }
+
+        @Override
         public List<ProfitShareAccrual> findByOrderId(String orderId) {
             return byId.values().stream().filter(a -> a.orderId().equals(orderId)).toList();
         }

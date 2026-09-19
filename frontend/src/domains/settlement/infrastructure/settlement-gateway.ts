@@ -87,15 +87,35 @@ export async function postAccrueSettlement(
     }),
     timeoutMs: TIMEOUT_MS,
   });
-  return (Array.isArray(raw) ? raw : []).map((row) => {
-    const r = row as Record<string, unknown>;
-    return {
-      id: String(r.id ?? ""),
-      orderId: String(r.orderId ?? ""),
-      orgId: String(r.orgId ?? ""),
-      amountCents: typeof r.amountCents === "number" ? r.amountCents : 0,
-      // 边界解析，不是强转：未知状态当场炸（patterns/parse-dont-validate）。
-      status: parseAccrualStatus(r.status),
-    };
-  });
+  return (Array.isArray(raw) ? raw : []).map(toAccrualDto);
+}
+
+/**
+ * `GET /settlement/accruals?orgId=` —— 读侧。
+ *
+ * @remarks
+ * 与上面几个 POST 的区别是**只读**：不碰任何用例。
+ * 存在的理由见后端 `SettlementController.listAccruals` ——
+ * 只返 PENDING 的话，界面上永远没有"为什么这条不能动"需要解释的东西，
+ * 展示不变量（`canSettleAccrual` 等）就成了死代码。
+ */
+export async function fetchAccruals(orgId: string): Promise<AccrualDto[]> {
+  const base = apiBase();
+  const raw = await fetchJson<unknown[]>(
+    `${base}/settlement/accruals?orgId=${encodeURIComponent(orgId)}`,
+    { method: "GET", timeoutMs: TIMEOUT_MS },
+  );
+  return (Array.isArray(raw) ? raw : []).map(toAccrualDto);
+}
+
+/** 线格式 → DTO。**边界解析，不是强转**（parse-dont-validate）。 */
+function toAccrualDto(row: unknown): AccrualDto {
+  const r = row as Record<string, unknown>;
+  return {
+    id: String(r.id ?? ""),
+    orderId: String(r.orderId ?? ""),
+    orgId: String(r.orgId ?? ""),
+    amountCents: typeof r.amountCents === "number" ? r.amountCents : 0,
+    status: parseAccrualStatus(r.status),
+  };
 }
