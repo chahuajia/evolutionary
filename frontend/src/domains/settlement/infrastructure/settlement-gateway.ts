@@ -108,6 +108,22 @@ export async function fetchAccruals(orgId: string): Promise<AccrualDto[]> {
   return (Array.isArray(raw) ? raw : []).map(toAccrualDto);
 }
 
+/** POST /settlement/orders/{orderId}/reverse-accruals（AC-35） */
+export async function postReverseAccruals(
+  orderId: string,
+): Promise<AccrualDto[]> {
+  const base = apiBase();
+  const raw = await fetchJson<unknown[]>(
+    `${base}/settlement/orders/${encodeURIComponent(orderId)}/reverse-accruals`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return (Array.isArray(raw) ? raw : []).map(toAccrualDto);
+}
+
 /** 线格式 → DTO。**边界解析，不是强转**（parse-dont-validate）。 */
 function toAccrualDto(row: unknown): AccrualDto {
   const r = row as Record<string, unknown>;

@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * 结算批客户端岛 — accrue + runBatch（对齐 ORG-L2 种子规则）。
+ * 结算批客户端岛 — accrue + reverse + runBatch（对齐 ORG-L2 种子规则）。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import {
   toAccrualView,
   type AccrualView,
@@ -15,6 +15,7 @@ import {
 } from "@/domains/settlement/domain/settlement-batch-view";
 import {
   postAccrueSettlement,
+  postReverseAccruals,
   postRunSettlementBatch,
 } from "@/domains/settlement/infrastructure/settlement-gateway";
 import styles from "../credit/page.module.css";
@@ -41,6 +42,35 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [batchView, setBatchView] = useState<SettlementBatchView | null>(null);
+  const [localAccruals, setLocalAccruals] = useState<AccrualView[] | null>(
+    null,
+  );
+
+  const list = localAccruals ?? accruals;
+
+  const reverseGate = useMemo(() => {
+    const forOrder = list.filter((a) => a.orderId === orderId.trim());
+    if (forOrder.length === 0) {
+      return {
+        reverseAllowed: true,
+        blockMessage: null as string | null,
+        hint: "列表无该订单 · 交后端判",
+      };
+    }
+    const blocked = forOrder.find((a) => !a.reverseAllowed);
+    if (blocked) {
+      return {
+        reverseAllowed: false,
+        blockMessage: blocked.blockMessage,
+        hint: null as string | null,
+      };
+    }
+    return {
+      reverseAllowed: true,
+      blockMessage: null as string | null,
+      hint: null as string | null,
+    };
+  }, [list, orderId]);
 
   async function onAccrue(e: FormEvent) {
     e.preventDefault();
@@ -56,15 +86,47 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
         completedAt: new Date().toISOString(),
       });
       const views = rows.map(toAccrualView);
+      setLocalAccruals(views);
       setResult(
         `已记意向 ${views.length} 条：` +
           views
             .map(
               (r) =>
                 `${r.orgId}=¥${r.amountYuan}/${r.status}` +
-                // 不可结算/冲销时把原因一并显示，不让用户对着灰按钮猜。
-                // 新建的必定是 PENDING，这里当前恒空 —— 但状态一旦不是 PENDING
-                // （读路径接上后），说明会立刻生效。
+                (r.blockMessage ? `（${r.blockMessage}）` : ""),
+            )
+            .join(" · "),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onReverse(e: FormEvent) {
+    e.preventDefault();
+    if (!reverseGate.reverseAllowed) {
+      setError(reverseGate.blockMessage ?? "不可冲销");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      const rows = await postReverseAccruals(orderId.trim() || "O-STL-UI");
+      const views = rows.map(toAccrualView);
+      setLocalAccruals((prev) => {
+        const byId = new Map((prev ?? list).map((a) => [a.id, a]));
+        for (const v of views) byId.set(v.id, v);
+        return Array.from(byId.values());
+      });
+      setResult(
+        `已冲销 ${views.length} 条：` +
+          views
+            .map(
+              (r) =>
+                `${r.orderId}=¥${r.amountYuan}/${r.status}` +
                 (r.blockMessage ? `（${r.blockMessage}）` : ""),
             )
             .join(" · "),
@@ -107,7 +169,10 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
         <form className={styles.repayForm} onSubmit={onAccrue}>
           <label>
             orderId
-            <input value={orderId} onChange={(e) => setOrderId(e.target.value)} />
+            <input
+              value={orderId}
+              onChange={(e) => setOrderId(e.target.value)}
+            />
           </label>
           <label>
             userId
@@ -131,14 +196,31 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
         </form>
       </section>
       <section className={styles.panel}>
+        <h2>冲销意向（HTTP · AC-35）</h2>
+        <p className={styles.note}>
+          <code>POST /settlement/orders/{"{orderId}"}/reverse-accruals</code>
+          {" · "}
+          仅 PENDING 可冲销（reverseAllowed）
+          {reverseGate.hint ? ` · ${reverseGate.hint}` : ""}
+        </p>
+        <form className={styles.repayForm} onSubmit={onReverse}>
+          <button type="submit" disabled={busy || !reverseGate.reverseAllowed}>
+            {busy ? "冲销中…" : "冲销该订单意向"}
+          </button>
+        </form>
+        {!reverseGate.reverseAllowed && reverseGate.blockMessage ? (
+          <p className={styles.note} role="status">
+            {reverseGate.blockMessage}
+          </p>
+        ) : null}
+      </section>
+      <section className={styles.panel}>
         <h2>跑结算批</h2>
         <p className={styles.note}>
           <code>POST /settlement/batches</code>
           {" · "}
           一次跑完即关账（仅 OPEN 域上可再关；HTTP 返回通常已是 CLOSED）
-          {batchView
-            ? ` · 上次=${batchView.statusLabel}`
-            : ""}
+          {batchView ? ` · 上次=${batchView.statusLabel}` : ""}
         </p>
         <form className={styles.repayForm} onSubmit={onBatch}>
           <label>
@@ -167,18 +249,13 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
       ) : null}
       {result ? <p className={styles.note}>{result}</p> : null}
 
-      {/*
-        服务端读来的列表。**这里才是展示不变量的用武之地** ——
-        列表里有已结算/已冲销的行，界面必须说明"为什么它不能动"，
-        否则灰按钮让人猜。
-      */}
       <section className={styles.panel}>
         <h2>意向列表（RSC · 只读）</h2>
-        {accruals.length === 0 ? (
+        {list.length === 0 ? (
           <p className={styles.note}>该组织暂无分润意向。</p>
         ) : (
           <ul className={styles.list}>
-            {accruals.map((a) => (
+            {list.map((a) => (
               <li key={a.id} className={styles.item}>
                 <div className={styles.itemHead}>
                   <span>{a.orderId}</span>
