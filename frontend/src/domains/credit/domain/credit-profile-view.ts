@@ -32,9 +32,23 @@ export function centsToYuan(cents: number): number {
 
 export { formatYuan };
 
+/**
+ * 展示不变量：可用额度 = 总额度 − 已用。
+ * 已用超过额度时为负数，表示超限，不在视图层偷偷截成 0。
+ */
+export function availableCreditCents(
+  limitCents: number,
+  usedCents: number,
+): number {
+  return limitCents - usedCents;
+}
+
 /** gateway DTO/读模型 → 展示模型 */
 export function toCreditProfileView(profile: CreditProfile): CreditProfileView {
-  const available = profile.creditLimit - profile.usedCredit;
+  const available = availableCreditCents(
+    profile.creditLimit,
+    profile.usedCredit,
+  );
   return {
     userId: profile.userId,
     creditLimitCents: profile.creditLimit,

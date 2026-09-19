@@ -134,6 +134,7 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
                 <li key={view.id}>
                   <button
                     type="button"
+                    disabled={!view.selectable}
                     className={
                       view.id === stationId
                         ? styles.stationPickActive

@@ -8,7 +8,16 @@ export type StationView = {
   readonly canSwapOut: boolean;
   readonly batteryCount: number;
   readonly availabilityLabel: string;
+  /** 不可换出的站不能被选为本次换电目标 */
+  readonly selectable: boolean;
 };
+
+/**
+ * 展示不变量：不能换出的站不可选为换电目标。
+ */
+export function canChooseStationForSwap(canSwapOut: boolean): boolean {
+  return canSwapOut;
+}
 
 export function toStationView(dto: {
   id: string;
@@ -22,5 +31,6 @@ export function toStationView(dto: {
     canSwapOut: dto.canSwapOut,
     batteryCount: dto.batteryCount,
     availabilityLabel: dto.canSwapOut ? "可换出" : "不可换出",
+    selectable: canChooseStationForSwap(dto.canSwapOut),
   };
 }

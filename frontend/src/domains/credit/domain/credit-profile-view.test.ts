@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { centsToYuan, toCreditProfileView } from "./credit-profile-view";
+import {
+  availableCreditCents,
+  centsToYuan,
+  toCreditProfileView,
+} from "./credit-profile-view";
+
+describe("availableCreditCents", () => {
+  it("is limit minus used", () => {
+    expect(availableCreditCents(10000, 2500)).toBe(7500);
+  });
+
+  it("goes negative when used exceeds limit", () => {
+    expect(availableCreditCents(10000, 12000)).toBe(-2000);
+  });
+});
 
 describe("centsToYuan", () => {
   it("converts cents to yuan number", () => {

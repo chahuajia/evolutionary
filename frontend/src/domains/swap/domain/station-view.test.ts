@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { toStationView } from "./station-view";
+import { canChooseStationForSwap, toStationView } from "./station-view";
+
+describe("canChooseStationForSwap", () => {
+  it("allows choosing a station that can swap out", () => {
+    expect(canChooseStationForSwap(true)).toBe(true);
+  });
+
+  it("forbids choosing a station that cannot swap out", () => {
+    expect(canChooseStationForSwap(false)).toBe(false);
+  });
+});
 
 describe("toStationView", () => {
   it("passes through station fields and sets availabilityLabel to 可换出 when canSwapOut is true", () => {
@@ -15,6 +25,7 @@ describe("toStationView", () => {
     expect(view.canSwapOut).toBe(true);
     expect(view.batteryCount).toBe(5);
     expect(view.availabilityLabel).toBe("可换出");
+    expect(view.selectable).toBe(true);
   });
 
   it("passes through station fields and sets availabilityLabel to 不可换出 when canSwapOut is false", () => {
@@ -30,5 +41,6 @@ describe("toStationView", () => {
     expect(view.canSwapOut).toBe(false);
     expect(view.batteryCount).toBe(0);
     expect(view.availabilityLabel).toBe("不可换出");
+    expect(view.selectable).toBe(false);
   });
 });
