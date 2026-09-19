@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   availableCreditCents,
+  canPurchaseOnCredit,
   centsToYuan,
   toCreditProfileView,
 } from "./credit-profile-view";
@@ -12,6 +13,14 @@ describe("availableCreditCents", () => {
 
   it("goes negative when used exceeds limit", () => {
     expect(availableCreditCents(10000, 12000)).toBe(-2000);
+  });
+});
+
+describe("canPurchaseOnCredit", () => {
+  it("allows only good", () => {
+    expect(canPurchaseOnCredit("good")).toBe(true);
+    expect(canPurchaseOnCredit("frozen")).toBe(false);
+    expect(canPurchaseOnCredit("overdue")).toBe(false);
   });
 });
 
@@ -37,5 +46,19 @@ describe("toCreditProfileView", () => {
     expect(view.availableYuan).toBe("75.00");
     expect(view.usedYuan).toBe("25.00");
     expect(view.limitYuan).toBe("100.00");
+    expect(view.purchaseAllowed).toBe(true);
+  });
+
+  it("blocks purchase when frozen", () => {
+    const view = toCreditProfileView({
+      userId: "u-1",
+      creditLimit: 10000,
+      usedCredit: 2500,
+      status: "frozen",
+      scoreTier: "C",
+      policyVersion: 1,
+    });
+    expect(view.purchaseAllowed).toBe(false);
+    expect(view.statusLabel).toBe("冻结");
   });
 });

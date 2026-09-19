@@ -16,6 +16,11 @@ import styles from "./page.module.css";
 
 const DEFAULT_PRODUCT_ID = "P-CREDIT-1";
 
+type CreditPurchasePanelProps = {
+  readonly purchaseAllowed?: boolean;
+  readonly statusLabel?: string;
+};
+
 function summarizePurchase(r: CreditPurchaseResult): string {
   const parts = [
     `订单 ${r.orderId}`,
@@ -29,7 +34,10 @@ function summarizePurchase(r: CreditPurchaseResult): string {
   return parts.join(" · ");
 }
 
-export function CreditPurchasePanel() {
+export function CreditPurchasePanel({
+  purchaseAllowed = true,
+  statusLabel,
+}: CreditPurchasePanelProps) {
   const router = useRouter();
   const [userId, setUserId] = useState(DEFAULT_CREDIT_USER);
   const [productId, setProductId] = useState(DEFAULT_PRODUCT_ID);
@@ -39,6 +47,14 @@ export function CreditPurchasePanel() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!purchaseAllowed) {
+      setError(
+        statusLabel
+          ? `档案${statusLabel}，不可信用购`
+          : "档案状态不允许信用购",
+      );
+      return;
+    }
     setBusy(true);
     setError(null);
     setResult(null);
@@ -71,10 +87,17 @@ export function CreditPurchasePanel() {
             onChange={(e) => setProductId(e.target.value)}
           />
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy || !purchaseAllowed}>
           {busy ? "提交中…" : "信用购"}
         </button>
       </form>
+      {!purchaseAllowed ? (
+        <p className={styles.note} role="status">
+          {statusLabel
+            ? `档案${statusLabel}，不可信用购`
+            : "档案状态不允许信用购"}
+        </p>
+      ) : null}
       {error ? (
         <p className={styles.note} role="alert">
           {error}

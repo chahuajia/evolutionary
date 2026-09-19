@@ -23,6 +23,8 @@ export type CreditProfileView = {
   readonly availableYuan: string;
   readonly usedYuan: string;
   readonly limitYuan: string;
+  /** 冻结/逾期不可信用购；仅 good 可提交 */
+  readonly purchaseAllowed: boolean;
 };
 
 /** 分转元数值 */
@@ -43,6 +45,14 @@ export function availableCreditCents(
   return limitCents - usedCents;
 }
 
+/**
+ * 展示不变量：仅正常档案可信用购。
+ * 对齐后端 CreditProfile.charge：frozen / overdue 直接拒。
+ */
+export function canPurchaseOnCredit(status: CreditStatus): boolean {
+  return status === "good";
+}
+
 /** gateway DTO/读模型 → 展示模型 */
 export function toCreditProfileView(profile: CreditProfile): CreditProfileView {
   const available = availableCreditCents(
@@ -61,5 +71,6 @@ export function toCreditProfileView(profile: CreditProfile): CreditProfileView {
     availableYuan: formatYuan(available),
     usedYuan: formatYuan(profile.usedCredit),
     limitYuan: formatYuan(profile.creditLimit),
+    purchaseAllowed: canPurchaseOnCredit(profile.status),
   };
 }

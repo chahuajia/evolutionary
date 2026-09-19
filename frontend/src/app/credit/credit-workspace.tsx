@@ -8,7 +8,15 @@ import { CreditPurchasePanel } from "./credit-purchase-panel";
 import { CreditRefundPanel } from "./credit-refund-panel";
 import { CreditRepayPanel } from "./credit-repay-panel";
 
-export function CreditWorkspace() {
+type CreditWorkspaceProps = {
+  readonly purchaseAllowed?: boolean;
+  readonly statusLabel?: string;
+};
+
+export function CreditWorkspace({
+  purchaseAllowed = true,
+  statusLabel,
+}: CreditWorkspaceProps) {
   return (
     <WorkflowTabs
       defaultId="journey"
@@ -18,13 +26,23 @@ export function CreditWorkspace() {
           label: "业务串联",
           description:
             "信用购 → 权益履约 → 退款冲销；购后后端自动记分润意向。",
-          content: <CreditJourneyPanel />,
+          content: (
+            <CreditJourneyPanel
+              purchaseAllowed={purchaseAllowed}
+              statusLabel={statusLabel}
+            />
+          ),
         },
         {
           id: "purchase",
           label: "信用购",
           description: "先用后付开权益（P-CREDIT-1）。",
-          content: <CreditPurchasePanel />,
+          content: (
+            <CreditPurchasePanel
+              purchaseAllowed={purchaseAllowed}
+              statusLabel={statusLabel}
+            />
+          ),
         },
         {
           id: "repay",
