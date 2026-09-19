@@ -4,7 +4,12 @@
  * 商城领券客户端岛 — 默认 CAMP-OK / U1 / T-C1；成功展示券 id/status。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import {
+  canClaimCoupon,
+  campaignClaimBlockMessage,
+  toCampaignView,
+} from "@/domains/mall/domain/campaign-view";
 import {
   parseUserCouponStatus,
   toUserCouponView,
@@ -18,6 +23,13 @@ import {
 } from "@/domains/mall/infrastructure/mall-gateway";
 import styles from "./page.module.css";
 
+/**
+ * 无 GET Campaign 前：默认种子活动视为 ACTIVE、预算未知不卡。
+ * 非默认 campaignId 仍提交后端，由服务端守卫判活。
+ */
+const SEED_ACTIVE = "ACTIVE" as const;
+const SEED_BUDGET_UNKNOWN = Number.MAX_SAFE_INTEGER;
+
 export function CouponClaimPanel() {
   const [campaignId, setCampaignId] = useState(DEFAULT_MALL_CAMPAIGN);
   const [userId, setUserId] = useState(DEFAULT_MALL_USER);
@@ -26,8 +38,35 @@ export function CouponClaimPanel() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<UserCouponView | null>(null);
 
+  const seedGate = useMemo(() => {
+    const isDefault =
+      (campaignId.trim() || DEFAULT_MALL_CAMPAIGN) === DEFAULT_MALL_CAMPAIGN;
+    if (!isDefault) {
+      return { claimAllowed: true as boolean, blockMessage: null as string | null };
+    }
+    return {
+      claimAllowed: canClaimCoupon(SEED_ACTIVE, SEED_BUDGET_UNKNOWN, 0),
+      blockMessage: campaignClaimBlockMessage(
+        SEED_ACTIVE,
+        SEED_BUDGET_UNKNOWN,
+        0,
+      ),
+      preview: toCampaignView({
+        id: DEFAULT_MALL_CAMPAIGN,
+        ownerOrgId: "seed",
+        name: "默认活动",
+        budgetRemainingCents: SEED_BUDGET_UNKNOWN,
+        status: SEED_ACTIVE,
+      }),
+    };
+  }, [campaignId]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!seedGate.claimAllowed) {
+      setError(seedGate.blockMessage ?? "活动不可领券");
+      return;
+    }
     setBusy(true);
     setError(null);
     setView(null);
@@ -55,6 +94,12 @@ export function CouponClaimPanel() {
   return (
     <section className={styles.panel}>
       <h2>活动领券</h2>
+      {"preview" in seedGate && seedGate.preview ? (
+        <p className={styles.note} role="status">
+          种子活动 {seedGate.preview.id} · {seedGate.preview.status}
+          {seedGate.preview.claimAllowed ? " · 可领券" : ""}
+        </p>
+      ) : null}
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
           campaignId
@@ -74,7 +119,7 @@ export function CouponClaimPanel() {
             onChange={(e) => setTemplateId(e.target.value)}
           />
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy || !seedGate.claimAllowed}>
           {busy ? "领取中…" : "领券"}
         </button>
       </form>
