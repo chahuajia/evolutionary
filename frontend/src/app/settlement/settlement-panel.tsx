@@ -5,6 +5,7 @@
  */
 
 import { FormEvent, useState } from "react";
+import { toAccrualView } from "@/domains/settlement/domain/accrual-view";
 import {
   postAccrueSettlement,
   postRunSettlementBatch,
@@ -35,9 +36,10 @@ export function SettlementPanel() {
         userId,
         completedAt: new Date().toISOString(),
       });
+      const views = rows.map(toAccrualView);
       setResult(
-        `已记意向 ${rows.length} 条：` +
-          rows.map((r) => `${r.orgId}=${r.amountCents}¢/${r.status}`).join(" · "),
+        `已记意向 ${views.length} 条：` +
+          views.map((r) => `${r.orgId}=¥${r.amountYuan}/${r.status}`).join(" · "),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
