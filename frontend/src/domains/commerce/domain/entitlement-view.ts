@@ -1,0 +1,93 @@
+/**
+ * 权益展示模型 — 视图边界。
+ *
+ * 对齐后端 `Entitlement`：
+ * - 履约：仅 ACTIVE（isActiveAt 另卡窗口）
+ * - freeze：仅 ACTIVE → FROZEN
+ * - unfreeze：仅 FROZEN → ACTIVE
+ * - revoke：ACTIVE / EXPIRED / FROZEN（已 REVOKED 幂等）
+ */
+
+export type EntitlementStatus = "ACTIVE" | "FROZEN" | "EXPIRED" | "REVOKED";
+
+const ENTITLEMENT_STATUSES = [
+  "ACTIVE",
+  "FROZEN",
+  "EXPIRED",
+  "REVOKED",
+] as const;
+
+export function parseEntitlementStatus(raw: unknown): EntitlementStatus {
+  if (
+    typeof raw === "string" &&
+    (ENTITLEMENT_STATUSES as readonly string[]).includes(raw)
+  ) {
+    return raw as EntitlementStatus;
+  }
+  throw new Error(
+    `未知权益状态：${String(raw)}（契约：${ENTITLEMENT_STATUSES.join(" | ")}）`,
+  );
+}
+
+export type EntitlementView = {
+  readonly id: string;
+  readonly status: EntitlementStatus;
+  readonly statusLabel: string;
+  /** 仅 ACTIVE 可发起权益换电（窗口由后端再判）。 */
+  readonly swapAllowed: boolean;
+  readonly freezeAllowed: boolean;
+  readonly unfreezeAllowed: boolean;
+  readonly revokeAllowed: boolean;
+  readonly blockMessage: string | null;
+};
+
+export const ENTITLEMENT_STATUS_LABEL: Record<EntitlementStatus, string> = {
+  ACTIVE: "有效",
+  FROZEN: "冻结",
+  EXPIRED: "已过期",
+  REVOKED: "已撤销",
+};
+
+export function canSwapWithEntitlement(status: EntitlementStatus): boolean {
+  return status === "ACTIVE";
+}
+
+export function canFreezeEntitlement(status: EntitlementStatus): boolean {
+  return status === "ACTIVE";
+}
+
+export function canUnfreezeEntitlement(status: EntitlementStatus): boolean {
+  return status === "FROZEN";
+}
+
+/** ACTIVE / EXPIRED / FROZEN 可撤销；REVOKED 已终态。 */
+export function canRevokeEntitlement(status: EntitlementStatus): boolean {
+  return (
+    status === "ACTIVE" || status === "EXPIRED" || status === "FROZEN"
+  );
+}
+
+export function entitlementBlockMessage(
+  status: EntitlementStatus,
+): string | null {
+  if (status === "ACTIVE") return null;
+  if (status === "FROZEN") return "权益已冻结（信用逾期），还款后方可换电";
+  if (status === "EXPIRED") return "权益已过期，不可换电";
+  return "权益已撤销，不可换电";
+}
+
+export function toEntitlementView(dto: {
+  id: string;
+  status: EntitlementStatus;
+}): EntitlementView {
+  return {
+    id: dto.id,
+    status: dto.status,
+    statusLabel: ENTITLEMENT_STATUS_LABEL[dto.status],
+    swapAllowed: canSwapWithEntitlement(dto.status),
+    freezeAllowed: canFreezeEntitlement(dto.status),
+    unfreezeAllowed: canUnfreezeEntitlement(dto.status),
+    revokeAllowed: canRevokeEntitlement(dto.status),
+    blockMessage: entitlementBlockMessage(dto.status),
+  };
+}

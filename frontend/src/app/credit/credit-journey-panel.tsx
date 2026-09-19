@@ -6,8 +6,17 @@
  */
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  parseCommerceOrderStatus,
+  toCommerceOrderView,
+  type CommerceOrderView,
+} from "@/domains/commerce/domain/commerce-order-view";
+import {
+  parseEntitlementStatus,
+  toEntitlementView,
+} from "@/domains/commerce/domain/entitlement-view";
 import { postRefundOrder } from "@/domains/commerce/infrastructure/order-refund-gateway";
 import {
   DEFAULT_CREDIT_USER,
@@ -55,11 +64,26 @@ export function CreditJourneyPanel({
   const [userId, setUserId] = useState(DEFAULT_CREDIT_USER);
   const [productId, setProductId] = useState(DEFAULT_PRODUCT_ID);
   const [orderId, setOrderId] = useState("");
+  const [orderView, setOrderView] = useState<CommerceOrderView | null>(null);
   const [entitlementId, setEntitlementId] = useState("");
   const [paidAmountCents, setPaidAmountCents] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [log, setLog] = useState<string[]>([]);
+
+  const refundGate = useMemo(() => {
+    if (!orderId.trim()) {
+      return { refundAllowed: false, blockMessage: null as string | null };
+    }
+    if (!orderView || orderView.orderId !== orderId.trim()) {
+      return { refundAllowed: true, blockMessage: null as string | null };
+    }
+    return {
+      refundAllowed: orderView.refundAllowed,
+      blockMessage: orderView.blockMessage,
+      statusLabel: orderView.statusLabel,
+    };
+  }, [orderId, orderView]);
 
   function append(line: string) {
     setLog((prev) => [...prev, line]);
@@ -79,9 +103,14 @@ export function CreditJourneyPanel({
     try {
       const r = await postCreditPurchase({ userId, productId });
       setOrderId(r.orderId);
+      const paidView = toCommerceOrderView({
+        orderId: r.orderId,
+        status: "PAID",
+      });
+      setOrderView(paidView);
       setEntitlementId(r.entitlementId);
       setPaidAmountCents(r.paidAmountCents ?? null);
-      append(`① 信用购：${summarizePurchase(r)}`);
+      append(`① 信用购：${summarizePurchase(r)} · ${paidView.statusLabel}`);
       append(
         "购后 BE 应已自动记分润意向（依赖 22a；未合入时可下方 Accrue 手调）",
       );
@@ -95,15 +124,30 @@ export function CreditJourneyPanel({
 
   async function onRefund(e: FormEvent) {
     e.preventDefault();
+    if (!refundGate.refundAllowed) {
+      setError(refundGate.blockMessage ?? "当前订单不可退款");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       const r = await postRefundOrder(orderId);
-      const ent = r.entitlementId ?? (entitlementId || "(revoked)");
-      append(
-        `③ 退款冲销：${r.orderId} · ${r.status} · 权益 ${ent}` +
-          (r.entitlementStatus ? `/${r.entitlementStatus}` : ""),
-      );
+      const status = parseCommerceOrderStatus(r.status);
+      const view = toCommerceOrderView({ orderId: r.orderId, status });
+      setOrderView(view);
+      let ent = r.entitlementId ?? (entitlementId || "(revoked)");
+      if (r.entitlementStatus) {
+        try {
+          const ev = toEntitlementView({
+            id: r.entitlementId ?? (entitlementId || "?"),
+            status: parseEntitlementStatus(r.entitlementStatus),
+          });
+          ent = `${ev.id}/${ev.statusLabel}`;
+        } catch {
+          ent = `${ent}/${r.entitlementStatus}`;
+        }
+      }
+      append(`③ 退款冲销：${view.orderId} · ${view.statusLabel} · 权益 ${ent}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -164,7 +208,11 @@ export function CreditJourneyPanel({
       <h2>业务串联</h2>
       <p className={styles.note}>
         演示：信用购 → 权益换电 / 分润意向 → 退款冲销 → 可选结算批。默认{" "}
-        {DEFAULT_CREDIT_USER} / {DEFAULT_PRODUCT_ID}。
+        {DEFAULT_CREDIT_USER} / {DEFAULT_PRODUCT_ID}。仅已支付可退
+        {"statusLabel" in refundGate && refundGate.statusLabel
+          ? ` · 当前订单=${refundGate.statusLabel}`
+          : ""}
+        。
       </p>
 
       <form className={styles.repayForm} onSubmit={onPurchase}>
@@ -210,15 +258,31 @@ export function CreditJourneyPanel({
           orderId
           <input
             value={orderId}
-            onChange={(e) => setOrderId(e.target.value)}
+            onChange={(e) => {
+              setOrderId(e.target.value);
+              if (
+                orderView &&
+                e.target.value.trim() !== orderView.orderId
+              ) {
+                setOrderView(null);
+              }
+            }}
             placeholder="由信用购填入或粘贴"
             required
           />
         </label>
-        <button type="submit" disabled={busy || !orderId.trim()}>
+        <button
+          type="submit"
+          disabled={busy || !orderId.trim() || !refundGate.refundAllowed}
+        >
           {busy ? "提交中…" : "③ 退款冲销"}
         </button>
       </form>
+      {!refundGate.refundAllowed && refundGate.blockMessage ? (
+        <p className={styles.note} role="status">
+          {refundGate.blockMessage}
+        </p>
+      ) : null}
 
       <div className={styles.journeyActions}>
         <button type="button" disabled={busy} onClick={onAccrue}>

@@ -5,8 +5,17 @@
  * 契约：POST /commerce/orders/{orderId}/refund
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  parseCommerceOrderStatus,
+  toCommerceOrderView,
+  type CommerceOrderView,
+} from "@/domains/commerce/domain/commerce-order-view";
+import {
+  parseEntitlementStatus,
+  toEntitlementView,
+} from "@/domains/commerce/domain/entitlement-view";
 import { postRefundOrder } from "@/domains/commerce/infrastructure/order-refund-gateway";
 import {
   DEFAULT_CREDIT_USER,
@@ -21,9 +30,25 @@ export function CreditRefundPanel() {
   const [userId, setUserId] = useState(DEFAULT_CREDIT_USER);
   const [productId, setProductId] = useState(DEFAULT_PRODUCT_ID);
   const [orderId, setOrderId] = useState("");
+  const [orderView, setOrderView] = useState<CommerceOrderView | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
+
+  const refundGate = useMemo(() => {
+    if (!orderId.trim()) {
+      return { refundAllowed: false, blockMessage: null as string | null };
+    }
+    if (!orderView || orderView.orderId !== orderId.trim()) {
+      // 粘贴未知单：交后端；本地有态则走门
+      return { refundAllowed: true, blockMessage: null as string | null };
+    }
+    return {
+      refundAllowed: orderView.refundAllowed,
+      blockMessage: orderView.blockMessage,
+      statusLabel: orderView.statusLabel,
+    };
+  }, [orderId, orderView]);
 
   async function onBuy(e: FormEvent) {
     e.preventDefault();
@@ -33,7 +58,14 @@ export function CreditRefundPanel() {
     try {
       const r = await postCreditPurchase({ userId, productId });
       setOrderId(r.orderId);
-      setResult(`已购订单 ${r.orderId} · 权益 ${r.entitlementId}`);
+      const paidView = toCommerceOrderView({
+        orderId: r.orderId,
+        status: "PAID",
+      });
+      setOrderView(paidView);
+      setResult(
+        `已购订单 ${r.orderId} · ${paidView.statusLabel} · 权益 ${r.entitlementId}`,
+      );
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -44,13 +76,31 @@ export function CreditRefundPanel() {
 
   async function onRefund(e: FormEvent) {
     e.preventDefault();
+    if (!refundGate.refundAllowed) {
+      setError(refundGate.blockMessage ?? "当前订单不可退款");
+      return;
+    }
     setBusy(true);
     setError(null);
     setResult(null);
     try {
       const r = await postRefundOrder(orderId);
-      const ent = r.entitlementId ?? "(revoked)";
-      setResult(`已退 ${r.orderId} · ${r.status} · 权益 ${ent}`);
+      const status = parseCommerceOrderStatus(r.status);
+      const view = toCommerceOrderView({ orderId: r.orderId, status });
+      setOrderView(view);
+      let entLabel = r.entitlementId ?? "(revoked)";
+      if (r.entitlementStatus) {
+        try {
+          const ev = toEntitlementView({
+            id: r.entitlementId ?? "?",
+            status: parseEntitlementStatus(r.entitlementStatus),
+          });
+          entLabel = `${ev.id}/${ev.statusLabel}`;
+        } catch {
+          entLabel = `${entLabel}/${r.entitlementStatus}`;
+        }
+      }
+      setResult(`已退 ${view.orderId} · ${view.statusLabel} · 权益 ${entLabel}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -64,6 +114,11 @@ export function CreditRefundPanel() {
       <h2>订单退款</h2>
       <p className={styles.note}>
         契约 <code>POST /commerce/orders/{"{orderId}"}/refund</code>
+        {" · "}
+        仅已支付可退
+        {"statusLabel" in refundGate && refundGate.statusLabel
+          ? ` · 当前=${refundGate.statusLabel}`
+          : ""}
       </p>
       <form className={styles.repayForm} onSubmit={onBuy}>
         <label>
@@ -86,15 +141,31 @@ export function CreditRefundPanel() {
           orderId
           <input
             value={orderId}
-            onChange={(e) => setOrderId(e.target.value)}
+            onChange={(e) => {
+              setOrderId(e.target.value);
+              if (
+                orderView &&
+                e.target.value.trim() !== orderView.orderId
+              ) {
+                setOrderView(null);
+              }
+            }}
             placeholder="粘贴或由信用购填入"
             required
           />
         </label>
-        <button type="submit" disabled={busy || !orderId.trim()}>
+        <button
+          type="submit"
+          disabled={busy || !orderId.trim() || !refundGate.refundAllowed}
+        >
           {busy ? "提交中…" : "退款"}
         </button>
       </form>
+      {!refundGate.refundAllowed && refundGate.blockMessage ? (
+        <p className={styles.note} role="status">
+          {refundGate.blockMessage}
+        </p>
+      ) : null}
       {error ? (
         <p className={styles.note} role="alert">
           {error}
