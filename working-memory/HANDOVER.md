@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-19 23:58（v21；波次以 `loop.md` 为准）
+**写于**：2026-09-20 00:22（v22；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v20（23:32 仍写 HEAD `1eacd73` —— 已过时）
+**取代**：v21（23:58 仍写 HEAD `978fbf2` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `978fbf2`。前端 152/152。
-wave96 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `414ee65`。前端 152/152。
+wave97 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -102,7 +102,8 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave93** | selectDefaultEntitlement（AC-14） | ✅ `59906df` · 前端 152/152 |
 | **wave94** | 跑批卡 settleAllowed | ✅ `1eacd73` · 前端 152/152 |
 | **wave95** | 换电提交卡门 canSwapOutBattery | ✅ `0602abf` |
-| **wave96** | POST resolve 工单 · resolveAllowed | ✅ `978fbf2` · 前端 **152/152** · IoT IT 10/10 |
+| **wave96** | POST resolve 工单 · resolveAllowed | ✅ `978fbf2` · 前端 152/152 · IoT IT 10/10 |
+| **wave97** | 派生下一版本 HTTP · nextVersionAllowed | ✅ `414ee65` · 前端 **152/152** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -138,7 +139,7 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **152/152** · HEAD `978fbf2`。父自选推进。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **152/152** · HEAD `414ee65`。父自选推进。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
