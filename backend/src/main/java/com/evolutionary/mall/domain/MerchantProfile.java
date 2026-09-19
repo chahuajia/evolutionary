@@ -34,6 +34,15 @@ public final class MerchantProfile {
         return new MerchantProfile(orgId, shopName, MerchantProfile.Status.ACTIVE);
     }
 
+    /** JPA 回放；不做业务校验。 */
+    public static MerchantProfile rehydrate(
+            String orgId, String shopName, MerchantProfile.Status status) {
+        return new MerchantProfile(
+                Objects.requireNonNull(orgId, "orgId"),
+                Objects.requireNonNull(shopName, "shopName"),
+                Objects.requireNonNull(status, "status"));
+    }
+
     public boolean isActive() {
         return status == MerchantProfile.Status.ACTIVE;
     }
