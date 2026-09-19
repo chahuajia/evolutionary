@@ -9,6 +9,7 @@ import {
   toEntitlementView,
   type EntitlementStatus,
 } from "@/domains/commerce/domain/entitlement-view";
+import { toUsageEventView } from "@/domains/commerce/domain/usage-event-view";
 import { postEntitledSwap } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import styles from "./page.module.css";
@@ -69,8 +70,14 @@ export function MeteredSwapPanel() {
         r.chargedAmountCents != null
           ? ` · 扣费 ${formatCents(r.chargedAmountCents)}`
           : "";
+      const ue = toUsageEventView({
+        id: r.usageEventId,
+        status: r.status,
+      });
       setResult(
-        `事件 ${r.usageEventId} · ${r.status} · 电池 ${r.batteryId}${charge}`,
+        `事件 ${ue.id} · ${ue.statusLabel}` +
+          (ue.blockMessage ? ` · ${ue.blockMessage}` : "") +
+          ` · 电池 ${r.batteryId}${charge}`,
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
