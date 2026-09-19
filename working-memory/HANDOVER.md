@@ -84,7 +84,10 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave74** | 影子 ShadowStatus/LockState 展示 | ✅ `e931420` · 前端 124/124 |
 | **wave75** | SettlementBatch 仅 OPEN 可关账 | ✅ `f1b4121` · 前端 129/129 |
 | **wave76** | GET SKU/Campaign + 面板真接线 | ✅ `d504785` · 前端 129/129 |
-| **wave77** | GET MerchantProfile + 种子 M1 | ✅ `045fd1f` · 前端 **129/129** |
+| **wave77** | GET MerchantProfile + 种子 M1 | ✅ `045fd1f` · 前端 129/129 |
+| **wave78** | GET CouponTemplate · 领券面额真接线 | ✅ `3dc1f33` |
+| **wave79** | PurchaseMallOrder 卡商家 isActive | ✅ `1608ee4` |
+| **wave80** | Checkout 卡商家 isActive | ✅ `2becbc1` · 前端 **129/129** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -120,7 +123,7 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **129/129** · HEAD `045fd1f`。父自选推进。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **129/129** · HEAD `2becbc1`。父自选推进。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
