@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-19 09:00（v2）
+**写于**：2026-09-19 15:01（v4；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v1（`303dc35` 那版）与 `collab-cli/working-memory/HANDOVER.md` 的对应段落
+**取代**：v3（11:02 仍写 HEAD `1a5def8` / 下一刀 wave50 —— 已过时）
 
-**当前总状态**：**▶ 集群可运行** —— 用户 2026-09-19 已说「继续」，wave42 已收口。
-但**下一刀派不派要单独判断** —— 见「下一刀」。
+**当前总状态**：**⏸ 听 Claude 点刀**。HEAD `5b914f6`。前端 25/25。
+小切片主树父写（证据 6）。wave54–56 已落。不自动续派。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -39,15 +39,10 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | :--- | :--- |
 | commerce / credit / mall / settlement / swap / station / battery / iot / admin / **operator** | ✅ 全部清零 |
 
-**全仓只剩 1 处 InMemory 注入**：
-
-```
-operator/interfaces/OperatorConfig.java:89
-    return new InMemoryMerchantProfileRepository();   // ← mall 域的仓储
-```
+**全仓 InMemory 注入已清零**（wave43 `09f083f` MerchantProfile JPA）。
 
 > ⚠️ **「还剩多少活」看「仍被 new 的数」，不是 `InMemory*.java` 文件数。**
-> 文件剩 32 个是有意保留（迁移后文件留着、只是不再注入）。
+> 文件留着是有意的（迁移后不再注入）。
 > 曾按文件数误判成 "settlement 3 / credit 4 / mall 7"，全错。
 
 ---
@@ -57,8 +52,21 @@ operator/interfaces/OperatorConfig.java:89
 | 波 | 内容 | 结果 |
 | :--- | :--- | :--- |
 | wave41 | iot 前半（DeviceShadow + TelemetryStore） | ✅ |
-| **wave42** | **46a AlertStore ∥ 46b MaintenanceTicket**（双 worktree） | ✅ 收口于 `2a10645` |
-| wave43 | 未派 | — |
+| **wave42** | **46a AlertStore ∥ 46b MaintenanceTicket** | ✅ |
+| **wave43** | **47a MerchantProfile JPA ∥ 47b 前端 vitest** | ✅ `3d1e8d2` · InMemory 注入清零 |
+| **wave44** | **48a operator page RSC ∥ 48b admin page RSC** | ✅ `806b748` · 全部 `page.tsx` 无 `"use client"` |
+| **wave45** | **49a credit-profile-view 测 ∥ 49b mall-order-view** | ✅ `9c3aaac` · 前端 6/6 |
+| **wave46** | **50a accrual-view ∥ 50b station-view** | ✅ `3b5d3b0` · 前端 10/10 |
+| **wave47** | **51a mall-purchase 落地 ∥ 51b settlement-panel 落地** | ✅ `1a89702` |
+| **wave48** | **52a mall-checkout-view ∥ 52b credit-journey 意向** | ✅ `6050f7c` · 前端 13/13 |
+| **wave49** | **53a iot 工单 RSC ∥ 53b station 接线** | ✅ `6662402` · 前端 13/13 |
+| **wave50** | **54a operator 有效价 RSC ∥ 54b home 换电日志 RSC** | ✅ `49fc611` |
+| **wave51** | **55a 覆盖价 ¥ ∥ 55b 撤销价 ¥** | ✅ `04fd0f4` |
+| **wave52** | **shared/money 分转元一处** | ✅ `4d0a308` |
+| **wave53** | **可用额度不变量 + 不可换出站不可选** | ✅ `1a5def8` · 前端 18/18 |
+| **wave54** | **canPurchaseOnCredit（仅 good）+ 档案状态入购/串联岛** | ✅ `19a5a8c` |
+| **wave55** | **hasCreditHeadroom（可用≤0 不可购）** | ✅ `c33dc11` |
+| **wave56** | **canOfferCreditRepay（good 且 used=0 不提供）** | ✅ `5b914f6` · 前端 25/25 |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -77,6 +85,7 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
    事务边界放 **interfaces**（见下表）。
 6. 中文 commit / 注释 / WM。回答从 H2 开始，不客套。
 7. 子代理通知 = **同轮 merge + 验绿**，父收口冲突。
+8. **收口≠停派。** 基线绿 ∧ 仍有互不改同一方法体的双路 ∧ 用户未说暂停 → **同 tick 必须派**。「需判断」= 父当场选切片，不是问用户、不是停机。不造未接线 view 只过滤切片，不构成停机。
 
 ---
 
@@ -93,19 +102,13 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-**JPA 化这条线基本走完了。** 只剩 1 处跨域注入，且**不该盲目 JPA 化** ——
-`InMemoryMerchantProfileRepository` 是 mall 域仓储接在 operator 的 config 里，
-先判断 merchant profile 是不是共享内核（KB 有 `shared-kernel-across-bc` 一行）。
+**JPA 化走完。** 前端基线 `vitest@2.1.9` · **25/25**。全部路由根已是 RSC 壳。
 
-真正的大块是**前端**：
+信用展示门已对齐后端：`charge`（good + 正额度）/`repay`（有欠或非 good）。  
+mall / settlement 视图仍偏 DTO 映射。
 
-- `topic/fe-ddd-rsc` 决策表仍标「待实施」：App Router 默认 RSC、服务端读模型、
-  客户端仅交互岛、目录按 BC 视图模型
-- **但前端零测试**（`frontend/` 下无任何 `*.test.*`）⇒ **前端没有基线**
-- 按硬规则 2，直接开大改会重演"红着基线派双路"。**先给前端建一条能跑的验收**
-  （哪怕只是 `next build` + 一条冒烟），才谈得上改造
-
-⇒ **合理的第一步是主进程单干（给前端建验收），不是派双路。**
+**2026-09-19 15:00 用户改指挥：听 Claude 点刀，本执行面不自选。**
+禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
 
