@@ -4,7 +4,8 @@
  * 套餐覆盖客户端岛 — POST overrides + GET effective-product（AC-26）。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import { toOrganizationView } from "@/domains/operator/domain/organization-view";
 import {
   parsePackageOverrideStatus,
   toPackageOverrideView,
@@ -23,6 +24,9 @@ import {
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import styles from "./page.module.css";
 
+/** 无 GET Org 前：种子操作方视为 ACTIVE。 */
+const SEED_ACTOR_STATUS = "ACTIVE" as const;
+
 export function PackageOverridePanel() {
   const [templateId, setTemplateId] = useState(DEFAULT_OVERRIDE_TEMPLATE_ID);
   const [actorOrgId, setActorOrgId] = useState(DEFAULT_OVERRIDE_ACTOR_ORG_ID);
@@ -39,8 +43,30 @@ export function PackageOverridePanel() {
     null,
   );
 
+  const actorGate = useMemo(() => {
+    const id = actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID;
+    if (id !== DEFAULT_OVERRIDE_ACTOR_ORG_ID) {
+      return { canAct: true, blockMessage: null as string | null };
+    }
+    const actor = toOrganizationView({
+      id,
+      name: "种子操作方",
+      status: SEED_ACTOR_STATUS,
+      operatorCapability: true,
+    });
+    return {
+      canAct: actor.canActAsManager,
+      blockMessage: actor.blockMessage,
+      statusLabel: actor.statusLabel,
+    };
+  }, [actorOrgId]);
+
   async function onActivate(e: FormEvent) {
     e.preventDefault();
+    if (!actorGate.canAct) {
+      setError(actorGate.blockMessage ?? "操作方组织不可激活覆盖");
+      return;
+    }
     if (view && !view.activateAllowed) {
       setError(view.blockMessage ?? "当前状态不可激活");
       return;
@@ -96,13 +122,23 @@ export function PackageOverridePanel() {
     }
   }
 
-  const activateBlocked = view != null && !view.activateAllowed;
+  const activateBlocked =
+    !actorGate.canAct || (view != null && !view.activateAllowed);
+  const blockMessage = !actorGate.canAct
+    ? actorGate.blockMessage
+    : view != null && !view.activateAllowed
+      ? view.blockMessage
+      : null;
 
   return (
     <section className={styles.panel}>
       <h2>套餐覆盖与有效价（HTTP · AC-26）</h2>
       <p className={styles.note}>
-        L2 对已发布模板激活 patches；目录侧 GET effective-product 合成价。
+        L2 对已发布模板激活 patches；操作方须 ACTIVE（对齐 canManage /
+        isActive）
+        {"statusLabel" in actorGate && actorGate.statusLabel
+          ? ` · 种子操作方=${actorGate.statusLabel}`
+          : ""}
       </p>
       <form className={styles.form} onSubmit={onActivate}>
         <label>
@@ -161,10 +197,10 @@ export function PackageOverridePanel() {
           {busy ? "查询中…" : "查询有效价"}
         </button>
       </form>
-      {activateBlocked && view?.blockMessage ? (
+      {activateBlocked && blockMessage ? (
         <p className={styles.note} role="status">
-          {view.blockMessage}
-          {view.revokeAllowed ? "（可去「撤销覆盖」页）" : ""}
+          {blockMessage}
+          {view?.revokeAllowed ? "（可去「撤销覆盖」页）" : ""}
         </p>
       ) : null}
       {error ? (
