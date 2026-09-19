@@ -66,9 +66,11 @@ public class MallConfig {
     PurchaseMallOrder purchaseMallOrder(
             MallSkuRepository skus,
             MallOrderRepository orders,
+            MerchantProfileRepository merchants,
             AccountRepository accounts,
             LedgerRepository ledger) {
-        return new PurchaseMallOrder(skus, orders, accounts, ledger, Clock.systemUTC());
+        return new PurchaseMallOrder(
+                skus, orders, merchants, accounts, ledger, Clock.systemUTC());
     }
 
     @Bean

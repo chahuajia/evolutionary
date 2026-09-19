@@ -7,6 +7,8 @@ public enum MallErrorCode {
     INSUFFICIENT_BALANCE,
     INVALID_QTY,
     MERCHANT_MISMATCH,
+    /** 商家档案非 ACTIVE（停用或缺失） */
+    MERCHANT_NOT_ACTIVE,
     /** 同 mutexGroup 多张券叠加 */
     COUPON_MUTEX_VIOLATION,
     /** 叠加超过上限（≤2） */

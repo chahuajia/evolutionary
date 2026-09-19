@@ -35,6 +35,7 @@ public final class MallApiErrorTranslator {
             case INSUFFICIENT_BALANCE -> "top up user balance then retry";
             case INSUFFICIENT_STOCK -> "reduce qty or wait for restock";
             case SKU_NOT_ON_SALE -> "pick an on-sale sku";
+            case MERCHANT_NOT_ACTIVE -> "use an active merchant profile";
             default -> null;
         };
     }
