@@ -6,12 +6,15 @@
 
 import { FormEvent, useState } from "react";
 import {
+  toDeviceShadowView,
+  type DeviceShadowView,
+} from "@/domains/iot/domain/device-shadow-view";
+import {
   DEFAULT_IOT_BATTERY,
   DEFAULT_TELEMETRY_SOC,
   DEFAULT_TELEMETRY_VENDOR,
   DEFAULT_TELEMETRY_VOLTAGE_MILLI,
   postTelemetry,
-  type TelemetryResult,
 } from "@/domains/iot/infrastructure/iot-gateway";
 import styles from "./page.module.css";
 
@@ -24,13 +27,13 @@ export function TelemetryPanel() {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<TelemetryResult | null>(null);
+  const [view, setView] = useState<DeviceShadowView | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    setResult(null);
+    setView(null);
     try {
       const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
       const r = await postTelemetry(id, {
@@ -38,7 +41,7 @@ export function TelemetryPanel() {
         soc: Number(soc) || DEFAULT_TELEMETRY_SOC,
         voltageMilli: Number(voltageMilli) || DEFAULT_TELEMETRY_VOLTAGE_MILLI,
       });
-      setResult(r);
+      setView(toDeviceShadowView(r));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -91,38 +94,48 @@ export function TelemetryPanel() {
         </p>
       ) : null}
 
-      {result ? <TelemetryResultView result={result} /> : null}
+      {view ? <ShadowResultView view={view} /> : null}
     </section>
   );
 }
 
-function TelemetryResultView({ result }: { result: TelemetryResult }) {
+function ShadowResultView({ view }: { view: DeviceShadowView }) {
   return (
     <dl className={styles.dl}>
       <dt>电池</dt>
-      <dd>{result.batteryId}</dd>
+      <dd>{view.batteryId}</dd>
 
       <dt>soc</dt>
-      <dd>{result.soc}%</dd>
+      <dd>{view.soc}%</dd>
 
       <dt>voltageMilli</dt>
-      <dd>{result.voltageMilli}</dd>
+      <dd>{view.voltageMilli}</dd>
 
       <dt>stale</dt>
       <dd>
         <span
           className={`${styles.badge} ${
-            result.stale ? styles.badgeStale : styles.badgeFresh
+            view.stale ? styles.badgeStale : styles.badgeFresh
           }`}
         >
-          {result.stale ? "stale" : "fresh"}
+          {view.fresh ? "fresh" : "stale"}
         </span>
       </dd>
 
-      {result.lastSeenAt ? (
+      <dt>计量换电</dt>
+      <dd>{view.meteredSwapAllowed ? "允许" : "禁止"}</dd>
+
+      {view.blockMessage ? (
+        <>
+          <dt>说明</dt>
+          <dd>{view.blockMessage}</dd>
+        </>
+      ) : null}
+
+      {view.lastSeenAt ? (
         <>
           <dt>lastSeenAt</dt>
-          <dd>{result.lastSeenAt}</dd>
+          <dd>{view.lastSeenAt}</dd>
         </>
       ) : null}
     </dl>

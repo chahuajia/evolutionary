@@ -53,6 +53,10 @@ export function MeteredSwapPanel() {
   return (
     <section className={styles.panel}>
       <h2>计量权益换电（HTTP）</h2>
+      <p className={styles.note}>
+        前置：设备影子须新鲜（AssertShadowFreshForMetered）；stale 时后端
+        TELEMETRY_STALE。
+      </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
           userId

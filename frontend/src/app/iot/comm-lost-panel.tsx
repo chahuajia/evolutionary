@@ -5,6 +5,7 @@
  */
 
 import { FormEvent, useState } from "react";
+import { canDetectCommLost } from "@/domains/iot/domain/device-shadow-view";
 import {
   DEFAULT_IOT_BATTERY,
   postDetectCommLost,
@@ -24,7 +25,9 @@ export function CommLostPanel() {
     setError(null);
     setResult(null);
     try {
-      const r = await postDetectCommLost(batteryId.trim() || DEFAULT_IOT_BATTERY);
+      const r = await postDetectCommLost(
+        batteryId.trim() || DEFAULT_IOT_BATTERY,
+      );
       setResult(r);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -36,6 +39,9 @@ export function CommLostPanel() {
   return (
     <section className={styles.panel}>
       <h2>通信丢失检测（HTTP）</h2>
+      <p className={styles.note}>
+        对齐 DetectCommLost：仅影子 stale 时抬 COMM_LOST；新鲜影子检测不会抬告警。
+      </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
           batteryId
@@ -63,6 +69,7 @@ export function CommLostPanel() {
 function DetectResultView({ result }: { result: DetectCommLostResult }) {
   const alertLabel =
     result.alertType ?? (result.raised ? "COMM_LOST" : null);
+  const detectUseful = canDetectCommLost(result.stale);
 
   return (
     <dl className={styles.dl}>
@@ -78,6 +85,7 @@ function DetectResultView({ result }: { result: DetectCommLostResult }) {
         >
           {result.stale ? "stale" : "fresh"}
         </span>
+        {detectUseful ? " · 适合检测" : " · 新鲜，不会抬告警"}
       </dd>
 
       <dt>告警</dt>

@@ -6,28 +6,44 @@
 
 import { FormEvent, useState } from "react";
 import {
+  toDeviceShadowView,
+  type DeviceShadowView,
+} from "@/domains/iot/domain/device-shadow-view";
+import {
   DEFAULT_IOT_BATTERY,
   postTriageOutdatedSoc,
-  type TriageOutdatedSocResult,
+  type TriageNextStep,
 } from "@/domains/iot/infrastructure/iot-gateway";
 import styles from "./page.module.css";
+
+type TriageView = {
+  batteryId: string;
+  nextStep: TriageNextStep;
+  orderedChecks: string[];
+  shadow: DeviceShadowView;
+};
 
 export function TriagePanel() {
   const [batteryId, setBatteryId] = useState(DEFAULT_IOT_BATTERY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<TriageOutdatedSocResult | null>(null);
+  const [view, setView] = useState<TriageView | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    setResult(null);
+    setView(null);
     try {
       const r = await postTriageOutdatedSoc(
         batteryId.trim() || DEFAULT_IOT_BATTERY,
       );
-      setResult(r);
+      setView({
+        batteryId: r.batteryId,
+        nextStep: r.nextStep,
+        orderedChecks: r.orderedChecks,
+        shadow: toDeviceShadowView(r.shadow),
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -57,37 +73,37 @@ export function TriagePanel() {
         </p>
       ) : null}
 
-      {result ? <TriageResultView result={result} /> : null}
+      {view ? <TriageResultView view={view} /> : null}
     </section>
   );
 }
 
-function TriageResultView({ result }: { result: TriageOutdatedSocResult }) {
-  const { shadow } = result;
+function TriageResultView({ view }: { view: TriageView }) {
+  const { shadow } = view;
   const nextStepClass =
-    result.nextStep === "SHADOW_STALE"
+    view.nextStep === "SHADOW_STALE"
       ? styles.badgeStale
-      : result.nextStep === "CHECK_ADAPTER"
+      : view.nextStep === "CHECK_ADAPTER"
         ? styles.badgeFresh
         : styles.badgeLost;
 
   return (
     <dl className={styles.dl}>
       <dt>电池</dt>
-      <dd>{result.batteryId}</dd>
+      <dd>{view.batteryId}</dd>
 
       <dt>nextStep</dt>
       <dd>
         <span className={`${styles.badge} ${nextStepClass}`}>
-          {result.nextStep || "—"}
+          {view.nextStep || "—"}
         </span>
       </dd>
 
       <dt>orderedChecks</dt>
       <dd>
-        {result.orderedChecks.length > 0 ? (
+        {view.orderedChecks.length > 0 ? (
           <ol>
-            {result.orderedChecks.map((check, i) => (
+            {view.orderedChecks.map((check, i) => (
               <li key={`${i}-${check}`}>{check}</li>
             ))}
           </ol>
@@ -99,16 +115,24 @@ function TriageResultView({ result }: { result: TriageOutdatedSocResult }) {
       <dt>shadow.soc</dt>
       <dd>{shadow.soc}%</dd>
 
-      <dt>shadow.stale</dt>
+      <dt>shadow</dt>
       <dd>
         <span
           className={`${styles.badge} ${
             shadow.stale ? styles.badgeStale : styles.badgeFresh
           }`}
         >
-          {shadow.stale ? "stale" : "fresh"}
+          {shadow.fresh ? "fresh" : "stale"}
         </span>
+        {shadow.meteredSwapAllowed ? " · 可计量换电" : " · 禁计量换电"}
       </dd>
+
+      {shadow.blockMessage ? (
+        <>
+          <dt>说明</dt>
+          <dd>{shadow.blockMessage}</dd>
+        </>
+      ) : null}
 
       {shadow.lastSeenAt ? (
         <>
