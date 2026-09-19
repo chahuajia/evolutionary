@@ -1,7 +1,5 @@
 package com.evolutionary.operator.interfaces;
 
-import com.evolutionary.mall.application.MerchantProfileRepository;
-import com.evolutionary.mall.infrastructure.InMemoryMerchantProfileRepository;
 import com.evolutionary.operator.application.ActivatePackageOverride;
 import com.evolutionary.operator.application.ApproveOperatorDownline;
 import com.evolutionary.operator.application.AuditLogRepository;
@@ -84,10 +82,7 @@ public class OperatorConfig {
 
     /** AuditLogRepository → {@code JpaAuditLogRepository}（表 audit_logs）。 */
 
-    @Bean
-    MerchantProfileRepository merchantProfileRepository() {
-        return new InMemoryMerchantProfileRepository();
-    }
+    /** MerchantProfileRepository → {@code JpaMerchantProfileRepository}（表 merchant_profiles，见 MallConfig）。 */
 
     @Bean
     OrgAuthorization orgAuthorization(OrganizationRepository organizations) {

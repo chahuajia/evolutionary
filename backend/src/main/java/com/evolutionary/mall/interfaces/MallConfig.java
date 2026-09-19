@@ -48,6 +48,8 @@ public class MallConfig {
 
     /** CouponRedemptionRepository → {@code JpaCouponRedemptionRepository}（表 coupon_redemptions）。 */
 
+    /** MerchantProfileRepository → {@code JpaMerchantProfileRepository}（表 merchant_profiles）。 */
+
     @Bean
     ClaimCouponFromCampaign claimCouponFromCampaign(
             CampaignRepository campaigns,
