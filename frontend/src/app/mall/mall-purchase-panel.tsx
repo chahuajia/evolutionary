@@ -2,7 +2,7 @@
 
 /**
  * 商城下单客户端岛 — POST /mall/orders（AC-41 · S1 / M1）。
- * GET SKU + Merchant 对齐库存/上架/可交易。
+ * GET SKU + Merchant + Wallet 对齐库存/上架/可交易/余额可覆盖。
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -28,6 +28,12 @@ import {
   fetchMerchantProfile,
   postPurchaseMallOrder,
 } from "@/domains/mall/infrastructure/mall-gateway";
+import {
+  canCoverCents,
+  formatCentsAsYuan,
+  type WalletView,
+} from "@/domains/wallet/domain/wallet-view";
+import { loadWallet } from "@/domains/wallet/application/load-wallet";
 import styles from "./page.module.css";
 
 export function MallPurchasePanel() {
@@ -38,10 +44,12 @@ export function MallPurchasePanel() {
   const [skuView, setSkuView] = useState<MallSkuView | null>(null);
   const [merchantView, setMerchantView] =
     useState<MerchantProfileView | null>(null);
+  const [walletView, setWalletView] = useState<WalletView | null>(null);
   const [skuLoadError, setSkuLoadError] = useState<string | null>(null);
   const [merchantLoadError, setMerchantLoadError] = useState<string | null>(
     null,
   );
+  const [walletLoadError, setWalletLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MallOrderView | null>(null);
@@ -102,6 +110,25 @@ export function MallPurchasePanel() {
     };
   }, [merchantOrgId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const id = userId.trim() || DEFAULT_MALL_USER;
+    setWalletLoadError(null);
+    loadWallet(id)
+      .then((view) => {
+        if (cancelled) return;
+        setWalletView(view);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setWalletView(null);
+        setWalletLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
   const gate = useMemo(() => {
     if (!skuView) {
       return {
@@ -113,6 +140,12 @@ export function MallPurchasePanel() {
       return {
         purchaseAllowed: false,
         blockMessage: merchantLoadError ?? "正在加载商家…",
+      };
+    }
+    if (!walletView) {
+      return {
+        purchaseAllowed: false,
+        blockMessage: walletLoadError ?? "正在加载钱包…",
       };
     }
     if (!skuView.purchaseAllowed) {
@@ -127,8 +160,23 @@ export function MallPurchasePanel() {
         blockMessage: merchantView.blockMessage,
       };
     }
+    const dueCents = skuView.priceCents * qty;
+    if (!canCoverCents(walletView.balanceCents, dueCents)) {
+      return {
+        purchaseAllowed: false,
+        blockMessage: `余额不足（¥${walletView.balanceYuan} < ¥${formatCentsAsYuan(dueCents)}）`,
+      };
+    }
     return { purchaseAllowed: true, blockMessage: null as string | null };
-  }, [skuView, merchantView, skuLoadError, merchantLoadError]);
+  }, [
+    skuView,
+    merchantView,
+    walletView,
+    qty,
+    skuLoadError,
+    merchantLoadError,
+    walletLoadError,
+  ]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -140,8 +188,9 @@ export function MallPurchasePanel() {
     setError(null);
     setResult(null);
     try {
+      const uid = userId.trim() || DEFAULT_MALL_USER;
       const r = await postPurchaseMallOrder({
-        userId: userId.trim() || DEFAULT_MALL_USER,
+        userId: uid,
         merchantOrgId: merchantOrgId.trim() || DEFAULT_MALL_MERCHANT,
         skuId: skuId.trim() || DEFAULT_MALL_SKU,
         qty,
@@ -161,6 +210,7 @@ export function MallPurchasePanel() {
           qty,
         ),
       );
+      setWalletView(await loadWallet(uid));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -172,13 +222,14 @@ export function MallPurchasePanel() {
     <section className={styles.panel}>
       <h2>商城下单（HTTP · AC-41）</h2>
       <p className={styles.note}>
-        GET SKU / Merchant 对齐库存与可交易
+        GET SKU / Merchant / Wallet 对齐库存、可交易与余额（canCoverCents）
         {skuView
           ? ` · ${skuView.name} · 库存 ${skuView.stock} · ${skuView.status}`
           : ""}
         {merchantView
           ? ` · ${merchantView.shopName}(${merchantView.statusLabel})`
           : ""}
+        {walletView ? ` · 余额 ¥${walletView.balanceYuan}` : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
