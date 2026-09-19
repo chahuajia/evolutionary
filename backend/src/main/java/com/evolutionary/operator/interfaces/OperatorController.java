@@ -203,13 +203,21 @@ public class OperatorController {
 
     private static DownlineView toDownlineView(Organization org) {
         return new DownlineView(
-                org.id(), org.name(), org.parentId(), org.hasCapability(OrgCapability.OPERATOR));
+                org.id(),
+                org.name(),
+                org.parentId(),
+                org.hasCapability(OrgCapability.OPERATOR),
+                org.status().name());
     }
 
     public record DownlineApproveRequest(String actorUserId, String actorOrgId) {}
 
     public record DownlineView(
-            String orgId, String name, String parentOrgId, boolean operatorCapability) {}
+            String orgId,
+            String name,
+            String parentOrgId,
+            boolean operatorCapability,
+            String status) {}
 
     public record PublishRequest(String actorUserId, String actorOrgId) {}
 

@@ -16,7 +16,10 @@ import {
   toOnboardingApplicationView,
   type OnboardingStatus,
 } from "@/domains/operator/domain/onboarding-application-view";
-import type { ApproveOperatorDownlineResult } from "@/domains/operator/infrastructure/operator-gateway";
+import {
+  toOrganizationView,
+  type OrganizationView,
+} from "@/domains/operator/domain/organization-view";
 import styles from "./page.module.css";
 
 const SEED_DL = {
@@ -25,6 +28,9 @@ const SEED_DL = {
   capability: "OPERATOR",
   status: "SUBMITTED" as OnboardingStatus,
 };
+
+/** 无 GET Org 前：种子操作方 ORG-L1 视为 ACTIVE。 */
+const SEED_ACTOR_STATUS = "ACTIVE" as const;
 
 export function ApproveDownlinePanel() {
   const [applicationId, setApplicationId] = useState(
@@ -39,9 +45,7 @@ export function ApproveDownlinePanel() {
   const [localStatus, setLocalStatus] = useState<OnboardingStatus>(
     SEED_DL.status,
   );
-  const [result, setResult] = useState<ApproveOperatorDownlineResult | null>(
-    null,
-  );
+  const [orgView, setOrgView] = useState<OrganizationView | null>(null);
 
   const appView = useMemo(() => {
     const isSeed =
@@ -60,15 +64,40 @@ export function ApproveDownlinePanel() {
     });
   }, [applicationId, localStatus]);
 
+  const actorGate = useMemo(() => {
+    const id = actorOrgId.trim() || DEFAULT_DOWNLINE_ACTOR_ORG_ID;
+    if (id !== DEFAULT_DOWNLINE_ACTOR_ORG_ID) {
+      return { canAct: true, blockMessage: null as string | null };
+    }
+    const actor = toOrganizationView({
+      id,
+      name: "种子操作方",
+      status: SEED_ACTOR_STATUS,
+      operatorCapability: true,
+    });
+    return {
+      canAct: actor.canActAsManager,
+      blockMessage: actor.blockMessage,
+      statusLabel: actor.statusLabel,
+    };
+  }, [actorOrgId]);
+
+  const approveAllowed = appView.approveAllowed && actorGate.canAct;
+  const blockMessage = !appView.approveAllowed
+    ? appView.blockMessage
+    : !actorGate.canAct
+      ? actorGate.blockMessage
+      : null;
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!appView.approveAllowed) {
-      setError(appView.blockMessage ?? "当前状态不可批准");
+    if (!approveAllowed) {
+      setError(blockMessage ?? "当前状态不可批准");
       return;
     }
     setBusy(true);
     setError(null);
-    setResult(null);
+    setOrgView(null);
     try {
       const r = await approveOperatorDownline({
         applicationId:
@@ -76,7 +105,15 @@ export function ApproveDownlinePanel() {
         actorOrgId: actorOrgId.trim() || DEFAULT_DOWNLINE_ACTOR_ORG_ID,
         actorUserId: actorUserId.trim() || DEFAULT_DOWNLINE_ACTOR_USER_ID,
       });
-      setResult(r);
+      setOrgView(
+        toOrganizationView({
+          id: r.orgId,
+          name: r.name,
+          parentId: r.parentOrgId,
+          status: r.status || "ACTIVE",
+          operatorCapability: r.operatorCapability,
+        }),
+      );
       if (
         (applicationId.trim() || DEFAULT_DOWNLINE_APPLICATION_ID) ===
         DEFAULT_DOWNLINE_APPLICATION_ID
@@ -97,6 +134,9 @@ export function ApproveDownlinePanel() {
         批的是运营商下线入驻（OPERATOR），不是批商城商家；商家入驻由总后台
         /admin 审批。{appView.statusLabel}
         {appView.approveAllowed ? " · 可批准" : ""}
+        {"statusLabel" in actorGate && actorGate.statusLabel
+          ? ` · 操作方=${actorGate.statusLabel}`
+          : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
@@ -123,13 +163,13 @@ export function ApproveDownlinePanel() {
             onChange={(e) => setActorUserId(e.target.value)}
           />
         </label>
-        <button type="submit" disabled={busy || !appView.approveAllowed}>
+        <button type="submit" disabled={busy || !approveAllowed}>
           {busy ? "批准中…" : "批下线"}
         </button>
       </form>
-      {!appView.approveAllowed && appView.blockMessage ? (
+      {!approveAllowed && blockMessage ? (
         <p className={styles.note} role="status">
-          {appView.blockMessage}
+          {blockMessage}
         </p>
       ) : null}
       {error ? (
@@ -137,12 +177,13 @@ export function ApproveDownlinePanel() {
           {error}
         </p>
       ) : null}
-      {result ? (
+      {orgView ? (
         <p>
-          下线组织 {result.orgId}
-          {result.name ? ` · ${result.name}` : ""}
-          {result.parentOrgId ? ` · parent ${result.parentOrgId}` : ""}
-          {result.operatorCapability ? " · OPERATOR" : ""}
+          下线组织 {orgView.id} · {orgView.name} · {orgView.statusLabel}
+          {orgView.parentId ? ` · parent ${orgView.parentId}` : ""}
+          {orgView.operatorCapability ? " · OPERATOR" : ""}
+          {orgView.active ? " · 可参与授权" : ""}
+          {orgView.blockMessage ? ` · ${orgView.blockMessage}` : ""}
         </p>
       ) : null}
     </section>

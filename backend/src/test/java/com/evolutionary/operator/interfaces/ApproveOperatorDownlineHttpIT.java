@@ -38,7 +38,8 @@ class ApproveOperatorDownlineHttpIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orgId").value("ORG-DL1"))
                 .andExpect(jsonPath("$.parentOrgId").value("ORG-L1"))
-                .andExpect(jsonPath("$.operatorCapability").value(true));
+                .andExpect(jsonPath("$.operatorCapability").value(true))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
     }
 
     @Test

@@ -82,6 +82,7 @@ export type ApproveOperatorDownlineResult = {
   name: string;
   parentOrgId: string | null;
   operatorCapability: boolean;
+  status: string;
 };
 
 export type ApproveOperatorDownlineRequest = {
@@ -126,10 +127,11 @@ function parseApproveOperatorDownline(
   const operatorCapability = Boolean(
     raw.operatorCapability ?? raw.hasOperatorCapability ?? false,
   );
+  const status = String(raw.status ?? "");
   if (!orgId) {
     throw new Error("批下线响应缺少 orgId");
   }
-  return { orgId, name, parentOrgId, operatorCapability };
+  return { orgId, name, parentOrgId, operatorCapability, status };
 }
 
 /** POST /operator/templates/{templateId}/publish 成功读模型（AC-24） */
