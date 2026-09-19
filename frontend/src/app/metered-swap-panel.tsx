@@ -2,7 +2,7 @@
 
 /**
  * 计量权益换电客户端岛 — 默认 U1 / E-M1 / CAB-1 · soc 80→60。
- * GET shadow(BAT-M1) 对齐 AssertShadowFreshForMetered。
+ * GET shadow + wallet：对齐 AssertShadowFreshForMetered 与 Account.canCoverCents。
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -17,7 +17,12 @@ import {
   type DeviceShadowView,
 } from "@/domains/iot/domain/device-shadow-view";
 import { fetchDeviceShadow } from "@/domains/iot/infrastructure/iot-gateway";
-import { formatCentsAsYuan } from "@/shared/money/format-cents";
+import { loadWallet } from "@/domains/wallet/application/load-wallet";
+import {
+  canCoverCents,
+  formatCentsAsYuan,
+  type WalletView,
+} from "@/domains/wallet/domain/wallet-view";
 import styles from "./page.module.css";
 
 function formatCents(cents: number): string {
@@ -29,6 +34,8 @@ const SEED_METERED_ENTITLEMENT = "E-M1";
 const SEED_STATUS = "ACTIVE" as EntitlementStatus;
 /** 计量种子电池；findAnyIdle 也可能拿到 BAT-1（同种子新鲜影子）。 */
 const DEFAULT_METERED_BATTERY = "BAT-M1";
+/** 种子 P-M1 meteredRate = 50¢ / SOC 单位（对齐 Money.cny(50) · IT 80→60→1000¢）。 */
+const SEED_METERED_RATE_CENTS = 50;
 
 export function MeteredSwapPanel() {
   const [userId, setUserId] = useState("U1");
@@ -42,6 +49,8 @@ export function MeteredSwapPanel() {
   const [result, setResult] = useState<string | null>(null);
   const [shadowView, setShadowView] = useState<DeviceShadowView | null>(null);
   const [shadowLoadError, setShadowLoadError] = useState<string | null>(null);
+  const [walletView, setWalletView] = useState<WalletView | null>(null);
+  const [walletLoadError, setWalletLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +80,31 @@ export function MeteredSwapPanel() {
       cancelled = true;
     };
   }, [batteryId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = userId.trim() || "U1";
+    setWalletLoadError(null);
+    loadWallet(id)
+      .then((view) => {
+        if (cancelled) return;
+        setWalletView(view);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setWalletView(null);
+        setWalletLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const estimatedChargeCents = useMemo(() => {
+    const delta = socBefore - socAfter;
+    if (!Number.isFinite(delta) || delta < 0) return null;
+    return delta * SEED_METERED_RATE_CENTS;
+  }, [socBefore, socAfter]);
 
   const gate = useMemo(() => {
     const id = entitlementId.trim() || SEED_METERED_ENTITLEMENT;
@@ -106,12 +140,40 @@ export function MeteredSwapPanel() {
         statusLabel: entitlementOk.statusLabel,
       };
     }
+    if (estimatedChargeCents == null) {
+      return {
+        swapAllowed: false,
+        blockMessage: "socAfter 不得超过 socBefore",
+        statusLabel: entitlementOk.statusLabel,
+      };
+    }
+    if (!walletView) {
+      return {
+        swapAllowed: false,
+        blockMessage: walletLoadError ?? "正在加载钱包…",
+        statusLabel: entitlementOk.statusLabel,
+      };
+    }
+    if (!canCoverCents(walletView.balanceCents, estimatedChargeCents)) {
+      return {
+        swapAllowed: false,
+        blockMessage: `余额不足（¥${walletView.balanceYuan} < ¥${formatCentsAsYuan(estimatedChargeCents)}）`,
+        statusLabel: entitlementOk.statusLabel,
+      };
+    }
     return {
       swapAllowed: true,
       blockMessage: null as string | null,
       statusLabel: entitlementOk.statusLabel,
     };
-  }, [entitlementId, shadowView, shadowLoadError]);
+  }, [
+    entitlementId,
+    shadowView,
+    shadowLoadError,
+    walletView,
+    walletLoadError,
+    estimatedChargeCents,
+  ]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -123,8 +185,9 @@ export function MeteredSwapPanel() {
     setError(null);
     setResult(null);
     try {
+      const uid = userId.trim() || "U1";
       const r = await postEntitledSwap({
-        userId,
+        userId: uid,
         entitlementId,
         cabinetId,
         socBefore,
@@ -157,6 +220,7 @@ export function MeteredSwapPanel() {
           lockState: dto.lockState,
         }),
       );
+      setWalletView(await loadWallet(uid));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -168,13 +232,17 @@ export function MeteredSwapPanel() {
     <section className={styles.panel}>
       <h2>计量权益换电（HTTP）</h2>
       <p className={styles.note}>
-        GET shadow 对齐 AssertShadowFreshForMetered；权益须 ACTIVE
+        GET shadow / wallet 对齐新鲜度与 canCoverCents
         {gate.statusLabel
           ? ` · 种子 ${SEED_METERED_ENTITLEMENT}=${gate.statusLabel}`
           : ""}
         {shadowView
           ? ` · ${shadowView.batteryId}=${shadowView.fresh ? "fresh" : "stale"}`
           : ""}
+        {estimatedChargeCents != null
+          ? ` · 预估 ${formatCents(estimatedChargeCents)}`
+          : ""}
+        {walletView ? ` · 余额 ¥${walletView.balanceYuan}` : ""}
         。
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
