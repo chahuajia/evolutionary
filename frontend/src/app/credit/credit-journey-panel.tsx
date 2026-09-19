@@ -14,6 +14,7 @@ import {
   postCreditPurchase,
   type CreditPurchaseResult,
 } from "@/domains/credit/infrastructure/credit-gateway";
+import { toAccrualView } from "@/domains/settlement/domain/accrual-view";
 import {
   postAccrueSettlement,
   postRunSettlementBatch,
@@ -104,9 +105,10 @@ export function CreditJourneyPanel() {
         userId,
         completedAt: new Date().toISOString(),
       });
+      const views = rows.map(toAccrualView);
       append(
-        `④ Accrue：${rows.length} 条 · ` +
-          rows.map((r) => `${r.orgId}=${r.amountCents}¢/${r.status}`).join(" · "),
+        `④ Accrue：${views.length} 条 · ` +
+          views.map((r) => `${r.orgId}=¥${r.amountYuan}/${r.status}`).join(" · "),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
