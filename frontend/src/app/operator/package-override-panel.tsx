@@ -143,13 +143,13 @@ export function PackageOverridePanel() {
           {activateResult.templateId} v{activateResult.templateVersion} ·{" "}
           {activateResult.status}
           {activateResult.priceCents != null
-            ? ` · ${activateResult.priceCents}¢`
+            ? ` · ¥${(activateResult.priceCents / 100).toFixed(2)}`
             : ""}
         </p>
       ) : null}
       {effective ? (
         <p>
-          有效价 {effective.priceCents}¢ · {effective.displayName || "—"} ·{" "}
+          有效价 ¥{(effective.priceCents / 100).toFixed(2)} · {effective.displayName || "—"} ·{" "}
           {effective.durationDays}天 · {effective.templateId} v
           {effective.templateVersion}
           {effective.overrideId
