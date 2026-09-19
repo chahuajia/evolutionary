@@ -26,13 +26,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/stations")
 public class SwapController {
 
-    private final PerformSwap performSwap;
+    /**
+     * 事务边界包装，不是裸的 {@code PerformSwap} —— 站库存与换电日志必须同生共死，
+     * 而用例本身要保持零框架依赖（见 {@link TransactionalPerformSwap}）。
+     */
+    private final TransactionalPerformSwap performSwap;
+
     private final ListStations listStations;
     private final GetStation getStation;
     private final ListSwapLogs listSwapLogs;
 
     public SwapController(
-            PerformSwap performSwap,
+            TransactionalPerformSwap performSwap,
             ListStations listStations,
             GetStation getStation,
             ListSwapLogs listSwapLogs) {

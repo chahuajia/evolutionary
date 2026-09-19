@@ -18,6 +18,17 @@ public class SwapConfig {
         return new PerformSwap(stations, swapLogs, Clock.systemUTC());
     }
 
+    /**
+     * 事务边界包装 —— **Controller 注入的是它，不是 {@link PerformSwap}**。
+     *
+     * <p>原因见 {@link TransactionalPerformSwap} 的类注释：站库存与换电日志
+     * 必须同生共死，而用例本身要保持零框架依赖。
+     */
+    @Bean
+    TransactionalPerformSwap transactionalPerformSwap(PerformSwap performSwap) {
+        return new TransactionalPerformSwap(performSwap);
+    }
+
     @Bean
     ListStations listStations(StationRepository stations) {
         return new ListStations(stations);
