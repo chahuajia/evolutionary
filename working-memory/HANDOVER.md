@@ -4,8 +4,8 @@
 **读者**：新开对话的 Agent（不是给用户的作业）
 **取代**：v4（15:01 仍写 ⏸ 听 Claude / HEAD `5b914f6` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `f4bb91d`。前端 61/61。
-wave59–61 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `5345f95`。前端 66/66。
+wave59–62 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -70,7 +70,8 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave57–58** | accrual 门 + settlement GET/RSC | ✅ `cc6bcb3` |
 | **wave59** | PackageTemplate 三门 + 发布面板 | ✅ `3307845` |
 | **wave60** | PackageOverride 激活/撤销门 | ✅ `1001c8d` |
-| **wave61** | UserCoupon 结账可选门 | ✅ `f4bb91d` · 前端 61/61 |
+| **wave61** | UserCoupon 结账可选门 | ✅ `f4bb91d` |
+| **wave62** | MallOrder 仅 CREATED 可支付 + INV-16 | ✅ `5345f95` · 前端 66/66 |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -106,7 +107,7 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **61/61**。父自选推进。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **66/66**。父自选推进。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
