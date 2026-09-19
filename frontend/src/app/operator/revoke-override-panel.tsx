@@ -90,7 +90,9 @@ export function RevokeOverridePanel() {
           {result.orgId ? ` · ${result.orgId}` : ""}
           {result.templateId ? ` · ${result.templateId}` : ""} ·{" "}
           {result.status}
-          {result.priceCents != null ? ` · patches ${result.priceCents}¢` : ""}
+          {result.priceCents != null
+            ? ` · patches ¥${(result.priceCents / 100).toFixed(2)}`
+            : ""}
           {" · 有效价已回落模板原价"}
         </p>
       ) : null}
