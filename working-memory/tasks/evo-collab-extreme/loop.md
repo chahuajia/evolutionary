@@ -1,19 +1,20 @@
 ﻿# evo-collab-extreme（双轴极端 · 无人值守完成）
 
-**更新**：2026-09-19 15:01  
+**更新**：2026-09-19 17:0x
 **模式**：主树父写（小切片）· **禁止**为 <5min 切片建 worktree/派 Task  
-**状态**：**⏸ 听 Claude 点刀**（执行面停派，不自动续 wave57+）  
-**波次**：wave54 ✅ · wave55 ✅ · wave56 ✅  
-**HEAD**：`5b914f6`  
+**状态**：**▶ 运行中**（Claude 接管指挥；常设规则见文末，**不再是"等点刀"**）
+**波次**：wave54–56 ✅ · **wave57 ✅** · **wave58 ✅**  
+**HEAD**：`cc6bcb3`  
 **idle**：— · **lanes**：0  
-**前端测**：25/25 · 未 push
+**测**：后端 220/0 · 前端 35/35 · 未 push
 
 ## 集群修了什么
 
 不是子代理在跑。停因三条：Task 创建超时、worktree 30–70s 负吞吐、未提交 WIP 冻住 HEAD。  
 现规则见 `cluster-policy-pressure.md` 证据 6：**小切片主树父写**。
 
-2026-09-19 15:00 用户改指挥：**等 Claude 点刀/管理，本执行面不自选下一刀。**
+> **2026-09-19 15:00 那条「等 Claude 点刀」已作废** ——
+> 它把父的职责（选片）外包给了用户。见文末「常设规则」。
 
 ## 刚落地
 
@@ -46,32 +47,23 @@
 
 **先写红测试**：7 failed → 实现 → 35/35 绿。
 
-## 下一刀（选片判据已备 · 父可自选）
+## wave58 ✅（2026-09-19 16:5x · `cc6bcb3`）
 
-**结构缺口：settlement 无读路径。** 要真做列表/RSC，需先加后端 GET 端点
-（如 `GET /settlement/accruals?orgId=`）—— 那是**跨前后端的切片**，>15min，
-按 v11 值得派（或父写）。
+**settlement 读路径**：`GET /settlement/accruals` + RSC 列表。
 
-**已做「裸 `string` 状态字段」体检**（本波那条 drift 就是被类型收紧顺带抓出的，
-所以值得扫一遍）。结果**要准确**：
+**前提先核实再选片**（上一刀的教训）：
 
-| 位置 | 现状 |
-| :--- | :--- |
-| `settlement/accrual-view.ts` | ✅ 已修（本波） |
-| `mall/mall-order-view.ts:13` | ⚠️ **潜伏**：`status: string`，但测试用的是 `"PAID"`（后端合法）→ **未漂移，但已上膛** |
-| `mall/mall-checkout-view.ts:11` | ⚠️ 同上 |
-| `wallet/wallet-view.ts:13` | `currency: string` —— **不是同类**（货币码不是状态机），不动 |
+| 候选 | 前提 |
+|---|---|
+| mall 五态 | ❌ 后端只有 1 个守卫 → 不变量会很薄 |
+| **本刀** | ✅ 读侧端口已有；HTTP 层确无 GET |
 
-**所以不是"又 2 个 bug"，是 1 个已漂移 + 2 个潜伏。** `MallOrder.Status` 有**五态**
-（CREATED/PAID/SHIPPED/COMPLETED/REFUNDED），收紧类型即可获得编译期保护。
+后端 220/0 · 前端 35/35 · tsc 0。**顺带补完上一刀半接线的展示不变量**。
 
-候选切片（同判据：后端有守卫可对齐 ∧ 能先写红测试）：
+**代价（诚实记录）**：给端口加方法，**三个测试 stub 也要跟** ——
+核实前提时只查了生产实现，漏了它们，编译当场报错。
+**核实前提要包括测试替身。**
 
-- `mall-order-view`：收紧为 `MallOrderStatus` + 五态守卫不变量
-  （`canRefundMallOrder` / `canCancelMallOrder` 之类，对齐后端状态机）
-- `mall-checkout-view`：同上
-
----
 
 ## 常设规则（**替代「等 Claude 点刀」**）
 
