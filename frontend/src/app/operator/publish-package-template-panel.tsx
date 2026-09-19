@@ -6,11 +6,15 @@
 
 import { FormEvent, useState } from "react";
 import {
+  parsePackageTemplateStatus,
+  toPackageTemplateView,
+  type PackageTemplateView,
+} from "@/domains/operator/domain/package-template-view";
+import {
   DEFAULT_PACKAGE_TEMPLATE_ID,
   DEFAULT_PUBLISH_ACTOR_ORG_ID,
   DEFAULT_PUBLISH_ACTOR_USER_ID,
   postPublishPackageTemplate,
-  type PublishPackageTemplateResult,
 } from "@/domains/operator/infrastructure/operator-gateway";
 import styles from "./page.module.css";
 
@@ -22,28 +26,39 @@ export function PublishPackageTemplatePanel() {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<PublishPackageTemplateResult | null>(
-    null,
-  );
+  const [view, setView] = useState<PackageTemplateView | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (view && !view.publishAllowed) {
+      setError(view.blockMessage ?? "当前状态不可发布");
+      return;
+    }
     setBusy(true);
     setError(null);
-    setResult(null);
+    setView(null);
     try {
       const r = await postPublishPackageTemplate({
         templateId: templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID,
         actorOrgId: actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID,
         actorUserId: actorUserId.trim() || DEFAULT_PUBLISH_ACTOR_USER_ID,
       });
-      setResult(r);
+      setView(
+        toPackageTemplateView({
+          id: r.templateId,
+          ownerOrgId: r.ownerOrgId,
+          version: r.version,
+          status: parsePackageTemplateStatus(r.status),
+        }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
   }
+
+  const publishBlocked = view != null && !view.publishAllowed;
 
   return (
     <section className={styles.panel}>
@@ -53,7 +68,10 @@ export function PublishPackageTemplatePanel() {
           templateId
           <input
             value={templateId}
-            onChange={(e) => setTemplateId(e.target.value)}
+            onChange={(e) => {
+              setTemplateId(e.target.value);
+              setView(null);
+            }}
           />
         </label>
         <label>
@@ -70,20 +88,26 @@ export function PublishPackageTemplatePanel() {
             onChange={(e) => setActorUserId(e.target.value)}
           />
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy || publishBlocked}>
           {busy ? "发布中…" : "发布模板"}
         </button>
       </form>
+      {publishBlocked && view?.blockMessage ? (
+        <p className={styles.note} role="status">
+          {view.blockMessage}
+        </p>
+      ) : null}
       {error ? (
         <p className={styles.error} role="alert">
           {error}
         </p>
       ) : null}
-      {result ? (
+      {view ? (
         <p>
-          模板 {result.templateId} · {result.ownerOrgId || "—"} · v
-          {result.version} · {result.status}
-          {result.publishedAt ? ` · ${result.publishedAt}` : ""}
+          模板 {view.id} · {view.ownerOrgId || "—"} · v{view.version} ·{" "}
+          {view.status}
+          {view.publishAllowed ? "" : " · 已不可再发布"}
+          {view.nextVersionAllowed ? " · 可派生下一版本" : ""}
         </p>
       ) : null}
     </section>
