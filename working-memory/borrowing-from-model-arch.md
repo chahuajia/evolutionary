@@ -262,6 +262,112 @@ catalog active     121
 
 两轮找不到反例 → 够格入库（且很可能值得升到约定层）。
 
+---
+
+# 第二批：从 **multi-agent 架构** 借什么（2026-09-19）
+
+**来源**：Cursor *Scaling long-running autonomous coding*、yage.ai 多 agent 失败研究、
+OKF 记忆生态综述。
+
+> ⚠️ **保真度声明**：WebFetch 被网络策略挡了，本批材料是**搜索引擎摘要，非原文**。
+> 置信度低于第一批（第一批至少拿到了官方文档）。引用时按"听说"对待。
+
+## 已本地验证并实现（不是假设）
+
+**`enforced` 可以静默失效。** 对照 OKF/Kage 的
+「来源漂移则**撤回**（withheld），而非静默返回过期内容」——
+我们实测：`enforced` 指向不存在的文件时 `collab validate` 报 **0 issues**。
+⇒ 已实现 `collab validate --check-enforced`（`1fb7c3d`）。
+
+**这一条是本批唯一的已验证项。以下才是假设。**
+
+## 假设 5：我们**没有 Judge**
+
+**借自**：Cursor 的 **Planner / Worker / Judge** 流水线 —— judge 在每轮末尾
+决定是否继续，**下一轮从 fresh state 开始**；文中明确把
+**periodic fresh starts** 列为对抗 drift / tunnel vision 的手段。
+
+**映射**：我们有 Planner（父）与 Worker（子代理），**没有 Judge**。
+而我们的 drift 症状是**有记录的**：证据 4（父把需判断当停机）、
+证据 5（派工幻觉 + WM 不刷新）。
+
+**假设**：这两个症状与"没有独立判断环节"是同一个洞。
+
+**怎么验**（成本：每波多一步，无新代码）：
+> 每波收口前，父**独立**回答一次：「这一波真的推进了吗？下一步该不该继续？」
+> —— 并**写下答案**（一行，进 loop）。
+
+跑 2–3 波，看：
+- 有没有出现「自以为推进、实际没有」被这一步抓住 → 抓住了 = 假设成立
+- 有没有出现「本来就会停、这步只是形式」→ 没抓住 = 假设不成立，别再加
+
+**反例警戒**：Cursor 自己说 **"the right amount of structure is in the middle"**、
+**"many improvements came from removing complexity"**。
+我们刚给集群策略加了 v11。**再加 judge 就是"再加结构"** ——
+先做零成本的观察版（只看不派），别直接建流程。
+
+## 假设 6：**"父收口"可能是反模式**
+
+**借自**：Cursor 试过加 **"integrator" 角色**做质量把关与冲突解决，
+结论是 **created more bottlenecks than it solved** —— worker 本来就能处理冲突。
+
+**映射**：我们刚花几轮**加固"父收口"**（撞车处理、冲突合并、验绿）。
+Cursor 说那个角色是反模式。
+
+**但**：不能直接套 —— 他们的 integrator 是**额外**角色（第三类 agent），
+我们的父同时是 planner，且只有 2 个 worker。
+
+**怎么验**（观察，不必实验）：
+下一波派工时**故意让两个 worker 直接协商**一个冲突点（父不介入），
+看结果：能自己解决 → 父收口确实多余；解决不了/跑偏 → 父收口承重。
+
+**若成立**：`extreme` 的「worktree 隔离 + 父收口」应当重新表述为
+「隔离是为**并行**，不是为**由父仲裁**」。
+
+## 假设 7：**上下文隔离的度**
+
+**借自**（yage.ai）：multi-agent 的核心挑战是**"上下文隔离的度"**；
+按人类社会分工拆 sub-agent **可能降低能力**，因为 **LLM 是通才**（不是专才）。
+
+**映射**：我们的 brief 是**极窄**的指令（"照着某个文件抄"）。
+假设是：**再窄一点，模型能力用不上；宽一点，它又能自作主张。**
+
+**怎么验**（对照，成本中）：
+同一个切片派两次 —— 一次给"照抄 X"的窄 brief，一次给"目标 + 约束"的宽 brief（留判断空间），
+比产出质量与返工。
+
+**反例警戒**：这与我们已确立的「小切片主树父写」有张力 ——
+如果宽 brief 更好，那"窄指令"这条经验就要重新审视。
+
+## 已与我们记录**吻合**的一条（旁证，不是新假设）
+
+yage.ai 引用的失败研究：**79% 的 multi-agent 失败源于 spec 与协调，
+基础设施只占 ~16%**。
+
+我核对了我们的失败记录：
+
+| 失败 | 归类 |
+| :--- | :--- |
+| 证据 4：父把需判断当停机 | 协调 |
+| 证据 6：小切片派工负吞吐 | 协调 / 设计 |
+| 我那 4 条写错的规则 | **spec**（我自己的推理） |
+| 半错的刀（"纯壳就该 RSC 化"） | **spec**（未核实因果） |
+| 证据 5：Task 创建超时 | 基础设施 |
+
+**协调 + spec 占压倒多数，基础设施只有 1 条。** 吻合。
+
+⇒ 若这个比例成立，**继续投基础设施（worktree、hook、仪器）的边际收益低于投"弄清规格"**。
+这与本会话"装仪器"的路线**有张力**，值得记着。
+
+## 来源（第二手，摘要）
+
+- [Cursor: Scaling long-running autonomous coding](https://cursor.com/cn/blog/scaling-agents)（摘要见
+  [gigazine 报道](https://gigazine.net/gsc_news/en/20260120-cursor-scaling-agents)）
+- [Cursor: Agent Swarm 经济学（planner 强 + worker 便宜 = 1/8 成本）](https://gigazine.net/gsc_news/en/20260721-agent-swarm-model-economics)
+- [OKF Agent Memory（Git 原生、渐进式披露、Kage 的确定性失效）](https://github.com/okf-memory/okf-agent-memory)
+- yage.ai/multi-agent.html（**本机网络策略挡了，未取到原文** —— 内容来自搜索摘要，
+  引用时请自行复核）
+
 ## 来源
 
 - [DeepSeek V4.1-Flash 发布（官方）](https://api-docs.deepseek.com/zh-cn/news/news260910/)
