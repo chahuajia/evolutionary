@@ -7,19 +7,14 @@ import {
   DEFAULT_CREDIT_USER,
   loadCreditProfile,
 } from "@/domains/credit/application/load-credit-profile";
+import { toBillingStatementView } from "@/domains/credit/domain/billing-statement-view";
 import type { CreditProfileView } from "@/domains/credit/domain/credit-profile-view";
 import { fetchCreditStatements } from "@/domains/credit/infrastructure/credit-gateway";
-import {
-  STATEMENT_STATUS_LABEL,
-  formatYuan,
-  type BillingStatement,
-  type StatementStatus,
-} from "@/lib/credit/types";
 import { CreditRefreshButton } from "./credit-refresh";
 import { CreditWorkspace } from "./credit-workspace";
 import styles from "./page.module.css";
 
-function statusBadgeClass(status: StatementStatus): string {
+function statusBadgeClass(status: string): string {
   if (status === "DUE") return `${styles.badge} ${styles.badgeDue}`;
   if (status === "PAID") return `${styles.badge} ${styles.badgePaid}`;
   if (status === "OVERDUE") return `${styles.badge} ${styles.badgeOverdue}`;
@@ -28,7 +23,7 @@ function statusBadgeClass(status: StatementStatus): string {
 
 export default async function CreditPage() {
   let profile: CreditProfileView | null = null;
-  let statements: readonly BillingStatement[] = [];
+  let statements: ReturnType<typeof toBillingStatementView>[] = [];
   let error: string | null = null;
 
   try {
@@ -37,7 +32,18 @@ export default async function CreditPage() {
       fetchCreditStatements(DEFAULT_CREDIT_USER),
     ]);
     profile = p;
-    statements = s;
+    statements = s.map((row) =>
+      toBillingStatementView({
+        id: row.id,
+        userId: row.userId,
+        status: row.status,
+        totalDue: row.totalDue,
+        periodStart: row.periodStart,
+        periodEnd: row.periodEnd,
+        dueDate: row.dueDate,
+        paidAt: row.paidAt,
+      }),
+    );
   } catch (e) {
     error =
       e instanceof Error
@@ -99,13 +105,19 @@ export default async function CreditPage() {
                 <div className={styles.itemHead}>
                   <span>{s.id}</span>
                   <span className={statusBadgeClass(s.status)}>
-                    {STATEMENT_STATUS_LABEL[s.status]}
+                    {s.statusLabel}
                   </span>
                 </div>
                 <div className={styles.meta}>
                   账期 {s.periodStart} ~ {s.periodEnd} · 应还 ¥
-                  {formatYuan(s.totalDue)} · 到期 {s.dueDate}
+                  {s.totalDueYuan} · 到期 {s.dueDate}
                   {s.paidAt ? ` · 已还于 ${s.paidAt.slice(0, 10)}` : ""}
+                  {s.repayAllowed
+                    ? " · 可还款"
+                    : s.blockMessage
+                      ? ` · ${s.blockMessage}`
+                      : ""}
+                  {s.markOverdueAllowed ? " · 可标逾期" : ""}
                 </div>
               </li>
             ))}

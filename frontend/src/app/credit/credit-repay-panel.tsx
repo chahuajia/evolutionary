@@ -2,12 +2,18 @@
 
 /**
  * 还款客户端岛 — 默认 U1 / STMT-2026-02 / 3000¢；成功后 router.refresh()。
+ * 账单门：仅 DUE/OVERDUE 可还（对齐 BillingStatement.markPaid）。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  toBillingStatementView,
+  type BillingStatementView,
+} from "@/domains/credit/domain/billing-statement-view";
+import {
   DEFAULT_CREDIT_USER,
+  fetchCreditStatements,
   postCreditRepay,
 } from "@/domains/credit/infrastructure/credit-gateway";
 import styles from "./page.module.css";
@@ -16,6 +22,7 @@ const DEFAULT_STATEMENT_ID = "STMT-2026-02";
 const DEFAULT_AMOUNT_CENTS = 3000;
 
 type CreditRepayPanelProps = {
+  /** 档案层：good 且 used=0 时不提供还款入口。 */
   readonly repayAllowed?: boolean;
   readonly statusLabel?: string;
 };
@@ -27,18 +34,81 @@ export function CreditRepayPanel({
   const router = useRouter();
   const [statementId, setStatementId] = useState(DEFAULT_STATEMENT_ID);
   const [amountCents, setAmountCents] = useState(DEFAULT_AMOUNT_CENTS);
+  const [statementView, setStatementView] =
+    useState<BillingStatementView | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  useEffect(() => {
+    let cancelled = false;
+    const id = statementId.trim() || DEFAULT_STATEMENT_ID;
+    setLoadError(null);
+    fetchCreditStatements(DEFAULT_CREDIT_USER)
+      .then((rows) => {
+        if (cancelled) return;
+        const hit = rows.find((r) => r.id === id);
+        if (!hit) {
+          setStatementView(null);
+          setLoadError(`未找到账单 ${id}（交后端判态）`);
+          return;
+        }
+        setStatementView(
+          toBillingStatementView({
+            id: hit.id,
+            userId: hit.userId,
+            status: hit.status,
+            totalDue: hit.totalDue,
+            periodStart: hit.periodStart,
+            periodEnd: hit.periodEnd,
+            dueDate: hit.dueDate,
+            paidAt: hit.paidAt,
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setStatementView(null);
+        setLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [statementId]);
+
+  const gate = useMemo(() => {
     if (!repayAllowed) {
-      setError(
-        statusLabel
+      return {
+        allowed: false,
+        message: statusLabel
           ? `档案${statusLabel}且无已用额度，无需还款`
           : "当前档案无需还款",
-      );
+      };
+    }
+    if (!statementView) {
+      // 列表未命中时仍允许提交，由后端判；加载中禁用
+      if (loadError?.includes("未找到")) {
+        return { allowed: true, message: null as string | null };
+      }
+      return {
+        allowed: false,
+        message: loadError ?? "正在加载账单…",
+      };
+    }
+    if (!statementView.repayAllowed) {
+      return {
+        allowed: false,
+        message: statementView.blockMessage,
+      };
+    }
+    return { allowed: true, message: null as string | null };
+  }, [repayAllowed, statusLabel, statementView, loadError]);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!gate.allowed) {
+      setError(gate.message ?? "不可还款");
       return;
     }
     setBusy(true);
@@ -62,6 +132,12 @@ export function CreditRepayPanel({
   return (
     <section className={styles.panel}>
       <h2>还款解冻</h2>
+      <p className={styles.note}>
+        仅待还/逾期账单可还
+        {statementView
+          ? ` · 当前 ${statementView.id}=${statementView.statusLabel}`
+          : ""}
+      </p>
       <form className={styles.repayForm} onSubmit={onSubmit}>
         <label>
           statementId
@@ -78,15 +154,13 @@ export function CreditRepayPanel({
             onChange={(e) => setAmountCents(Number(e.target.value))}
           />
         </label>
-        <button type="submit" disabled={busy || !repayAllowed}>
+        <button type="submit" disabled={busy || !gate.allowed}>
           {busy ? "提交中…" : "还款解冻"}
         </button>
       </form>
-      {!repayAllowed ? (
+      {!gate.allowed && gate.message ? (
         <p className={styles.note} role="status">
-          {statusLabel
-            ? `档案${statusLabel}且无已用额度，无需还款`
-            : "当前档案无需还款"}
+          {gate.message}
         </p>
       ) : null}
       {error ? (

@@ -10,26 +10,11 @@ import {
   DEFAULT_CREDIT_USER,
   postMonthlyBilling,
 } from "@/domains/credit/infrastructure/credit-gateway";
-import {
-  STATEMENT_STATUS_LABEL,
-  formatYuan,
-  type BillingStatement,
-} from "@/lib/credit/types";
+import { toBillingStatementView } from "@/domains/credit/domain/billing-statement-view";
 import styles from "./page.module.css";
 
 const DEFAULT_PERIOD_START = "2026-08-01";
 const DEFAULT_PERIOD_END = "2026-08-31";
-
-function summarizeStatement(s: BillingStatement): string {
-  const statusLabel = STATEMENT_STATUS_LABEL[s.status] ?? s.status;
-  return [
-    `账单 ${s.id}`,
-    `账期 ${s.periodStart} ~ ${s.periodEnd}`,
-    `应还 ¥${formatYuan(s.totalDue)}`,
-    `${statusLabel}（${s.status}）`,
-    `到期 ${s.dueDate}`,
-  ].join(" · ");
-}
 
 export function CreditMonthlyBillingPanel() {
   const router = useRouter();
@@ -51,7 +36,28 @@ export function CreditMonthlyBillingPanel() {
         periodStart,
         periodEnd,
       });
-      setResult(summarizeStatement(statement));
+      const view = toBillingStatementView({
+        id: statement.id,
+        userId: statement.userId,
+        status: statement.status,
+        totalDue: statement.totalDue,
+        periodStart: statement.periodStart,
+        periodEnd: statement.periodEnd,
+        dueDate: statement.dueDate,
+        paidAt: statement.paidAt,
+      });
+      setResult(
+        [
+          `账单 ${view.id}`,
+          `账期 ${view.periodStart} ~ ${view.periodEnd}`,
+          `应还 ¥${view.totalDueYuan}`,
+          `${view.statusLabel}（${view.status}）`,
+          `到期 ${view.dueDate}`,
+          view.repayAllowed ? "可还款" : view.blockMessage ?? "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      );
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
