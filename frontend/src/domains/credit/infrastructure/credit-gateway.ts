@@ -83,6 +83,28 @@ export async function postCreditRepay(
   );
 }
 
+export type MarkOverdueRequest = {
+  userId: string;
+  statementId: string;
+};
+
+/** POST /credit/profiles/{userId}/mark-overdue — 仅 DUE 账单；返回更新后档案 */
+export async function postMarkCreditOverdue(
+  req: MarkOverdueRequest,
+): Promise<CreditProfile> {
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/credit/profiles/${encodeURIComponent(req.userId)}/mark-overdue`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ statementId: req.statementId }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return parseProfile(raw);
+}
+
 export type CreditPurchaseRequest = {
   userId: string;
   productId: string;

@@ -15,6 +15,7 @@ import {
   DEFAULT_CREDIT_USER,
   fetchCreditStatements,
   postCreditRepay,
+  postMarkCreditOverdue,
 } from "@/domains/credit/infrastructure/credit-gateway";
 import styles from "./page.module.css";
 
@@ -105,6 +106,28 @@ export function CreditRepayPanel({
     return { allowed: true, message: null as string | null };
   }, [repayAllowed, statusLabel, statementView, loadError]);
 
+  async function onMarkOverdue() {
+    if (!statementView?.markOverdueAllowed) {
+      setError(statementView?.blockMessage ?? "当前账单不可标逾期");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    setStatus(null);
+    try {
+      const profile = await postMarkCreditOverdue({
+        userId: DEFAULT_CREDIT_USER,
+        statementId: statementId.trim() || DEFAULT_STATEMENT_ID,
+      });
+      setStatus(`已标逾期 · 档案 ${profile.status}`);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!gate.allowed) {
@@ -156,6 +179,13 @@ export function CreditRepayPanel({
         </label>
         <button type="submit" disabled={busy || !gate.allowed}>
           {busy ? "提交中…" : "还款解冻"}
+        </button>
+        <button
+          type="button"
+          disabled={busy || !statementView?.markOverdueAllowed}
+          onClick={onMarkOverdue}
+        >
+          标逾期
         </button>
       </form>
       {!gate.allowed && gate.message ? (
