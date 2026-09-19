@@ -134,11 +134,44 @@ KB 入口：`collaboration/AGENTS.md` 的**症状表**（不要拿 catalog 当�
 
 ---
 
+## 待验证的假设（**不要当成结论用**）
+
+`tasks/evo-collab-extreme/borrowing-from-model-arch.md`
+
+从 DeepSeek V4.1-Flash 架构 + 推测解码 + MoE 文献借来的四条，**全部零本地验证**：
+
+| # | 假设 | 怎么验 | 成本 |
+| :-- | :--- | :--- | :--- |
+| 1 | `acceptance rate` 是派工账本缺的数（现在只记 `dispatched=N recovered=M`，那只是"有回音"，不是"经受住审查"） | 每波多记 3 个数：accepted / reworked / rejected | 低 |
+| 2 | 症状表是"廉价查找面"，**不该往里面塞推理** | 10 个真实症状走两条路径，比命中率 | 低 |
+| 3 | KB 参与该有**三档**（Full / Reindex / **Reuse**），现在只有两档 | 只观察：标"本会话已确立却重查了"的次数 | 极低 |
+| 4 | 条目的"**饿死**"（有链接但零路由）和"孤岛"是两回事 | 已算：96/121 从不走症状表 —— **但结论不是"清理它们"** | 已完成 |
+
+**假设 4 的意外产出（这条最硬，本地证据）**：
+
+> `pruning-policy` 有「引用计数 = 0 → 候选」，而**全库没有"引用计数"这个仪器**。
+> 我们建的 `retire --candidates` 是**图结构**的（孤岛），**不是读取行为**的。
+
+⇒ 该做的不是清理 96 条，是**补一把尺**。没有尺之前"该不该清"不可判定。
+
+**并且这次去找了反例，找到一个，修正了结论**：
+
+`check-freshness.mjs` 写于 09-16 22:27，接进 pre-push 是 09-18 22:35 ——
+**中间两天仪器存在但从未运行**，一跑就抓出 2/3 仓已烂。
+
+⇒ **"有仪器" ≠ "被执行"。仪器必须接线才算存在。**
+（这正是本会话另一处观察：机制只管它被安装的地方。）
+
+**留给下一个人**：找"已接线但从未触发"与"无仪器却执行良好"两类反例。
+两轮找不到 → 够格入库。
+
 ## 读序（新对话）
 
 1. 本文件
 2. `working-memory/README.md` → `tasks/evo-collab-extreme/loop.md`（波次真相）
 3. 设计决策：`collaboration/AGENTS.md` 症状表 → 1–2 条正文
 4. 跑代码：`mvn -o test`（确认基线）→ `backend/` 对标最近的 `Jpa*Repository`
-5. 想理解判断依据：`tasks/evo-collab-extreme/cluster-policy-pressure.md`
-   （用 wave42 压集群策略的三条证据）
+5. 想理解判断依据：
+   - `tasks/evo-collab-extreme/cluster-policy-pressure.md`（wave42 压集群策略的三条证据）
+   - `tasks/evo-collab-extreme/next-direction.md`（方向与方针：JPA 矿挖完了）
+   - `tasks/evo-collab-extreme/borrowing-from-model-arch.md`（四条待验假设 + 仪器结论）
