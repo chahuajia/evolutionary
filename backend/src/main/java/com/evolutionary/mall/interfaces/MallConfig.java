@@ -77,13 +77,22 @@ public class MallConfig {
     CheckoutMallOrderWithCoupons checkoutMallOrderWithCoupons(
             MallSkuRepository skus,
             MallOrderRepository orders,
+            MerchantProfileRepository merchants,
             UserCouponRepository userCoupons,
             CouponTemplateRepository templates,
             CouponRedemptionRepository redemptions,
             AccountRepository accounts,
             LedgerRepository ledger) {
         return new CheckoutMallOrderWithCoupons(
-                skus, orders, userCoupons, templates, redemptions, accounts, ledger, Clock.systemUTC());
+                skus,
+                orders,
+                merchants,
+                userCoupons,
+                templates,
+                redemptions,
+                accounts,
+                ledger,
+                Clock.systemUTC());
     }
 
     /**

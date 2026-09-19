@@ -31,6 +31,7 @@ public final class CheckoutMallOrderWithCoupons {
 
     private final MallSkuRepository skus;
     private final MallOrderRepository orders;
+    private final MerchantProfileRepository merchants;
     private final UserCouponRepository userCoupons;
     private final CouponTemplateRepository templates;
     private final CouponRedemptionRepository redemptions;
@@ -41,6 +42,7 @@ public final class CheckoutMallOrderWithCoupons {
     public CheckoutMallOrderWithCoupons(
             MallSkuRepository skus,
             MallOrderRepository orders,
+            MerchantProfileRepository merchants,
             UserCouponRepository userCoupons,
             CouponTemplateRepository templates,
             CouponRedemptionRepository redemptions,
@@ -49,6 +51,7 @@ public final class CheckoutMallOrderWithCoupons {
             Clock clock) {
         this.skus = Objects.requireNonNull(skus, "skus");
         this.orders = Objects.requireNonNull(orders, "orders");
+        this.merchants = Objects.requireNonNull(merchants, "merchants");
         this.userCoupons = Objects.requireNonNull(userCoupons, "userCoupons");
         this.templates = Objects.requireNonNull(templates, "templates");
         this.redemptions = Objects.requireNonNull(redemptions, "redemptions");
@@ -73,6 +76,11 @@ public final class CheckoutMallOrderWithCoupons {
 
         if (qty <= 0) {
             return MallOutcome.err(MallErrorCode.INVALID_QTY, "qty 必须为正");
+        }
+
+        var merchant = merchants.findByOrgId(merchantOrgId).orElse(null);
+        if (merchant == null || !merchant.isActive()) {
+            return MallOutcome.err(MallErrorCode.MERCHANT_NOT_ACTIVE, "商家不可交易");
         }
 
         MallSku sku = skus.get(skuId);
