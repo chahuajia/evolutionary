@@ -96,7 +96,8 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave86–87** | 购买/还款岛 canCoverCents | ✅ `b749430` |
 | **wave88** | TelemetryFreshnessPort · 计量岛 GET shadow | ✅ `cf1d8fa` · 前端 146/146 · BE 相关 IT 6/6 |
 | **wave89** | 通信丢失岛 canDetectCommLost | ✅ `f28bee6` |
-| **wave90** | 结算岛 reverseAllowed 冲销 | ✅ `35a47f3` · 前端 **146/146** |
+| **wave90** | 结算岛 reverseAllowed 冲销 | ✅ `35a47f3` |
+| **wave91** | 带券结账 SKU/商家/钱包门 | ✅ `8080461` · 前端 **146/146** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -132,7 +133,7 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **146/146** · HEAD `35a47f3`。父自选推进。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **146/146** · HEAD `8080461`。父自选推进。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
