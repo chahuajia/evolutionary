@@ -27,6 +27,13 @@ export const DEFAULT_OVERRIDE_ACTOR_USER_ID = "U-SZ";
 export const DEFAULT_OVERRIDE_ID = "OV-1";
 export const DEFAULT_OVERRIDE_PRICE_CENTS = 2800;
 
+/** 派生下一版本：源 T-PUB-1（已发布）/ 新草稿 T-NEXT-1 / ORG-L1 */
+export const DEFAULT_NEXT_VERSION_SOURCE_ID = "T-PUB-1";
+export const DEFAULT_NEXT_VERSION_NEW_ID = "T-NEXT-1";
+export const DEFAULT_NEXT_VERSION_DISPLAY_NAME = "30天卡 v2";
+export const DEFAULT_NEXT_VERSION_PRICE_CENTS = 3200;
+export const DEFAULT_NEXT_VERSION_DURATION_DAYS = 30;
+
 const TIMEOUT_MS = 8000;
 
 /** POST /admin/onboarding/{applicationId}/approve 成功读模型（AC-40 · 26a 对齐） */
@@ -194,6 +201,82 @@ function parsePublishPackageTemplate(
     throw new Error("发布模板响应缺少 templateId/status/version");
   }
   return { templateId, ownerOrgId, version, status, publishedAt };
+}
+
+/** POST /operator/templates/{id}/next-version 成功读模型（AC-25） */
+export type NextVersionDraftResult = {
+  templateId: string;
+  ownerOrgId: string;
+  version: number;
+  status: string;
+  inheritedFrom: string | null;
+};
+
+export type NextVersionDraftRequest = {
+  sourceTemplateId: string;
+  newTemplateId: string;
+  actorUserId: string;
+  actorOrgId: string;
+  displayName: string;
+  priceCents: number;
+  durationDays: number;
+};
+
+/**
+ * POST /operator/templates/{sourceTemplateId}/next-version
+ */
+export async function postCreateNextVersionDraft(
+  req: NextVersionDraftRequest,
+): Promise<NextVersionDraftResult> {
+  const sourceTemplateId =
+    req.sourceTemplateId.trim() || DEFAULT_NEXT_VERSION_SOURCE_ID;
+  const newTemplateId =
+    req.newTemplateId.trim() || DEFAULT_NEXT_VERSION_NEW_ID;
+  const actorUserId =
+    req.actorUserId.trim() || DEFAULT_PUBLISH_ACTOR_USER_ID;
+  const actorOrgId = req.actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID;
+  const displayName =
+    req.displayName.trim() || DEFAULT_NEXT_VERSION_DISPLAY_NAME;
+  const priceCents = Number.isFinite(req.priceCents)
+    ? req.priceCents
+    : DEFAULT_NEXT_VERSION_PRICE_CENTS;
+  const durationDays = Number.isFinite(req.durationDays)
+    ? req.durationDays
+    : DEFAULT_NEXT_VERSION_DURATION_DAYS;
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/operator/templates/${encodeURIComponent(sourceTemplateId)}/next-version`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        actorUserId,
+        actorOrgId,
+        newTemplateId,
+        displayName,
+        priceCents,
+        durationDays,
+      }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  const templateId = String(raw.templateId ?? raw.id ?? newTemplateId);
+  const ownerOrgId = String(raw.ownerOrgId ?? "");
+  const versionRaw = raw.version;
+  const version =
+    typeof versionRaw === "number"
+      ? versionRaw
+      : Number.parseInt(String(versionRaw ?? ""), 10);
+  const status = String(raw.status ?? "");
+  const inheritedRaw = raw.inheritedFrom;
+  const inheritedFrom =
+    inheritedRaw == null || inheritedRaw === ""
+      ? null
+      : String(inheritedRaw);
+  if (!templateId || !status || !Number.isFinite(version)) {
+    throw new Error("派生下一版本响应缺少 templateId/status/version");
+  }
+  return { templateId, ownerOrgId, version, status, inheritedFrom };
 }
 
 /** POST /operator/templates/{templateId}/overrides 成功读模型（AC-26） */

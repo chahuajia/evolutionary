@@ -3,6 +3,7 @@ package com.evolutionary.operator.interfaces;
 import com.evolutionary.operator.application.ActivatePackageOverride;
 import com.evolutionary.operator.application.ApproveOperatorDownline;
 import com.evolutionary.operator.application.AuditLogRepository;
+import com.evolutionary.operator.application.CreateNextVersionDraft;
 import com.evolutionary.operator.application.OnboardingApplicationRepository;
 import com.evolutionary.operator.application.OrganizationRepository;
 import com.evolutionary.operator.application.PackageOverrideRepository;
@@ -96,6 +97,15 @@ public class OperatorConfig {
             AuditLogRepository auditLogs,
             OrganizationRepository organizations) {
         return new PublishPackageTemplate(
+                templates, auditLogs, organizations, Clock.systemUTC());
+    }
+
+    @Bean
+    CreateNextVersionDraft createNextVersionDraft(
+            PackageTemplateRepository templates,
+            AuditLogRepository auditLogs,
+            OrganizationRepository organizations) {
+        return new CreateNextVersionDraft(
                 templates, auditLogs, organizations, Clock.systemUTC());
     }
 

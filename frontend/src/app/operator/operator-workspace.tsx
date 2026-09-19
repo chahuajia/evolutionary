@@ -8,6 +8,7 @@ import {
   DEFAULT_PACKAGE_TEMPLATE_ID,
 } from "@/domains/operator/infrastructure/operator-gateway";
 import { ApproveDownlinePanel } from "./approve-downline-panel";
+import { NextVersionPanel } from "./next-version-panel";
 import { PackageOverridePanel } from "./package-override-panel";
 import { PublishPackageTemplatePanel } from "./publish-package-template-panel";
 import { RevokeOverridePanel } from "./revoke-override-panel";
@@ -22,6 +23,12 @@ export function OperatorWorkspace() {
           label: "发布套餐",
           description: "OPERATOR 发布草稿模板（AC-24）。",
           content: <PublishPackageTemplatePanel />,
+        },
+        {
+          id: "next-version",
+          label: "派生下一版",
+          description: "已发布模板派生下一版本草稿（AC-25 · nextVersionAllowed）。",
+          content: <NextVersionPanel />,
         },
         {
           id: "override",

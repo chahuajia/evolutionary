@@ -4,6 +4,8 @@ package com.evolutionary.operator.domain;
 public enum AuditAction {
     TEMPLATE_PUBLISH,
     TEMPLATE_DEPRECATE,
+    /** 从已发布模板派生下一版本草稿（AC-25）。 */
+    TEMPLATE_NEXT_VERSION,
     OVERRIDE_ACTIVATE,
     OVERRIDE_REVOKE,
     /** 平台批准商家入驻（切片30b · P0 轨迹）。 */

@@ -2,6 +2,7 @@ package com.evolutionary.operator.interfaces;
 
 import com.evolutionary.operator.application.ActivatePackageOverride;
 import com.evolutionary.operator.application.ApproveOperatorDownline;
+import com.evolutionary.operator.application.CreateNextVersionDraft;
 import com.evolutionary.operator.application.PublishPackageTemplate;
 import com.evolutionary.operator.application.ResolveEffectiveProduct;
 import com.evolutionary.operator.application.RevokePackageOverride;
@@ -11,6 +12,7 @@ import com.evolutionary.operator.domain.OrgCapability;
 import com.evolutionary.operator.domain.Organization;
 import com.evolutionary.operator.domain.PackageOverride;
 import com.evolutionary.operator.domain.PackageTemplate;
+import com.evolutionary.operator.domain.TemplateBaseProduct;
 import java.time.Instant;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OperatorController {
 
     private final PublishPackageTemplate publishPackageTemplate;
+    private final CreateNextVersionDraft createNextVersionDraft;
     private final ActivatePackageOverride activatePackageOverride;
     private final RevokePackageOverride revokePackageOverride;
     private final ResolveEffectiveProduct resolveEffectiveProduct;
@@ -35,11 +38,13 @@ public class OperatorController {
 
     public OperatorController(
             PublishPackageTemplate publishPackageTemplate,
+            CreateNextVersionDraft createNextVersionDraft,
             ActivatePackageOverride activatePackageOverride,
             RevokePackageOverride revokePackageOverride,
             ResolveEffectiveProduct resolveEffectiveProduct,
             ApproveOperatorDownline approveOperatorDownline) {
         this.publishPackageTemplate = publishPackageTemplate;
+        this.createNextVersionDraft = createNextVersionDraft;
         this.activatePackageOverride = activatePackageOverride;
         this.revokePackageOverride = revokePackageOverride;
         this.resolveEffectiveProduct = resolveEffectiveProduct;
@@ -89,6 +94,46 @@ public class OperatorController {
                         templateId.trim());
         if (outcome instanceof OperatorOutcome.Ok<PackageTemplate> ok) {
             return ResponseEntity.ok(toPublishView(ok.value()));
+        }
+        OperatorOutcome.Err<PackageTemplate> err =
+                (OperatorOutcome.Err<PackageTemplate>) outcome;
+        OperatorApiErrorTranslator.Translated translated =
+                OperatorApiErrorTranslator.translate(err);
+        return ResponseEntity.status(translated.status()).body(translated.body());
+    }
+
+    /**
+     * 从已发布模板派生下一版本草稿（AC-25 合法变更路径）。
+     *
+     * <p>body：actor + newTemplateId + baseProduct（displayName / priceCents / durationDays）。
+     */
+    @PostMapping("/templates/{templateId}/next-version")
+    public ResponseEntity<?> nextVersion(
+            @PathVariable String templateId, @RequestBody NextVersionRequest body) {
+        if (body == null
+                || body.actorUserId() == null
+                || body.actorUserId().isBlank()
+                || body.actorOrgId() == null
+                || body.actorOrgId().isBlank()
+                || body.newTemplateId() == null
+                || body.newTemplateId().isBlank()
+                || body.displayName() == null
+                || body.displayName().isBlank()) {
+            throw new IllegalArgumentException(
+                    "actorUserId, actorOrgId, newTemplateId and displayName required");
+        }
+        TemplateBaseProduct nextBase =
+                TemplateBaseProduct.of(
+                        body.displayName().trim(), body.priceCents(), body.durationDays());
+        OperatorOutcome<PackageTemplate> outcome =
+                createNextVersionDraft.execute(
+                        body.actorUserId().trim(),
+                        body.actorOrgId().trim(),
+                        templateId.trim(),
+                        body.newTemplateId().trim(),
+                        nextBase);
+        if (outcome instanceof OperatorOutcome.Ok<PackageTemplate> ok) {
+            return ResponseEntity.ok(toTemplateView(ok.value()));
         }
         OperatorOutcome.Err<PackageTemplate> err =
                 (OperatorOutcome.Err<PackageTemplate>) outcome;
@@ -176,9 +221,19 @@ public class OperatorController {
     private static PublishView toPublishView(PackageTemplate template) {
         return new PublishView(
                 template.id(),
+                template.ownerOrgId(),
                 template.status().name(),
                 template.version(),
                 template.publishedAt());
+    }
+
+    private static TemplateView toTemplateView(PackageTemplate template) {
+        return new TemplateView(
+                template.id(),
+                template.ownerOrgId(),
+                template.status().name(),
+                template.version(),
+                template.inheritedFrom());
     }
 
     private static OverrideView toOverrideView(PackageOverride override) {
@@ -221,7 +276,19 @@ public class OperatorController {
 
     public record PublishRequest(String actorUserId, String actorOrgId) {}
 
-    public record PublishView(String id, String status, int version, Instant publishedAt) {}
+    public record PublishView(
+            String id, String ownerOrgId, String status, int version, Instant publishedAt) {}
+
+    public record NextVersionRequest(
+            String actorUserId,
+            String actorOrgId,
+            String newTemplateId,
+            String displayName,
+            long priceCents,
+            int durationDays) {}
+
+    public record TemplateView(
+            String id, String ownerOrgId, String status, int version, String inheritedFrom) {}
 
     public record ActivateOverrideRequest(
             String actorUserId, String actorOrgId, String overrideId, Map<String, Object> patches) {}
