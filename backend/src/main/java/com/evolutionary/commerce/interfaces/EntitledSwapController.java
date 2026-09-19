@@ -1,11 +1,15 @@
 package com.evolutionary.commerce.interfaces;
 
+import com.evolutionary.commerce.application.EntitlementRepository;
 import com.evolutionary.commerce.application.PerformEntitledSwap;
 import com.evolutionary.commerce.domain.DomainOutcome;
+import com.evolutionary.commerce.domain.Entitlement;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.UsageEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,9 +20,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class EntitledSwapController {
 
     private final PerformEntitledSwap performEntitledSwap;
+    private final EntitlementRepository entitlements;
 
-    public EntitledSwapController(PerformEntitledSwap performEntitledSwap) {
+    public EntitledSwapController(
+            PerformEntitledSwap performEntitledSwap, EntitlementRepository entitlements) {
         this.performEntitledSwap = performEntitledSwap;
+        this.entitlements = entitlements;
+    }
+
+    /** 只读：供换电岛对齐 swapAllowed（含 FROZEN）。 */
+    @GetMapping("/{entitlementId}")
+    public ResponseEntity<EntitlementView> entitlement(@PathVariable String entitlementId) {
+        return entitlements
+                .findById(entitlementId.trim())
+                .map(EntitledSwapController::toView)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -90,4 +107,15 @@ public class EntitledSwapController {
             String cabinetId,
             String entitlementId,
             Long chargedAmountCents) {}
+
+    public record EntitlementView(
+            String id, String userId, String status, Integer remainingSwaps) {}
+
+    private static EntitlementView toView(Entitlement entitlement) {
+        return new EntitlementView(
+                entitlement.id(),
+                entitlement.userId(),
+                entitlement.status().name(),
+                entitlement.remainingSwaps());
+    }
 }

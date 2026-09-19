@@ -28,6 +28,37 @@ export type EntitledSwapResult = {
   chargedAmountCents?: number;
 };
 
+export type EntitlementDto = {
+  id: string;
+  userId: string;
+  status: string;
+  remainingSwaps: number | null;
+};
+
+/**
+ * GET /entitled-swaps/{entitlementId}
+ */
+export async function fetchEntitlement(
+  entitlementId: string,
+): Promise<EntitlementDto> {
+  const id = entitlementId.trim();
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/entitled-swaps/${encodeURIComponent(id)}`,
+    { timeoutMs: TIMEOUT_MS },
+  );
+  const remaining = raw.remainingSwaps;
+  return {
+    id: String(raw.id ?? id),
+    userId: String(raw.userId ?? ""),
+    status: String(raw.status ?? ""),
+    remainingSwaps:
+      typeof remaining === "number" && Number.isFinite(remaining)
+        ? remaining
+        : null,
+  };
+}
+
 export async function postEntitledSwap(
   body: EntitledSwapRequest,
 ): Promise<EntitledSwapResult> {

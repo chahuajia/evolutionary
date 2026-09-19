@@ -2,20 +2,24 @@
 
 /**
  * 权益换电客户端岛 — 默认 U1 / E-1 / CAB-1（与 CommerceConfig 种子对齐）。
+ * GET /entitled-swaps/{id} 对齐 swapAllowed（含 FROZEN / 用尽）。
  */
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
+  parseEntitlementStatus,
   toEntitlementView,
-  type EntitlementStatus,
+  type EntitlementView,
 } from "@/domains/commerce/domain/entitlement-view";
+import { isExhaustedEntitlement } from "@/domains/commerce/domain/select-entitlement";
 import { toUsageEventView } from "@/domains/commerce/domain/usage-event-view";
-import { postEntitledSwap } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
+import {
+  fetchEntitlement,
+  postEntitledSwap,
+} from "@/domains/commerce/infrastructure/entitled-swap-gateway";
 import styles from "./page.module.css";
 
-/** 种子 E-1 为 ACTIVE；无 GET 时默认按 ACTIVE，非种子 id 交后端判。 */
 const SEED_ENTITLEMENT_ID = "E-1";
-const SEED_STATUS = "ACTIVE" as EntitlementStatus;
 
 export function EntitledSwapPanel() {
   const [userId, setUserId] = useState("U1");
@@ -24,19 +28,64 @@ export function EntitledSwapPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
+  const [view, setView] = useState<EntitlementView | null>(null);
+  const [remainingSwaps, setRemainingSwaps] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const gate = useMemo(() => {
+  useEffect(() => {
+    let cancelled = false;
     const id = entitlementId.trim() || SEED_ENTITLEMENT_ID;
-    if (id !== SEED_ENTITLEMENT_ID) {
-      return { swapAllowed: true, blockMessage: null as string | null };
-    }
-    const view = toEntitlementView({ id, status: SEED_STATUS });
-    return {
-      swapAllowed: view.swapAllowed,
-      blockMessage: view.blockMessage,
-      statusLabel: view.statusLabel,
+    setLoadError(null);
+    fetchEntitlement(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setRemainingSwaps(dto.remainingSwaps);
+        setView(
+          toEntitlementView({
+            id: dto.id,
+            status: parseEntitlementStatus(dto.status),
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setView(null);
+        setRemainingSwaps(null);
+        setLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
     };
   }, [entitlementId]);
+
+  const gate = useMemo(() => {
+    if (!view) {
+      return {
+        swapAllowed: false,
+        blockMessage: loadError ?? "正在加载权益…",
+        statusLabel: null as string | null,
+      };
+    }
+    if (!view.swapAllowed) {
+      return {
+        swapAllowed: false,
+        blockMessage: view.blockMessage,
+        statusLabel: view.statusLabel,
+      };
+    }
+    if (isExhaustedEntitlement(remainingSwaps)) {
+      return {
+        swapAllowed: false,
+        blockMessage: "权益次数已用尽，不可换电",
+        statusLabel: view.statusLabel,
+      };
+    }
+    return {
+      swapAllowed: true,
+      blockMessage: null as string | null,
+      statusLabel: view.statusLabel,
+    };
+  }, [view, loadError, remainingSwaps]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -58,6 +107,16 @@ export function EntitledSwapPanel() {
           (ue.blockMessage ? ` · ${ue.blockMessage}` : "") +
           ` · 电池 ${r.batteryId}`,
       );
+      const dto = await fetchEntitlement(
+        entitlementId.trim() || SEED_ENTITLEMENT_ID,
+      );
+      setRemainingSwaps(dto.remainingSwaps);
+      setView(
+        toEntitlementView({
+          id: dto.id,
+          status: parseEntitlementStatus(dto.status),
+        }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -69,10 +128,9 @@ export function EntitledSwapPanel() {
     <section className={styles.panel}>
       <h2>权益换电（HTTP）</h2>
       <p className={styles.note}>
-        仅 ACTIVE 权益可履约
-        {"statusLabel" in gate && gate.statusLabel
-          ? ` · 种子 ${SEED_ENTITLEMENT_ID}=${gate.statusLabel}`
-          : ""}
+        GET 权益对齐仅 ACTIVE 且未用尽可履约
+        {gate.statusLabel ? ` · ${entitlementId}=${gate.statusLabel}` : ""}
+        {remainingSwaps != null ? ` · 余 ${remainingSwaps} 次` : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
@@ -97,7 +155,7 @@ export function EntitledSwapPanel() {
           />
         </label>
         <button type="submit" disabled={busy || !gate.swapAllowed}>
-          权益换电
+          {busy ? "换电中…" : "权益换电"}
         </button>
       </form>
       {!gate.swapAllowed && gate.blockMessage ? (

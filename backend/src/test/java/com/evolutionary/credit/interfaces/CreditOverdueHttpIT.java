@@ -1,5 +1,6 @@
 package com.evolutionary.credit.interfaces;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,6 +29,14 @@ class CreditOverdueHttpIT {
     @Test
     @DisplayName("mark-overdue U1 → 200 overdue；再 POST /entitled-swaps → 409 CREDIT_OVERDUE_BLOCKED")
     void markOverdueThenEntitledSwapBlocked() throws Exception {
+        mvc.perform(get("/entitled-swaps/E-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("E-1"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"));
+
+        mvc.perform(get("/entitled-swaps/NO-SUCH"))
+                .andExpect(status().isNotFound());
+
         mvc.perform(
                         post("/credit/profiles/U1/mark-overdue")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -35,6 +44,10 @@ class CreditOverdueHttpIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value("U1"))
                 .andExpect(jsonPath("$.status").value("overdue"));
+
+        mvc.perform(get("/entitled-swaps/E-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("FROZEN"));
 
         mvc.perform(
                         post("/entitled-swaps")

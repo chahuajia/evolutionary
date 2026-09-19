@@ -9,6 +9,17 @@ public interface EntitlementRepository {
 
     Entitlement get(String entitlementId);
 
+    /**
+     * 只读查找。默认用 {@link #get} 吞掉未知 id，避免各测试替身再实现一遍。
+     */
+    default Optional<Entitlement> findById(String entitlementId) {
+        try {
+            return Optional.of(get(entitlementId));
+        } catch (IllegalArgumentException ex) {
+            return Optional.empty();
+        }
+    }
+
     Optional<Entitlement> findByOrderId(String orderId);
 
     /** 用户当前 ACTIVE 权益（不含时间/次数可用性过滤）。 */
