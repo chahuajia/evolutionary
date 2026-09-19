@@ -6,9 +6,12 @@
 
 import { FormEvent, useState } from "react";
 import {
+  toMaintenanceTicketView,
+  type MaintenanceTicketView,
+} from "@/domains/iot/domain/maintenance-ticket-view";
+import {
   DEFAULT_IOT_BATTERY,
   fetchMaintenanceTickets,
-  type MaintenanceTicketItem,
 } from "@/domains/iot/infrastructure/iot-gateway";
 import styles from "./page.module.css";
 
@@ -16,7 +19,7 @@ export function TicketsPanel() {
   const [batteryId, setBatteryId] = useState(DEFAULT_IOT_BATTERY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tickets, setTickets] = useState<MaintenanceTicketItem[] | null>(null);
+  const [tickets, setTickets] = useState<MaintenanceTicketView[] | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -27,7 +30,7 @@ export function TicketsPanel() {
       const list = await fetchMaintenanceTickets(
         batteryId.trim() || DEFAULT_IOT_BATTERY,
       );
-      setTickets(list);
+      setTickets(list.map(toMaintenanceTicketView));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -62,7 +65,8 @@ export function TicketsPanel() {
           <ul>
             {tickets.map((t) => (
               <li key={t.ticketId}>
-                {t.ticketId} · {t.alertType} · {t.status}
+                {t.ticketId} · {t.alertType} · {t.statusLabel}
+                {t.needsAction ? " · 可解决" : ` · ${t.blockMessage}`}
               </li>
             ))}
           </ul>

@@ -7,12 +7,12 @@ import {
   DEFAULT_IOT_BATTERY,
   loadTickets,
 } from "@/domains/iot/application/load-tickets";
-import type { MaintenanceTicketItem } from "@/domains/iot/infrastructure/iot-gateway";
+import type { MaintenanceTicketView } from "@/domains/iot/domain/maintenance-ticket-view";
 import { IotWorkspace } from "./iot-workspace";
 import styles from "./page.module.css";
 
 export default async function IotPage() {
-  let tickets: readonly MaintenanceTicketItem[] = [];
+  let tickets: readonly MaintenanceTicketView[] = [];
   let error: string | null = null;
 
   try {
@@ -21,6 +21,7 @@ export default async function IotPage() {
     error = e instanceof Error ? e.message : "工单拉取失败";
   }
 
+  const openCount = tickets.filter((t) => t.needsAction).length;
   const preview = tickets.slice(0, 3);
 
   return (
@@ -37,13 +38,15 @@ export default async function IotPage() {
       ) : (
         <section className={styles.overview} aria-label="工单概览">
           <p className={styles.note}>
-            {DEFAULT_IOT_BATTERY} · {tickets.length} 条工单（只读 · RSC）
+            {DEFAULT_IOT_BATTERY} · {tickets.length} 条工单 · 待处理 {openCount}
+            （只读 · RSC）
           </p>
           {preview.length > 0 ? (
             <ul className={styles.preview}>
               {preview.map((t) => (
                 <li key={t.ticketId}>
-                  {t.ticketId} · {t.alertType} · {t.status}
+                  {t.ticketId} · {t.alertType} · {t.statusLabel}
+                  {t.needsAction ? " · 需处理" : ""}
                 </li>
               ))}
             </ul>
