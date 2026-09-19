@@ -10,6 +10,10 @@ import {
   type AccrualView,
 } from "@/domains/settlement/domain/accrual-view";
 import {
+  toSettlementBatchView,
+  type SettlementBatchView,
+} from "@/domains/settlement/domain/settlement-batch-view";
+import {
   postAccrueSettlement,
   postRunSettlementBatch,
 } from "@/domains/settlement/infrastructure/settlement-gateway";
@@ -36,6 +40,7 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
+  const [batchView, setBatchView] = useState<SettlementBatchView | null>(null);
 
   async function onAccrue(e: FormEvent) {
     e.preventDefault();
@@ -76,9 +81,15 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
     setBusy(true);
     setError(null);
     setResult(null);
+    setBatchView(null);
     try {
       const r = await postRunSettlementBatch({ periodStart, periodEnd });
-      setResult(`批 ${r.id} · ${r.status}`);
+      const view = toSettlementBatchView(r);
+      setBatchView(view);
+      setResult(
+        `批 ${view.id} · ${view.statusLabel}` +
+          (view.blockMessage ? ` · ${view.blockMessage}` : ""),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -123,6 +134,11 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
         <h2>跑结算批</h2>
         <p className={styles.note}>
           <code>POST /settlement/batches</code>
+          {" · "}
+          一次跑完即关账（仅 OPEN 域上可再关；HTTP 返回通常已是 CLOSED）
+          {batchView
+            ? ` · 上次=${batchView.statusLabel}`
+            : ""}
         </p>
         <form className={styles.repayForm} onSubmit={onBatch}>
           <label>

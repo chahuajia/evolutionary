@@ -24,6 +24,7 @@ import {
   type CreditPurchaseResult,
 } from "@/domains/credit/infrastructure/credit-gateway";
 import { toAccrualView } from "@/domains/settlement/domain/accrual-view";
+import { toSettlementBatchView } from "@/domains/settlement/domain/settlement-batch-view";
 import {
   postAccrueSettlement,
   postRunSettlementBatch,
@@ -195,7 +196,11 @@ export function CreditJourneyPanel({
         periodStart: start.toISOString(),
         periodEnd: now.toISOString(),
       });
-      append(`④ Run batch：${r.id} · ${r.status}`);
+      const view = toSettlementBatchView(r);
+      append(
+        `④ Run batch：${view.id} · ${view.statusLabel}` +
+          (view.blockMessage ? ` · ${view.blockMessage}` : ""),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
