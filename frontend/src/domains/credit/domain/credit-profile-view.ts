@@ -29,6 +29,8 @@ export type CreditProfileView = {
   readonly purchaseAllowed: boolean;
   /** 购单被拒原因；ok 才可提交 */
   readonly purchaseBlock: CreditPurchaseBlock;
+  /** 已用>0 或非 good 才提供还款 */
+  readonly repayAllowed: boolean;
 };
 
 /** 分转元数值 */
@@ -75,6 +77,18 @@ export function creditPurchaseBlock(
   return "ok";
 }
 
+/**
+ * 展示不变量：还款是恢复路径。
+ * 对齐后端 repay：扣 used，且 overdue/frozen 会回到 good。
+ * used=0 且 good 时还款是空操作，不提供。
+ */
+export function canOfferCreditRepay(
+  status: CreditStatus,
+  usedCents: number,
+): boolean {
+  return status !== "good" || usedCents > 0;
+}
+
 export function creditPurchaseBlockMessage(
   block: CreditPurchaseBlock,
   statusLabel?: string,
@@ -112,5 +126,6 @@ export function toCreditProfileView(profile: CreditProfile): CreditProfileView {
     limitYuan: formatYuan(profile.creditLimit),
     purchaseAllowed: block === "ok",
     purchaseBlock: block,
+    repayAllowed: canOfferCreditRepay(profile.status, profile.usedCredit),
   };
 }

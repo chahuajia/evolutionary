@@ -15,7 +15,15 @@ import styles from "./page.module.css";
 const DEFAULT_STATEMENT_ID = "STMT-2026-02";
 const DEFAULT_AMOUNT_CENTS = 3000;
 
-export function CreditRepayPanel() {
+type CreditRepayPanelProps = {
+  readonly repayAllowed?: boolean;
+  readonly statusLabel?: string;
+};
+
+export function CreditRepayPanel({
+  repayAllowed = true,
+  statusLabel,
+}: CreditRepayPanelProps) {
   const router = useRouter();
   const [statementId, setStatementId] = useState(DEFAULT_STATEMENT_ID);
   const [amountCents, setAmountCents] = useState(DEFAULT_AMOUNT_CENTS);
@@ -25,6 +33,14 @@ export function CreditRepayPanel() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!repayAllowed) {
+      setError(
+        statusLabel
+          ? `档案${statusLabel}且无已用额度，无需还款`
+          : "当前档案无需还款",
+      );
+      return;
+    }
     setBusy(true);
     setError(null);
     setStatus(null);
@@ -62,10 +78,17 @@ export function CreditRepayPanel() {
             onChange={(e) => setAmountCents(Number(e.target.value))}
           />
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy || !repayAllowed}>
           {busy ? "提交中…" : "还款解冻"}
         </button>
       </form>
+      {!repayAllowed ? (
+        <p className={styles.note} role="status">
+          {statusLabel
+            ? `档案${statusLabel}且无已用额度，无需还款`
+            : "当前档案无需还款"}
+        </p>
+      ) : null}
       {error ? (
         <p className={styles.note} role="alert">
           {error}

@@ -3,6 +3,7 @@ import {
   availableCreditCents,
   canPurchaseOnCredit,
   centsToYuan,
+  canOfferCreditRepay,
   creditPurchaseBlock,
   creditPurchaseBlockMessage,
   hasCreditHeadroom,
@@ -43,6 +44,15 @@ describe("creditPurchaseBlock", () => {
   });
 });
 
+describe("canOfferCreditRepay", () => {
+  it("offers repay when used or not good", () => {
+    expect(canOfferCreditRepay("good", 0)).toBe(false);
+    expect(canOfferCreditRepay("good", 1)).toBe(true);
+    expect(canOfferCreditRepay("frozen", 0)).toBe(true);
+    expect(canOfferCreditRepay("overdue", 0)).toBe(true);
+  });
+});
+
 describe("centsToYuan", () => {
   it("converts cents to yuan number", () => {
     expect(centsToYuan(250)).toBe(2.5);
@@ -67,6 +77,7 @@ describe("toCreditProfileView", () => {
     expect(view.limitYuan).toBe("100.00");
     expect(view.purchaseAllowed).toBe(true);
     expect(view.purchaseBlock).toBe("ok");
+    expect(view.repayAllowed).toBe(true);
   });
 
   it("blocks purchase when frozen", () => {
@@ -97,5 +108,18 @@ describe("toCreditProfileView", () => {
     expect(creditPurchaseBlockMessage(view.purchaseBlock, view.statusLabel, view.availableYuan)).toContain(
       "可用额度不足",
     );
+    expect(view.repayAllowed).toBe(true);
+  });
+
+  it("hides repay when good and unused", () => {
+    const view = toCreditProfileView({
+      userId: "u-1",
+      creditLimit: 10000,
+      usedCredit: 0,
+      status: "good",
+      scoreTier: "A",
+      policyVersion: 1,
+    });
+    expect(view.repayAllowed).toBe(false);
   });
 });

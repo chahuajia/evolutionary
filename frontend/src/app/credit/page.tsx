@@ -119,6 +119,7 @@ export default async function CreditPage() {
           purchaseBlock={profile?.purchaseBlock ?? "ok"}
           statusLabel={profile?.statusLabel}
           availableYuan={profile?.availableYuan}
+          repayAllowed={profile?.repayAllowed ?? true}
         />
       </div>
     </>

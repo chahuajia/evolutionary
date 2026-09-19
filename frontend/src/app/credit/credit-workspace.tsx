@@ -14,6 +14,7 @@ type CreditWorkspaceProps = {
   readonly purchaseBlock?: CreditPurchaseBlock;
   readonly statusLabel?: string;
   readonly availableYuan?: string;
+  readonly repayAllowed?: boolean;
 };
 
 export function CreditWorkspace({
@@ -21,6 +22,7 @@ export function CreditWorkspace({
   purchaseBlock = "ok",
   statusLabel,
   availableYuan,
+  repayAllowed = true,
 }: CreditWorkspaceProps) {
   return (
     <WorkflowTabs
@@ -57,7 +59,12 @@ export function CreditWorkspace({
           id: "repay",
           label: "还款解冻",
           description: "逾期后全额还款，恢复换电。",
-          content: <CreditRepayPanel />,
+          content: (
+            <CreditRepayPanel
+              repayAllowed={repayAllowed}
+              statusLabel={statusLabel}
+            />
+          ),
         },
         {
           id: "billing",
