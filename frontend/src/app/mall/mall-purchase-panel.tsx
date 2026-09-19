@@ -87,6 +87,8 @@ export function MallPurchasePanel() {
         <p>
           订单 {result.orderId} · {result.status} · ¥{result.paidAmountYuan} ·{" "}
           {result.skuId}×{result.qty}
+          {result.entitlementForbidden ? " · 不可开换电权益" : ""}
+          {result.blockMessage ? ` · ${result.blockMessage}` : ""}
         </p>
       ) : null}
     </section>
