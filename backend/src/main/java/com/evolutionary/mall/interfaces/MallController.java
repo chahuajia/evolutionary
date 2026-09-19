@@ -4,11 +4,13 @@ import com.evolutionary.mall.application.CampaignRepository;
 import com.evolutionary.mall.application.CheckoutMallOrderWithCoupons;
 import com.evolutionary.mall.application.ClaimCouponFromCampaign;
 import com.evolutionary.mall.application.MallSkuRepository;
+import com.evolutionary.mall.application.MerchantProfileRepository;
 import com.evolutionary.mall.application.PurchaseMallOrder;
 import com.evolutionary.mall.domain.Campaign;
 import com.evolutionary.mall.domain.MallOrder;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.MallSku;
+import com.evolutionary.mall.domain.MerchantProfile;
 import com.evolutionary.mall.domain.UserCoupon;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -30,18 +32,21 @@ public class MallController {
     private final CheckoutMallOrderWithCoupons checkoutMallOrderWithCoupons;
     private final MallSkuRepository skus;
     private final CampaignRepository campaigns;
+    private final MerchantProfileRepository merchants;
 
     public MallController(
             ClaimCouponFromCampaign claimCouponFromCampaign,
             PurchaseMallOrder purchaseMallOrder,
             CheckoutMallOrderWithCoupons checkoutMallOrderWithCoupons,
             MallSkuRepository skus,
-            CampaignRepository campaigns) {
+            CampaignRepository campaigns,
+            MerchantProfileRepository merchants) {
         this.claimCouponFromCampaign = claimCouponFromCampaign;
         this.purchaseMallOrder = purchaseMallOrder;
         this.checkoutMallOrderWithCoupons = checkoutMallOrderWithCoupons;
         this.skus = skus;
         this.campaigns = campaigns;
+        this.merchants = merchants;
     }
 
     /** 只读：供前端展示门对齐 stock / ON_SALE。 */
@@ -60,6 +65,15 @@ public class MallController {
         return campaigns
                 .findById(campaignId.trim())
                 .map(c -> ResponseEntity.ok(toCampaignView(c)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /** 只读：供前端展示门对齐 MerchantProfile.isActive。 */
+    @GetMapping("/merchants/{orgId}")
+    public ResponseEntity<?> getMerchant(@PathVariable String orgId) {
+        return merchants
+                .findByOrgId(orgId.trim())
+                .map(m -> ResponseEntity.ok(toMerchantView(m)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -193,6 +207,10 @@ public class MallController {
                 c.couponTemplateIds());
     }
 
+    private static MerchantView toMerchantView(MerchantProfile m) {
+        return new MerchantView(m.orgId(), m.shopName(), m.status().name());
+    }
+
     public record ClaimRequest(String userId, String templateId) {}
 
     public record PurchaseRequest(String userId, String merchantOrgId, String skuId, Integer qty) {}
@@ -232,4 +250,6 @@ public class MallController {
             long budgetRemainingCents,
             String status,
             List<String> couponTemplateIds) {}
+
+    public record MerchantView(String orgId, String shopName, String status) {}
 }

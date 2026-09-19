@@ -16,12 +16,14 @@ import com.evolutionary.mall.application.MallOrderRepository;
 import com.evolutionary.mall.application.MallSkuRepository;
 import com.evolutionary.mall.application.PurchaseMallOrder;
 import com.evolutionary.mall.application.UserCouponRepository;
+import com.evolutionary.mall.application.MerchantProfileRepository;
 import com.evolutionary.mall.domain.Campaign;
 import com.evolutionary.mall.domain.CouponKind;
 import com.evolutionary.mall.domain.CouponScope;
 import com.evolutionary.mall.domain.CouponTemplate;
 import com.evolutionary.mall.domain.IssuerType;
 import com.evolutionary.mall.domain.MallSku;
+import com.evolutionary.mall.domain.MerchantProfile;
 import com.evolutionary.operator.application.AuditLogRepository;
 import java.time.Clock;
 import java.time.Instant;
@@ -90,6 +92,7 @@ public class MallConfig {
             CampaignRepository campaigns,
             CouponTemplateRepository templates,
             MallSkuRepository skus,
+            MerchantProfileRepository merchants,
             AccountRepository accounts) {
         return args -> {
             templates.save(
@@ -115,6 +118,7 @@ public class MallConfig {
                             "CAMP-EMPTY", "M1", "空预算活动", Money.cny(0), List.of("T-C1")));
 
             skus.save(MallSku.createOnSale("S1", "M1", "商城配件", Money.cny(1_000), 20));
+            merchants.save(MerchantProfile.activate("M1", "演示商家"));
             accounts.save(
                     Account.open(
                             "ACC-M1-SETTLE",

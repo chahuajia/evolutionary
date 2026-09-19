@@ -225,3 +225,27 @@ export async function fetchCampaign(
     couponTemplateIds: templates,
   };
 }
+
+/** GET /mall/merchants/{orgId} 读模型 */
+export type MerchantProfileDto = {
+  orgId: string;
+  shopName: string;
+  status: string;
+};
+
+/** GET /mall/merchants/{orgId} */
+export async function fetchMerchantProfile(
+  orgId: string = DEFAULT_MALL_MERCHANT,
+): Promise<MerchantProfileDto> {
+  const base = apiBase();
+  const id = orgId.trim() || DEFAULT_MALL_MERCHANT;
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/mall/merchants/${encodeURIComponent(id)}`,
+    { method: "GET", timeoutMs: TIMEOUT_MS },
+  );
+  return {
+    orgId: String(raw.orgId ?? id),
+    shopName: String(raw.shopName ?? ""),
+    status: String(raw.status ?? ""),
+  };
+}
