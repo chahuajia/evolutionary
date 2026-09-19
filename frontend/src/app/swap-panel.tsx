@@ -11,6 +11,7 @@ import type {
   StationSummary,
   SwapLog,
 } from "@/domains/swap/infrastructure/station-gateway";
+import { toStationView } from "@/domains/swap/domain/station-view";
 import {
   fetchSwapLogs,
   resolveApiBase,
@@ -127,22 +128,25 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
         </div>
         {stations.length > 0 && (
           <ul className={styles.stationList}>
-            {stations.map((s) => (
-              <li key={s.id}>
-                <button
-                  type="button"
-                  className={
-                    s.id === stationId
-                      ? styles.stationPickActive
-                      : styles.stationPick
-                  }
-                  onClick={() => setStationId(s.id)}
-                >
-                  {s.name}（{s.id}）— {s.canSwapOut ? "可换出" : "不可换出"} ·
-                  电池 {s.batteryCount}
-                </button>
-              </li>
-            ))}
+            {stations.map((s) => {
+              const view = toStationView(s);
+              return (
+                <li key={view.id}>
+                  <button
+                    type="button"
+                    className={
+                      view.id === stationId
+                        ? styles.stationPickActive
+                        : styles.stationPick
+                    }
+                    onClick={() => setStationId(view.id)}
+                  >
+                    {view.name}（{view.id}）— {view.availabilityLabel} · 电池{" "}
+                    {view.batteryCount}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

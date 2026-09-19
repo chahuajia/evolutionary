@@ -17,7 +17,7 @@ describe("toStationView", () => {
     expect(view.availabilityLabel).toBe("可换出");
   });
 
-  it("passes through station fields and sets availabilityLabel to 暂不可换 when canSwapOut is false", () => {
+  it("passes through station fields and sets availabilityLabel to 不可换出 when canSwapOut is false", () => {
     const view = toStationView({
       id: "st-2",
       name: "二号站",
@@ -29,6 +29,6 @@ describe("toStationView", () => {
     expect(view.name).toBe("二号站");
     expect(view.canSwapOut).toBe(false);
     expect(view.batteryCount).toBe(0);
-    expect(view.availabilityLabel).toBe("暂不可换");
+    expect(view.availabilityLabel).toBe("不可换出");
   });
 });

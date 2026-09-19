@@ -21,6 +21,6 @@ export function toStationView(dto: {
     name: dto.name,
     canSwapOut: dto.canSwapOut,
     batteryCount: dto.batteryCount,
-    availabilityLabel: dto.canSwapOut ? "可换出" : "暂不可换",
+    availabilityLabel: dto.canSwapOut ? "可换出" : "不可换出",
   };
 }
