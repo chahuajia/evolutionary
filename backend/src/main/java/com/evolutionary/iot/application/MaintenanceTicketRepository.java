@@ -8,6 +8,8 @@ import java.util.Optional;
 public interface MaintenanceTicketRepository {
     void save(MaintenanceTicket ticket);
 
+    Optional<MaintenanceTicket> findById(String ticketId);
+
     Optional<MaintenanceTicket> findOpen(String batteryId, AlertType alertType);
 
     List<MaintenanceTicket> findByBatteryId(String batteryId);

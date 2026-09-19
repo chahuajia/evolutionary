@@ -20,6 +20,11 @@ public final class InMemoryMaintenanceTicketRepository implements MaintenanceTic
     }
 
     @Override
+    public Optional<MaintenanceTicket> findById(String ticketId) {
+        return Optional.ofNullable(byId.get(ticketId));
+    }
+
+    @Override
     public Optional<MaintenanceTicket> findOpen(String batteryId, AlertType alertType) {
         return byId.values().stream()
                 .filter(t -> t.batteryId().equals(batteryId))

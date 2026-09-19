@@ -7,6 +7,7 @@ import com.evolutionary.iot.application.AssertShadowFreshForMetered;
 import com.evolutionary.iot.application.DetectCommLost;
 import com.evolutionary.iot.application.DeviceShadowRepository;
 import com.evolutionary.iot.application.MaintenanceTicketRepository;
+import com.evolutionary.iot.application.ResolveMaintenanceTicket;
 import com.evolutionary.iot.application.ShadowTelemetryFreshnessAdapter;
 import com.evolutionary.iot.application.TelemetryStore;
 import com.evolutionary.iot.application.TriageOutdatedSoc;
@@ -45,6 +46,11 @@ public class IotConfig {
     @Bean
     TriageOutdatedSoc triageOutdatedSoc(DeviceShadowRepository shadows) {
         return new TriageOutdatedSoc(shadows, Clock.systemUTC());
+    }
+
+    @Bean
+    ResolveMaintenanceTicket resolveMaintenanceTicket(MaintenanceTicketRepository tickets) {
+        return new ResolveMaintenanceTicket(tickets);
     }
 
     /** AC-58：计量换电前影子新鲜度守卫。 */

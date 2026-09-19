@@ -4,6 +4,7 @@ import com.evolutionary.iot.application.ApplyTelemetryToShadow;
 import com.evolutionary.iot.application.DetectCommLost;
 import com.evolutionary.iot.application.DeviceShadowRepository;
 import com.evolutionary.iot.application.MaintenanceTicketRepository;
+import com.evolutionary.iot.application.ResolveMaintenanceTicket;
 import com.evolutionary.iot.application.TriageOutdatedSoc;
 import com.evolutionary.iot.domain.BatteryTelemetryReported;
 import com.evolutionary.iot.domain.DeviceShadow;
@@ -33,18 +34,21 @@ public class IotController {
     private final ApplyTelemetryToShadow applyTelemetryToShadow;
     private final TriageOutdatedSoc triageOutdatedSoc;
     private final MaintenanceTicketRepository tickets;
+    private final ResolveMaintenanceTicket resolveMaintenanceTicket;
 
     public IotController(
             DeviceShadowRepository shadows,
             DetectCommLost detectCommLost,
             ApplyTelemetryToShadow applyTelemetryToShadow,
             TriageOutdatedSoc triageOutdatedSoc,
-            MaintenanceTicketRepository tickets) {
+            MaintenanceTicketRepository tickets,
+            ResolveMaintenanceTicket resolveMaintenanceTicket) {
         this.shadows = shadows;
         this.detectCommLost = detectCommLost;
         this.applyTelemetryToShadow = applyTelemetryToShadow;
         this.triageOutdatedSoc = triageOutdatedSoc;
         this.tickets = tickets;
+        this.resolveMaintenanceTicket = resolveMaintenanceTicket;
     }
 
     @GetMapping("/batteries/{batteryId}/shadow")
@@ -101,6 +105,16 @@ public class IotController {
         List<TicketView> views =
                 tickets.findByBatteryId(batteryId).stream().map(IotController::toTicketView).toList();
         return ResponseEntity.ok(views);
+    }
+
+    /** 解决运维工单（对齐 MaintenanceTicket.resolve · 已 RESOLVED 幂等）。 */
+    @PostMapping("/tickets/{ticketId}/resolve")
+    public ResponseEntity<?> resolveTicket(@PathVariable String ticketId) {
+        if (ticketId == null || ticketId.isBlank()) {
+            throw new IllegalArgumentException("ticketId required");
+        }
+        MaintenanceTicket resolved = resolveMaintenanceTicket.execute(ticketId.trim());
+        return ResponseEntity.ok(toTicketView(resolved));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

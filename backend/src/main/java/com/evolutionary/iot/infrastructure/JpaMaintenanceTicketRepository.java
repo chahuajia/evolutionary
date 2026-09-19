@@ -29,6 +29,11 @@ public final class JpaMaintenanceTicketRepository implements MaintenanceTicketRe
     }
 
     @Override
+    public Optional<MaintenanceTicket> findById(String ticketId) {
+        return jpa.findById(ticketId).map(JpaMaintenanceTicketRepository::toDomain);
+    }
+
+    @Override
     public Optional<MaintenanceTicket> findOpen(String batteryId, AlertType alertType) {
         return jpa.findFirstByBatteryIdAndAlertTypeAndStatusOrderByCreatedAtAsc(
                         batteryId, alertType, MaintenanceTicket.Status.OPEN)

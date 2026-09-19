@@ -272,3 +272,30 @@ export async function fetchMaintenanceTickets(
     };
   });
 }
+
+/**
+ * POST /iot/tickets/{ticketId}/resolve
+ */
+export async function postResolveMaintenanceTicket(
+  ticketId: string,
+): Promise<MaintenanceTicketItem> {
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/iot/tickets/${encodeURIComponent(ticketId)}/resolve`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  return {
+    ticketId: String(raw.ticketId ?? ticketId),
+    batteryId: String(raw.batteryId ?? ""),
+    alertType: String(raw.alertType ?? ""),
+    status: String(raw.status ?? ""),
+    createdAt:
+      raw.createdAt == null || String(raw.createdAt).length === 0
+        ? null
+        : String(raw.createdAt),
+  };
+}
