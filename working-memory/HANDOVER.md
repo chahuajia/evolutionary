@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-19 15:01（v4；波次以 `loop.md` 为准）
+**写于**：2026-09-19 20:00（v5；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v3（11:02 仍写 HEAD `1a5def8` / 下一刀 wave50 —— 已过时）
+**取代**：v4（15:01 仍写 ⏸ 听 Claude / HEAD `5b914f6` —— 已过时）
 
-**当前总状态**：**⏸ 听 Claude 点刀**。HEAD `5b914f6`。前端 25/25。
-小切片主树父写（证据 6）。wave54–56 已落。不自动续派。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `f4bb91d`。前端 61/61。
+wave59–61 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -67,6 +67,10 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave54** | **canPurchaseOnCredit（仅 good）+ 档案状态入购/串联岛** | ✅ `19a5a8c` |
 | **wave55** | **hasCreditHeadroom（可用≤0 不可购）** | ✅ `c33dc11` |
 | **wave56** | **canOfferCreditRepay（good 且 used=0 不提供）** | ✅ `5b914f6` · 前端 25/25 |
+| **wave57–58** | accrual 门 + settlement GET/RSC | ✅ `cc6bcb3` |
+| **wave59** | PackageTemplate 三门 + 发布面板 | ✅ `3307845` |
+| **wave60** | PackageOverride 激活/撤销门 | ✅ `1001c8d` |
+| **wave61** | UserCoupon 结账可选门 | ✅ `f4bb91d` · 前端 61/61 |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -100,20 +104,10 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ---
 
-## 下一刀（Claude 已点 · 2026-09-19 15:2x）
+## 下一刀
 
-**wave57：`settlement/page.tsx` RSC 化 + accrual 展示不变量**
-详见 `tasks/evo-collab-extreme/loop.md`。
-
-选片依据（**已核实，不是猜的**）：
-
-| 事实 | 证据 |
-| :--- | :--- |
-| `settlement/page.tsx` **0 个 `await`** —— 最后一个非 RSC 的页 | iot(2) / operator(2) / credit(2) 均已 RSC |
-| 后端有真守卫可对齐 | `ProfitShareAccrual.settle` **仅 PENDING 可结算**；`ReverseAccrualsOnRefund` **已结算不可冲销** |
-| `accrual-view.ts` 是**纯 DTO 映射** | 只有一个 `toAccrualView`，无不变量 |
-
-交付：RSC 取数 + `canSettleAccrual`/`canReverseAccrual` + panel 消费 + **先写红测试**。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **61/61**。父自选推进。
+禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
 
