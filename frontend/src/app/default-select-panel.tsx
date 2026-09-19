@@ -2,11 +2,23 @@
 
 /**
  * 默认选卡换电客户端岛 — 省略 entitlementId，展示 BE AC-14 选中的权益。
+ * 无 GET 目录前：种子 E-FINITE / E-1 对齐 CommerceConfig。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
+import { toUsageEventView } from "@/domains/commerce/domain/usage-event-view";
+import {
+  selectDefaultEntitlement,
+  type SelectableEntitlement,
+} from "@/domains/commerce/domain/select-entitlement";
 import { postEntitledSwap } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
 import styles from "./page.module.css";
+
+/** 对齐 CommerceConfig 种子：E-FINITE 次卡优先于 E-1 无限。 */
+const SEED_CATALOG: readonly SelectableEntitlement[] = [
+  { id: "E-1", status: "ACTIVE", remainingSwaps: null },
+  { id: "E-FINITE", status: "ACTIVE", remainingSwaps: 5 },
+];
 
 export function DefaultSelectPanel() {
   const [userId, setUserId] = useState("U1");
@@ -15,15 +27,49 @@ export function DefaultSelectPanel() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
 
+  const preview = useMemo(
+    () => selectDefaultEntitlement(SEED_CATALOG),
+    [],
+  );
+
+  const gate = useMemo(() => {
+    if (!preview) {
+      return {
+        swapAllowed: false,
+        blockMessage: "无可用权益（AC-14 种子目录为空）",
+      };
+    }
+    return {
+      swapAllowed: true,
+      blockMessage: null as string | null,
+    };
+  }, [preview]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!gate.swapAllowed) {
+      setError(gate.blockMessage ?? "不可默认选卡换电");
+      return;
+    }
     setBusy(true);
     setError(null);
     setResult(null);
     try {
       const r = await postEntitledSwap({ userId, cabinetId });
+      const ue = toUsageEventView({
+        id: r.usageEventId,
+        status: r.status,
+      });
       setResult(
-        `默认选中 ${r.entitlementId} · 事件 ${r.usageEventId} · ${r.status} · 电池 ${r.batteryId}`,
+        `默认选中 ${r.entitlementId}` +
+          (preview && r.entitlementId === preview.id
+            ? "（对齐 FE 预览）"
+            : preview
+              ? `（FE 预览 ${preview.id}）`
+              : "") +
+          ` · 事件 ${ue.id} · ${ue.statusLabel}` +
+          (ue.blockMessage ? ` · ${ue.blockMessage}` : "") +
+          ` · 电池 ${r.batteryId}`,
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -35,6 +81,16 @@ export function DefaultSelectPanel() {
   return (
     <section className={styles.panel}>
       <h2>默认选卡换电（HTTP · AC-14）</h2>
+      <p className={styles.note}>
+        省略 entitlementId；FE 预览 selectDefaultEntitlement（FINITE 优先）
+        {preview
+          ? ` · 预览选中 ${preview.id}${
+              preview.remainingSwaps != null
+                ? `（余 ${preview.remainingSwaps} 次）`
+                : "（无限）"
+            }`
+          : ""}
+      </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
           userId
@@ -50,10 +106,15 @@ export function DefaultSelectPanel() {
             onChange={(e) => setCabinetId(e.target.value)}
           />
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy || !gate.swapAllowed}>
           {busy ? "换电中…" : "默认选卡换电"}
         </button>
       </form>
+      {!gate.swapAllowed && gate.blockMessage ? (
+        <p className={styles.note} role="status">
+          {gate.blockMessage}
+        </p>
+      ) : null}
       {error ? <p className={styles.error}>{error}</p> : null}
       {result ? <p>{result}</p> : null}
     </section>
