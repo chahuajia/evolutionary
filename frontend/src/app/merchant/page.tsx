@@ -4,15 +4,15 @@
 
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
+import { toOnboardingApplicationView } from "@/domains/operator/domain/onboarding-application-view";
 import styles from "./page.module.css";
 
-const SEED = {
-  applicationId: "APP-M1",
-  merchantOrgId: "ORG-NEW",
+const SEED = toOnboardingApplicationView({
+  id: "APP-M1",
+  orgId: "ORG-NEW",
   capability: "MERCHANT",
   status: "SUBMITTED",
-  statusLabel: "已提交 · 待平台审批",
-} as const;
+});
 
 export default function MerchantPage() {
   return (
@@ -26,11 +26,11 @@ export default function MerchantPage() {
         <dl className={styles.meta}>
           <div>
             <dt>申请单</dt>
-            <dd>{SEED.applicationId}</dd>
+            <dd>{SEED.id}</dd>
           </div>
           <div>
             <dt>拟开组织</dt>
-            <dd>{SEED.merchantOrgId}</dd>
+            <dd>{SEED.orgId}</dd>
           </div>
           <div>
             <dt>能力</dt>
@@ -41,6 +41,10 @@ export default function MerchantPage() {
             <dd>
               <span className={styles.badge}>{SEED.statusLabel}</span>
             </dd>
+          </div>
+          <div>
+            <dt>可批准</dt>
+            <dd>{SEED.approveAllowed ? "是（待总后台）" : "否"}</dd>
           </div>
         </dl>
         <p className={styles.note}>

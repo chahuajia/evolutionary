@@ -14,6 +14,10 @@ import {
   skuPurchaseBlockMessage,
 } from "@/domains/mall/domain/mall-sku-view";
 import {
+  canTradeWithMerchant,
+  merchantTradeBlockMessage,
+} from "@/domains/mall/domain/merchant-profile-view";
+import {
   DEFAULT_MALL_MERCHANT,
   DEFAULT_MALL_SKU,
   DEFAULT_MALL_USER,
@@ -24,6 +28,8 @@ import styles from "./page.module.css";
 /** 无 GET SKU 前：种子默认上架；库存未知时不在前端卡库存。 */
 const SEED_SKU_STATUS = "ON_SALE" as const;
 const SEED_STOCK_UNKNOWN = Number.MAX_SAFE_INTEGER;
+/** 无 GET MerchantProfile 前：默认商家视为 ACTIVE。 */
+const SEED_MERCHANT_STATUS = "ACTIVE" as const;
 
 export function MallPurchasePanel() {
   const [userId, setUserId] = useState(DEFAULT_MALL_USER);
@@ -34,16 +40,17 @@ export function MallPurchasePanel() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MallOrderView | null>(null);
 
-  const purchaseAllowed = canPurchaseSku(
-    SEED_SKU_STATUS,
-    SEED_STOCK_UNKNOWN,
-    qty,
-  );
-  const blockMessage = skuPurchaseBlockMessage(
-    SEED_SKU_STATUS,
-    SEED_STOCK_UNKNOWN,
-    qty,
-  );
+  const skuOk = canPurchaseSku(SEED_SKU_STATUS, SEED_STOCK_UNKNOWN, qty);
+  const merchantOk =
+    (merchantOrgId.trim() || DEFAULT_MALL_MERCHANT) !== DEFAULT_MALL_MERCHANT
+      ? true
+      : canTradeWithMerchant(SEED_MERCHANT_STATUS);
+  const purchaseAllowed = skuOk && merchantOk;
+  const blockMessage = !skuOk
+    ? skuPurchaseBlockMessage(SEED_SKU_STATUS, SEED_STOCK_UNKNOWN, qty)
+    : !merchantOk
+      ? merchantTradeBlockMessage(SEED_MERCHANT_STATUS)
+      : null;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
