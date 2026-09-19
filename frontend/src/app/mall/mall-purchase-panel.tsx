@@ -6,11 +6,14 @@
 
 import { FormEvent, useState } from "react";
 import {
+  toMallOrderView,
+  type MallOrderView,
+} from "@/domains/mall/domain/mall-order-view";
+import {
   DEFAULT_MALL_MERCHANT,
   DEFAULT_MALL_SKU,
   DEFAULT_MALL_USER,
   postPurchaseMallOrder,
-  type PurchaseMallOrderResult,
 } from "@/domains/mall/infrastructure/mall-gateway";
 import styles from "./page.module.css";
 
@@ -21,7 +24,7 @@ export function MallPurchasePanel() {
   const [qty, setQty] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<PurchaseMallOrderResult | null>(null);
+  const [result, setResult] = useState<MallOrderView | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -35,7 +38,7 @@ export function MallPurchasePanel() {
         skuId: skuId.trim() || DEFAULT_MALL_SKU,
         qty,
       });
-      setResult(r);
+      setResult(toMallOrderView(r));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -82,7 +85,7 @@ export function MallPurchasePanel() {
       ) : null}
       {result ? (
         <p>
-          订单 {result.orderId} · {result.status} · {result.paidAmountCents}¢ ·{" "}
+          订单 {result.orderId} · {result.status} · ¥{result.paidAmountYuan} ·{" "}
           {result.skuId}×{result.qty}
         </p>
       ) : null}
