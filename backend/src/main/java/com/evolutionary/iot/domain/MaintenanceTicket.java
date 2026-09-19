@@ -26,6 +26,17 @@ public final class MaintenanceTicket {
         this.createdAt = createdAt;
     }
 
+    /** 持久化回放（infrastructure → domain）；只校验形状，不做状态机校验。 */
+    public static MaintenanceTicket rehydrate(
+            String id, String batteryId, AlertType alertType, Status status, Instant createdAt) {
+        return new MaintenanceTicket(
+                Objects.requireNonNull(id, "id"),
+                Objects.requireNonNull(batteryId, "batteryId"),
+                Objects.requireNonNull(alertType, "alertType"),
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(createdAt, "createdAt"));
+    }
+
     public static MaintenanceTicket open(
             String id, String batteryId, AlertType alertType, Instant createdAt) {
         return new MaintenanceTicket(
