@@ -2,9 +2,10 @@
 
 /**
  * 带券结账客户端岛 — 先领券再 POST checkout-with-coupons（AC-42..44）。
+ * GET SKU / Merchant / Wallet 对齐可购、可交易、余额覆盖标价（券后实付可能更低）。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toCheckoutView } from "@/domains/mall/domain/mall-checkout-view";
 import {
   canSelectCouponForCheckout,
@@ -13,25 +14,187 @@ import {
   type UserCouponView,
 } from "@/domains/mall/domain/user-coupon-view";
 import {
+  parseMallSkuStatus,
+  toMallSkuView,
+  type MallSkuView,
+} from "@/domains/mall/domain/mall-sku-view";
+import {
+  parseMerchantProfileStatus,
+  toMerchantProfileView,
+  type MerchantProfileView,
+} from "@/domains/mall/domain/merchant-profile-view";
+import {
   DEFAULT_MALL_CAMPAIGN,
   DEFAULT_MALL_MERCHANT,
   DEFAULT_MALL_SKU,
   DEFAULT_MALL_TEMPLATE,
   DEFAULT_MALL_USER,
+  fetchMallSku,
+  fetchMerchantProfile,
   postCheckoutWithCoupons,
   postClaimCoupon,
 } from "@/domains/mall/infrastructure/mall-gateway";
+import {
+  canCoverCents,
+  formatCentsAsYuan,
+  type WalletView,
+} from "@/domains/wallet/domain/wallet-view";
+import { loadWallet } from "@/domains/wallet/application/load-wallet";
 import styles from "./page.module.css";
+
+const QTY = 1;
 
 export function CouponCheckoutPanel() {
   const [userId, setUserId] = useState(DEFAULT_MALL_USER);
   const [couponId, setCouponId] = useState("");
   const [couponView, setCouponView] = useState<UserCouponView | null>(null);
+  const [skuView, setSkuView] = useState<MallSkuView | null>(null);
+  const [merchantView, setMerchantView] =
+    useState<MerchantProfileView | null>(null);
+  const [walletView, setWalletView] = useState<WalletView | null>(null);
+  const [skuLoadError, setSkuLoadError] = useState<string | null>(null);
+  const [merchantLoadError, setMerchantLoadError] = useState<string | null>(
+    null,
+  );
+  const [walletLoadError, setWalletLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ReturnType<
     typeof toCheckoutView
   > | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSkuLoadError(null);
+    fetchMallSku(DEFAULT_MALL_SKU)
+      .then((dto) => {
+        if (cancelled) return;
+        setSkuView(
+          toMallSkuView(
+            {
+              id: dto.id,
+              merchantOrgId: dto.merchantOrgId,
+              name: dto.name,
+              priceCents: dto.priceCents,
+              stock: dto.stock,
+              status: parseMallSkuStatus(dto.status),
+            },
+            QTY,
+          ),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSkuView(null);
+        setSkuLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMerchantLoadError(null);
+    fetchMerchantProfile(DEFAULT_MALL_MERCHANT)
+      .then((dto) => {
+        if (cancelled) return;
+        setMerchantView(
+          toMerchantProfileView({
+            orgId: dto.orgId,
+            shopName: dto.shopName,
+            status: parseMerchantProfileStatus(dto.status),
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setMerchantView(null);
+        setMerchantLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = userId.trim() || DEFAULT_MALL_USER;
+    setWalletLoadError(null);
+    loadWallet(id)
+      .then((view) => {
+        if (cancelled) return;
+        setWalletView(view);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setWalletView(null);
+        setWalletLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  const gate = useMemo(() => {
+    if (!skuView) {
+      return {
+        checkoutAllowed: false,
+        blockMessage: skuLoadError ?? "正在加载 SKU…",
+      };
+    }
+    if (!merchantView) {
+      return {
+        checkoutAllowed: false,
+        blockMessage: merchantLoadError ?? "正在加载商家…",
+      };
+    }
+    if (!walletView) {
+      return {
+        checkoutAllowed: false,
+        blockMessage: walletLoadError ?? "正在加载钱包…",
+      };
+    }
+    if (!skuView.purchaseAllowed) {
+      return {
+        checkoutAllowed: false,
+        blockMessage: skuView.blockMessage,
+      };
+    }
+    if (!merchantView.tradeAllowed) {
+      return {
+        checkoutAllowed: false,
+        blockMessage: merchantView.blockMessage,
+      };
+    }
+    if (
+      couponView &&
+      couponId.trim() === couponView.id &&
+      !canSelectCouponForCheckout(couponView.status)
+    ) {
+      return {
+        checkoutAllowed: false,
+        blockMessage: couponView.blockMessage,
+      };
+    }
+    const listCents = skuView.priceCents * QTY;
+    if (!canCoverCents(walletView.balanceCents, listCents)) {
+      return {
+        checkoutAllowed: false,
+        blockMessage: `余额不足覆盖标价（¥${walletView.balanceYuan} < ¥${formatCentsAsYuan(listCents)}；券后可能更低）`,
+      };
+    }
+    return { checkoutAllowed: true, blockMessage: null as string | null };
+  }, [
+    skuView,
+    merchantView,
+    walletView,
+    couponView,
+    couponId,
+    skuLoadError,
+    merchantLoadError,
+    walletLoadError,
+  ]);
 
   async function claimFirst() {
     setBusy(true);
@@ -59,24 +222,21 @@ export function CouponCheckoutPanel() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (
-      couponView &&
-      couponId.trim() === couponView.id &&
-      !canSelectCouponForCheckout(couponView.status)
-    ) {
-      setError(couponView.blockMessage ?? "当前券不可用于结账");
+    if (!gate.checkoutAllowed) {
+      setError(gate.blockMessage ?? "不可结账");
       return;
     }
     setBusy(true);
     setError(null);
     setResult(null);
     try {
+      const uid = userId.trim() || DEFAULT_MALL_USER;
       const ids = couponId.trim() ? [couponId.trim()] : [];
       const r = await postCheckoutWithCoupons({
-        userId: userId.trim() || DEFAULT_MALL_USER,
+        userId: uid,
         merchantOrgId: DEFAULT_MALL_MERCHANT,
         skuId: DEFAULT_MALL_SKU,
-        qty: 1,
+        qty: QTY,
         userCouponIds: ids,
       });
       setResult(toCheckoutView(r));
@@ -88,6 +248,21 @@ export function CouponCheckoutPanel() {
           }),
         );
       }
+      setWalletView(await loadWallet(uid));
+      const dto = await fetchMallSku(DEFAULT_MALL_SKU);
+      setSkuView(
+        toMallSkuView(
+          {
+            id: dto.id,
+            merchantOrgId: dto.merchantOrgId,
+            name: dto.name,
+            priceCents: dto.priceCents,
+            stock: dto.stock,
+            status: parseMallSkuStatus(dto.status),
+          },
+          QTY,
+        ),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -95,14 +270,17 @@ export function CouponCheckoutPanel() {
     }
   }
 
-  const checkoutBlocked =
-    couponView != null &&
-    couponId.trim() === couponView.id &&
-    !couponView.checkoutSelectable;
-
   return (
     <section className={styles.panel}>
       <h2>带券结账（HTTP · AC-42..44）</h2>
+      <p className={styles.note}>
+        GET SKU / Merchant / Wallet 对齐可购、可交易与余额
+        {skuView ? ` · ${skuView.name}` : ""}
+        {merchantView
+          ? ` · ${merchantView.shopName}(${merchantView.statusLabel})`
+          : ""}
+        {walletView ? ` · 余额 ¥${walletView.balanceYuan}` : ""}
+      </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
           userId
@@ -125,14 +303,14 @@ export function CouponCheckoutPanel() {
           <button type="button" disabled={busy} onClick={claimFirst}>
             先领券
           </button>
-          <button type="submit" disabled={busy || checkoutBlocked}>
+          <button type="submit" disabled={busy || !gate.checkoutAllowed}>
             {busy ? "结账中…" : "带券结账"}
           </button>
         </div>
       </form>
-      {checkoutBlocked && couponView?.blockMessage ? (
+      {!gate.checkoutAllowed && gate.blockMessage ? (
         <p className={styles.note} role="status">
-          {couponView.blockMessage}
+          {gate.blockMessage}
         </p>
       ) : null}
       {error ? (
