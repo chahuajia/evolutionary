@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-19 20:44（v8；波次以 `loop.md` 为准）
+**写于**：2026-09-19 21:05（v9；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v7（20:35 仍写 HEAD `254ac6d` / 98/98 —— 已过时）
+**取代**：v8（20:44 仍写 HEAD `dc18798` / 110/110 —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `dc18798`。前端 110/110。
-wave70–71 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `59aa36d`。前端 122/122。
+wave72–73 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -80,6 +80,7 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave69** | 工单仅 OPEN 需处理 | ✅ `254ac6d` |
 | **wave70** | 影子新鲜度：stale 禁计量换电 | ✅ `399486f` |
 | **wave71** | 电池状态机：仅 AVAILABLE 可换出 | ✅ `dc18798` · 前端 110/110 |
+| **wave72–73** | Entitlement ACTIVE 可换电 · Order PAID 可退 | ✅ `59aa36d` · 前端 **122/122** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -115,7 +116,7 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **110/110**。父自选推进。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **122/122**。父自选推进。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
