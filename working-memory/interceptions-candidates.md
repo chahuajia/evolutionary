@@ -2,6 +2,11 @@
 
 > L2 撞墙先记这里；W4 通过后 harvest **一行**进 collaboration `meta/interceptions.md`。  
 > 见 [[patterns/project-evidence-vs-kb-ledger]]。
+>
+> ⚙️ **龄期由仪器看**：`collab memory` 列出「挂了多久未 harvest」的候选并**点名哪一条**。
+> 默认阈 **14 天**（`--max-candidate-age` 可调）。
+> 在此之前，「W4 通过后 harvest」只是一句**没有触发机制**的约定 ——
+> 实测连加几轮候选却从未跑过 W4。**候选挂着不是推进。**
 
 | 日期 | 条目（候选） | 拦住了什么 | 证据路径 | 状态 |
 | :--- | :--- | :--- | :--- | :--- |
