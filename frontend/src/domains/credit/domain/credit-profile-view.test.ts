@@ -3,6 +3,9 @@ import {
   availableCreditCents,
   canPurchaseOnCredit,
   centsToYuan,
+  creditPurchaseBlock,
+  creditPurchaseBlockMessage,
+  hasCreditHeadroom,
   toCreditProfileView,
 } from "./credit-profile-view";
 
@@ -21,6 +24,22 @@ describe("canPurchaseOnCredit", () => {
     expect(canPurchaseOnCredit("good")).toBe(true);
     expect(canPurchaseOnCredit("frozen")).toBe(false);
     expect(canPurchaseOnCredit("overdue")).toBe(false);
+  });
+});
+
+describe("hasCreditHeadroom", () => {
+  it("requires positive available cents", () => {
+    expect(hasCreditHeadroom(1)).toBe(true);
+    expect(hasCreditHeadroom(0)).toBe(false);
+    expect(hasCreditHeadroom(-2000)).toBe(false);
+  });
+});
+
+describe("creditPurchaseBlock", () => {
+  it("reports status before limit", () => {
+    expect(creditPurchaseBlock("frozen", -100)).toBe("status");
+    expect(creditPurchaseBlock("good", 0)).toBe("limit");
+    expect(creditPurchaseBlock("good", 1)).toBe("ok");
   });
 });
 
@@ -47,6 +66,7 @@ describe("toCreditProfileView", () => {
     expect(view.usedYuan).toBe("25.00");
     expect(view.limitYuan).toBe("100.00");
     expect(view.purchaseAllowed).toBe(true);
+    expect(view.purchaseBlock).toBe("ok");
   });
 
   it("blocks purchase when frozen", () => {
@@ -59,6 +79,23 @@ describe("toCreditProfileView", () => {
       policyVersion: 1,
     });
     expect(view.purchaseAllowed).toBe(false);
+    expect(view.purchaseBlock).toBe("status");
     expect(view.statusLabel).toBe("冻结");
+  });
+
+  it("blocks purchase when available is zero", () => {
+    const view = toCreditProfileView({
+      userId: "u-1",
+      creditLimit: 10000,
+      usedCredit: 10000,
+      status: "good",
+      scoreTier: "B",
+      policyVersion: 1,
+    });
+    expect(view.purchaseAllowed).toBe(false);
+    expect(view.purchaseBlock).toBe("limit");
+    expect(creditPurchaseBlockMessage(view.purchaseBlock, view.statusLabel, view.availableYuan)).toContain(
+      "可用额度不足",
+    );
   });
 });

@@ -11,6 +11,10 @@ import {
   postCreditPurchase,
   type CreditPurchaseResult,
 } from "@/domains/credit/infrastructure/credit-gateway";
+import {
+  creditPurchaseBlockMessage,
+  type CreditPurchaseBlock,
+} from "@/domains/credit/domain/credit-profile-view";
 import { formatYuan } from "@/lib/credit/types";
 import styles from "./page.module.css";
 
@@ -18,7 +22,9 @@ const DEFAULT_PRODUCT_ID = "P-CREDIT-1";
 
 type CreditPurchasePanelProps = {
   readonly purchaseAllowed?: boolean;
+  readonly purchaseBlock?: CreditPurchaseBlock;
   readonly statusLabel?: string;
+  readonly availableYuan?: string;
 };
 
 function summarizePurchase(r: CreditPurchaseResult): string {
@@ -36,7 +42,9 @@ function summarizePurchase(r: CreditPurchaseResult): string {
 
 export function CreditPurchasePanel({
   purchaseAllowed = true,
+  purchaseBlock = "ok",
   statusLabel,
+  availableYuan,
 }: CreditPurchasePanelProps) {
   const router = useRouter();
   const [userId, setUserId] = useState(DEFAULT_CREDIT_USER);
@@ -49,9 +57,8 @@ export function CreditPurchasePanel({
     e.preventDefault();
     if (!purchaseAllowed) {
       setError(
-        statusLabel
-          ? `档案${statusLabel}，不可信用购`
-          : "档案状态不允许信用购",
+        creditPurchaseBlockMessage(purchaseBlock, statusLabel, availableYuan) ??
+          "不可信用购",
       );
       return;
     }
@@ -93,9 +100,7 @@ export function CreditPurchasePanel({
       </form>
       {!purchaseAllowed ? (
         <p className={styles.note} role="status">
-          {statusLabel
-            ? `档案${statusLabel}，不可信用购`
-            : "档案状态不允许信用购"}
+          {creditPurchaseBlockMessage(purchaseBlock, statusLabel, availableYuan)}
         </p>
       ) : null}
       {error ? (

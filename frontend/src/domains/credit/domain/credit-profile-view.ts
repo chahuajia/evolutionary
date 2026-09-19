@@ -10,6 +10,8 @@ import {
   type ScoreTier,
 } from "@/lib/credit/types";
 
+export type CreditPurchaseBlock = "ok" | "status" | "limit";
+
 export type CreditProfileView = {
   readonly userId: string;
   readonly creditLimitCents: number;
@@ -25,6 +27,8 @@ export type CreditProfileView = {
   readonly limitYuan: string;
   /** 冻结/逾期不可信用购；仅 good 可提交 */
   readonly purchaseAllowed: boolean;
+  /** 购单被拒原因；ok 才可提交 */
+  readonly purchaseBlock: CreditPurchaseBlock;
 };
 
 /** 分转元数值 */
@@ -53,12 +57,47 @@ export function canPurchaseOnCredit(status: CreditStatus): boolean {
   return status === "good";
 }
 
+/**
+ * 展示不变量：可用额度须为正才有购单余地。
+ * 对齐后端 canCharge：used + amount ≤ limit；无商品价时，≤0 必拒。
+ */
+export function hasCreditHeadroom(availableCents: number): boolean {
+  return availableCents > 0;
+}
+
+/** 状态优先于额度：frozen/overdue 先报，再报额度不足。 */
+export function creditPurchaseBlock(
+  status: CreditStatus,
+  availableCents: number,
+): CreditPurchaseBlock {
+  if (!canPurchaseOnCredit(status)) return "status";
+  if (!hasCreditHeadroom(availableCents)) return "limit";
+  return "ok";
+}
+
+export function creditPurchaseBlockMessage(
+  block: CreditPurchaseBlock,
+  statusLabel?: string,
+  availableYuan?: string,
+): string | null {
+  if (block === "ok") return null;
+  if (block === "limit") {
+    return availableYuan != null
+      ? `可用额度不足（¥${availableYuan}），不可信用购`
+      : "可用额度不足，不可信用购";
+  }
+  return statusLabel
+    ? `档案${statusLabel}，不可信用购`
+    : "档案状态不允许信用购";
+}
+
 /** gateway DTO/读模型 → 展示模型 */
 export function toCreditProfileView(profile: CreditProfile): CreditProfileView {
   const available = availableCreditCents(
     profile.creditLimit,
     profile.usedCredit,
   );
+  const block = creditPurchaseBlock(profile.status, available);
   return {
     userId: profile.userId,
     creditLimitCents: profile.creditLimit,
@@ -71,6 +110,7 @@ export function toCreditProfileView(profile: CreditProfile): CreditProfileView {
     availableYuan: formatYuan(available),
     usedYuan: formatYuan(profile.usedCredit),
     limitYuan: formatYuan(profile.creditLimit),
-    purchaseAllowed: canPurchaseOnCredit(profile.status),
+    purchaseAllowed: block === "ok",
+    purchaseBlock: block,
   };
 }

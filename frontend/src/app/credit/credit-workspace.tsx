@@ -1,6 +1,7 @@
 "use client";
 
 import { WorkflowTabs } from "@/components/workflow-tabs";
+import type { CreditPurchaseBlock } from "@/domains/credit/domain/credit-profile-view";
 import { CreditApplyPolicyPanel } from "./credit-apply-policy-panel";
 import { CreditJourneyPanel } from "./credit-journey-panel";
 import { CreditMonthlyBillingPanel } from "./credit-monthly-billing-panel";
@@ -10,12 +11,16 @@ import { CreditRepayPanel } from "./credit-repay-panel";
 
 type CreditWorkspaceProps = {
   readonly purchaseAllowed?: boolean;
+  readonly purchaseBlock?: CreditPurchaseBlock;
   readonly statusLabel?: string;
+  readonly availableYuan?: string;
 };
 
 export function CreditWorkspace({
   purchaseAllowed = true,
+  purchaseBlock = "ok",
   statusLabel,
+  availableYuan,
 }: CreditWorkspaceProps) {
   return (
     <WorkflowTabs
@@ -29,7 +34,9 @@ export function CreditWorkspace({
           content: (
             <CreditJourneyPanel
               purchaseAllowed={purchaseAllowed}
+              purchaseBlock={purchaseBlock}
               statusLabel={statusLabel}
+              availableYuan={availableYuan}
             />
           ),
         },
@@ -40,7 +47,9 @@ export function CreditWorkspace({
           content: (
             <CreditPurchasePanel
               purchaseAllowed={purchaseAllowed}
+              purchaseBlock={purchaseBlock}
               statusLabel={statusLabel}
+              availableYuan={availableYuan}
             />
           ),
         },
