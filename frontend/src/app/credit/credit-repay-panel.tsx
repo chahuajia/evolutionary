@@ -2,7 +2,7 @@
 
 /**
  * 还款客户端岛 — 默认 U1 / STMT-2026-02 / 3000¢；成功后 router.refresh()。
- * 账单门：仅 DUE/OVERDUE 可还（对齐 BillingStatement.markPaid）。
+ * 账单门：仅 DUE/OVERDUE 可还；钱包门：canCoverCents 对齐 Account。
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -17,6 +17,12 @@ import {
   postCreditRepay,
   postMarkCreditOverdue,
 } from "@/domains/credit/infrastructure/credit-gateway";
+import {
+  canCoverCents,
+  formatCentsAsYuan,
+  type WalletView,
+} from "@/domains/wallet/domain/wallet-view";
+import { loadWallet } from "@/domains/wallet/application/load-wallet";
 import styles from "./page.module.css";
 
 const DEFAULT_STATEMENT_ID = "STMT-2026-02";
@@ -37,7 +43,9 @@ export function CreditRepayPanel({
   const [amountCents, setAmountCents] = useState(DEFAULT_AMOUNT_CENTS);
   const [statementView, setStatementView] =
     useState<BillingStatementView | null>(null);
+  const [walletView, setWalletView] = useState<WalletView | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [walletLoadError, setWalletLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -78,6 +86,24 @@ export function CreditRepayPanel({
     };
   }, [statementId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setWalletLoadError(null);
+    loadWallet(DEFAULT_CREDIT_USER)
+      .then((view) => {
+        if (cancelled) return;
+        setWalletView(view);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setWalletView(null);
+        setWalletLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const gate = useMemo(() => {
     if (!repayAllowed) {
       return {
@@ -103,8 +129,28 @@ export function CreditRepayPanel({
         message: statementView.blockMessage,
       };
     }
+    if (!walletView) {
+      return {
+        allowed: false,
+        message: walletLoadError ?? "正在加载钱包…",
+      };
+    }
+    if (!canCoverCents(walletView.balanceCents, amountCents)) {
+      return {
+        allowed: false,
+        message: `余额不足（¥${walletView.balanceYuan} < ¥${formatCentsAsYuan(amountCents)}）`,
+      };
+    }
     return { allowed: true, message: null as string | null };
-  }, [repayAllowed, statusLabel, statementView, loadError]);
+  }, [
+    repayAllowed,
+    statusLabel,
+    statementView,
+    loadError,
+    walletView,
+    walletLoadError,
+    amountCents,
+  ]);
 
   async function onMarkOverdue() {
     if (!statementView?.markOverdueAllowed) {
@@ -143,6 +189,7 @@ export function CreditRepayPanel({
         statementId,
         amountCents,
       });
+      setWalletView(await loadWallet(DEFAULT_CREDIT_USER));
       setStatus("还款成功，已刷新档案/账单");
       router.refresh();
     } catch (err) {
@@ -156,10 +203,11 @@ export function CreditRepayPanel({
     <section className={styles.panel}>
       <h2>还款解冻</h2>
       <p className={styles.note}>
-        仅待还/逾期账单可还
+        仅待还/逾期账单可还；余额须覆盖金额（canCoverCents）
         {statementView
           ? ` · 当前 ${statementView.id}=${statementView.statusLabel}`
           : ""}
+        {walletView ? ` · 余额 ¥${walletView.balanceYuan}` : ""}
       </p>
       <form className={styles.repayForm} onSubmit={onSubmit}>
         <label>
