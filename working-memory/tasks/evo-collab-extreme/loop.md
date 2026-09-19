@@ -25,25 +25,51 @@
 | 55 | `hasCreditHeadroom`：可用≤0 不可购；状态优先于额度 | `c33dc11` | 23/23 |
 | 56 | `canOfferCreditRepay`：good 且 used=0 不提供还款 | `5b914f6` | **25/25** |
 
-## 下一刀（Claude 已点 · 2026-09-19 15:2x）
+## wave57 ✅（2026-09-19 15:21 · `e98dc3b`）
 
-**wave57：`settlement/page.tsx` RSC 化 + accrual 展示不变量**
+**accrual 展示不变量 + 修契约漂移** —— 前端 25 → **35/35**。
 
-选片依据（全部已核实，不是猜的）：
+> ⚠️ **我下的刀有一半作废，记在这里免得重犯。**
+> 我点的是「settlement RSC 化 + accrual 不变量」。核实后发现：
+> `SettlementController` **只有 3 个 POST、没有 GET** —— 没有可读端点，
+> **RSC 化无处取数**。选片依据「page 是纯壳」本身没错，
+> 但"纯壳 → 应该 RSC 化"这一步**没核实数据源是否存在**。
 
-| 事实 | 证据 |
+实际落地（都是核过后才做的）：
+
+| # | 内容 | 依据 |
+| :-- | :--- | :--- |
+| 1 | `status: string` → `AccrualStatus` | 测试里的 `"ACCRUED"` **后端从来不存在**；类型一收紧，编译器立刻抓出网关也在裸转 |
+| 2 | 两份真相 → 派生：网关只声明 `AccrualDto` | 网关自己定义了**第二份** `AccrualView` —— 那就是漂移能发生的原因 |
+| 3 | `String(r.status ?? "")` → `parseAccrualStatus` | 未知值**当场炸**，不产生默认值（parse-dont-validate） |
+| 4 | `canSettleAccrual`/`canReverseAccrual`/`accrualBlockMessage` + panel 消费 | 对齐后端 `settle`/`reverse` 均仅 PENDING |
+
+**先写红测试**：7 failed → 实现 → 35/35 绿。
+
+## 下一刀（选片判据已备 · 父可自选）
+
+**结构缺口：settlement 无读路径。** 要真做列表/RSC，需先加后端 GET 端点
+（如 `GET /settlement/accruals?orgId=`）—— 那是**跨前后端的切片**，>15min，
+按 v11 值得派（或父写）。
+
+**已做「裸 `string` 状态字段」体检**（本波那条 drift 就是被类型收紧顺带抓出的，
+所以值得扫一遍）。结果**要准确**：
+
+| 位置 | 现状 |
 | :--- | :--- |
-| `settlement/page.tsx` **0 个 `await`** —— 纯壳，唯一还没 RSC 化的页 | 对比 iot(2) / operator(2) / credit(2) 均已 RSC |
-| 后端有真守卫可对齐 | `ProfitShareAccrual.settle` **仅 PENDING 可结算**；`ReverseAccrualsOnRefund` **已结算不可冲销**（`anySettled → throw`） |
-| accrual-view 是**纯 DTO 映射** | 只有一个 `toAccrualView`，无不变量 |
+| `settlement/accrual-view.ts` | ✅ 已修（本波） |
+| `mall/mall-order-view.ts:13` | ⚠️ **潜伏**：`status: string`，但测试用的是 `"PAID"`（后端合法）→ **未漂移，但已上膛** |
+| `mall/mall-checkout-view.ts:11` | ⚠️ 同上 |
+| `wallet/wallet-view.ts:13` | `currency: string` —— **不是同类**（货币码不是状态机），不动 |
 
-**交付**（加厚切片，一次做完）：
-1. `settlement/page.tsx` 服务端取 accruals（对齐 credit 的 `loadCreditProfile` 写法）
-2. `accrual-view.ts` 加**带名字的不变量**：`canSettleAccrual` / `canReverseAccrual` + `accrualBlockMessage`
-3. `settlement-panel.tsx` 消费它（禁用 + 说明理由）
-4. **先写红测试**再加实现（`apps/*.test.ts` 已有 7 个文件可对标）
+**所以不是"又 2 个 bug"，是 1 个已漂移 + 2 个潜伏。** `MallOrder.Status` 有**五态**
+（CREATED/PAID/SHIPPED/COMPLETED/REFUNDED），收紧类型即可获得编译期保护。
 
-**不要**：为 <5min 的切片建 worktree / 派 Task（v11 派工成本门槛）。
+候选切片（同判据：后端有守卫可对齐 ∧ 能先写红测试）：
+
+- `mall-order-view`：收紧为 `MallOrderStatus` + 五态守卫不变量
+  （`canRefundMallOrder` / `canCancelMallOrder` 之类，对齐后端状态机）
+- `mall-checkout-view`：同上
 
 ---
 
