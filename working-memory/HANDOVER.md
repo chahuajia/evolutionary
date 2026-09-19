@@ -136,7 +136,7 @@ KB 入口：`collaboration/AGENTS.md` 的**症状表**（不要拿 catalog 当�
 
 ## 待验证的假设（**不要当成结论用**）
 
-`tasks/evo-collab-extreme/borrowing-from-model-arch.md`
+`borrowing-from-model-arch.md`
 
 从 DeepSeek V4.1-Flash 架构 + 推测解码 + MoE 文献借来的四条，**全部零本地验证**：
 
@@ -172,6 +172,11 @@ KB 入口：`collaboration/AGENTS.md` 的**症状表**（不要拿 catalog 当�
 3. 设计决策：`collaboration/AGENTS.md` 症状表 → 1–2 条正文
 4. 跑代码：`mvn -o test`（确认基线）→ `backend/` 对标最近的 `Jpa*Repository`
 5. 想理解判断依据：
-   - `tasks/evo-collab-extreme/cluster-policy-pressure.md`（wave42 压集群策略的三条证据）
-   - `tasks/evo-collab-extreme/next-direction.md`（方向与方针：JPA 矿挖完了）
-   - `tasks/evo-collab-extreme/borrowing-from-model-arch.md`（四条待验假设 + 仪器结论）
+   - `next-direction.md`（**项目级**：方向与方针，JPA 矿挖完了）
+   - `borrowing-from-model-arch.md`（**项目级**：四条待验假设 + 仪器结论）
+   - `tasks/evo-collab-extreme/cluster-policy-pressure.md`（任务级：wave42 的三条证据）
+
+> **项目级 vs 任务级的判据**：讲"这个项目往哪走"→ `working-memory/` 根；
+> 讲"某一次任务"→ `tasks/<任务>/`。
+> 这不是洁癖：`tasks/` 下的内容会**随 worktree 复制多份**（本机曾有 25 份
+> `evo-collab-extreme/`），而项目级结论住在那里，换个 worktree 就找不到了。
