@@ -6,11 +6,15 @@
 
 import { FormEvent, useState } from "react";
 import {
+  parseUserCouponStatus,
+  toUserCouponView,
+  type UserCouponView,
+} from "@/domains/mall/domain/user-coupon-view";
+import {
   DEFAULT_MALL_CAMPAIGN,
   DEFAULT_MALL_TEMPLATE,
   DEFAULT_MALL_USER,
   postClaimCoupon,
-  type ClaimCouponResult,
 } from "@/domains/mall/infrastructure/mall-gateway";
 import styles from "./page.module.css";
 
@@ -20,20 +24,27 @@ export function CouponClaimPanel() {
   const [templateId, setTemplateId] = useState(DEFAULT_MALL_TEMPLATE);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<ClaimCouponResult | null>(null);
+  const [view, setView] = useState<UserCouponView | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    setResult(null);
+    setView(null);
     try {
       const r = await postClaimCoupon({
         campaignId: campaignId.trim() || DEFAULT_MALL_CAMPAIGN,
         userId: userId.trim() || DEFAULT_MALL_USER,
         templateId: templateId.trim() || DEFAULT_MALL_TEMPLATE,
       });
-      setResult(r);
+      setView(
+        toUserCouponView({
+          id: r.id,
+          userId: r.userId,
+          templateId: r.templateId,
+          status: parseUserCouponStatus(r.status),
+        }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -74,26 +85,34 @@ export function CouponClaimPanel() {
         </p>
       ) : null}
 
-      {result ? <ClaimResultView result={result} /> : null}
+      {view ? <ClaimResultView view={view} /> : null}
     </section>
   );
 }
 
-function ClaimResultView({ result }: { result: ClaimCouponResult }) {
+function ClaimResultView({ view }: { view: UserCouponView }) {
   return (
     <dl className={styles.dl}>
       <dt>券 id</dt>
-      <dd>{result.id}</dd>
+      <dd>{view.id}</dd>
       <dt>用户</dt>
-      <dd>{result.userId}</dd>
+      <dd>{view.userId}</dd>
       <dt>模板</dt>
-      <dd>{result.templateId}</dd>
+      <dd>{view.templateId}</dd>
       <dt>状态</dt>
       <dd>
         <span className={`${styles.badge} ${styles.badgeAvailable}`}>
-          {result.status}
+          {view.status}
         </span>
       </dd>
+      <dt>结账可选</dt>
+      <dd>{view.checkoutSelectable ? "是" : "否"}</dd>
+      {view.blockMessage ? (
+        <>
+          <dt>说明</dt>
+          <dd>{view.blockMessage}</dd>
+        </>
+      ) : null}
     </dl>
   );
 }

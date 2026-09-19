@@ -7,6 +7,12 @@
 import { FormEvent, useState } from "react";
 import { toCheckoutView } from "@/domains/mall/domain/mall-checkout-view";
 import {
+  canSelectCouponForCheckout,
+  parseUserCouponStatus,
+  toUserCouponView,
+  type UserCouponView,
+} from "@/domains/mall/domain/user-coupon-view";
+import {
   DEFAULT_MALL_CAMPAIGN,
   DEFAULT_MALL_MERCHANT,
   DEFAULT_MALL_SKU,
@@ -20,6 +26,7 @@ import styles from "./page.module.css";
 export function CouponCheckoutPanel() {
   const [userId, setUserId] = useState(DEFAULT_MALL_USER);
   const [couponId, setCouponId] = useState("");
+  const [couponView, setCouponView] = useState<UserCouponView | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ReturnType<
@@ -35,7 +42,14 @@ export function CouponCheckoutPanel() {
         userId: userId.trim() || DEFAULT_MALL_USER,
         templateId: DEFAULT_MALL_TEMPLATE,
       });
+      const view = toUserCouponView({
+        id: c.id,
+        userId: c.userId,
+        templateId: c.templateId,
+        status: parseUserCouponStatus(c.status),
+      });
       setCouponId(c.id);
+      setCouponView(view);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -45,6 +59,14 @@ export function CouponCheckoutPanel() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (
+      couponView &&
+      couponId.trim() === couponView.id &&
+      !canSelectCouponForCheckout(couponView.status)
+    ) {
+      setError(couponView.blockMessage ?? "当前券不可用于结账");
+      return;
+    }
     setBusy(true);
     setError(null);
     setResult(null);
@@ -58,12 +80,25 @@ export function CouponCheckoutPanel() {
         userCouponIds: ids,
       });
       setResult(toCheckoutView(r));
+      if (couponView && ids[0] === couponView.id) {
+        setCouponView(
+          toUserCouponView({
+            ...couponView,
+            status: "USED",
+          }),
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
   }
+
+  const checkoutBlocked =
+    couponView != null &&
+    couponId.trim() === couponView.id &&
+    !couponView.checkoutSelectable;
 
   return (
     <section className={styles.panel}>
@@ -77,7 +112,12 @@ export function CouponCheckoutPanel() {
           userCouponId
           <input
             value={couponId}
-            onChange={(e) => setCouponId(e.target.value)}
+            onChange={(e) => {
+              setCouponId(e.target.value);
+              if (!couponView || e.target.value.trim() !== couponView.id) {
+                setCouponView(null);
+              }
+            }}
             placeholder="先点领券或粘贴券 id"
           />
         </label>
@@ -85,11 +125,16 @@ export function CouponCheckoutPanel() {
           <button type="button" disabled={busy} onClick={claimFirst}>
             先领券
           </button>
-          <button type="submit" disabled={busy}>
+          <button type="submit" disabled={busy || checkoutBlocked}>
             {busy ? "结账中…" : "带券结账"}
           </button>
         </div>
       </form>
+      {checkoutBlocked && couponView?.blockMessage ? (
+        <p className={styles.note} role="status">
+          {couponView.blockMessage}
+        </p>
+      ) : null}
       {error ? (
         <p className={styles.error} role="alert">
           {error}
