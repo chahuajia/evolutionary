@@ -10,12 +10,20 @@ import {
   type MallOrderView,
 } from "@/domains/mall/domain/mall-order-view";
 import {
+  canPurchaseSku,
+  skuPurchaseBlockMessage,
+} from "@/domains/mall/domain/mall-sku-view";
+import {
   DEFAULT_MALL_MERCHANT,
   DEFAULT_MALL_SKU,
   DEFAULT_MALL_USER,
   postPurchaseMallOrder,
 } from "@/domains/mall/infrastructure/mall-gateway";
 import styles from "./page.module.css";
+
+/** 无 GET SKU 前：种子默认上架；库存未知时不在前端卡库存。 */
+const SEED_SKU_STATUS = "ON_SALE" as const;
+const SEED_STOCK_UNKNOWN = Number.MAX_SAFE_INTEGER;
 
 export function MallPurchasePanel() {
   const [userId, setUserId] = useState(DEFAULT_MALL_USER);
@@ -26,8 +34,23 @@ export function MallPurchasePanel() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<MallOrderView | null>(null);
 
+  const purchaseAllowed = canPurchaseSku(
+    SEED_SKU_STATUS,
+    SEED_STOCK_UNKNOWN,
+    qty,
+  );
+  const blockMessage = skuPurchaseBlockMessage(
+    SEED_SKU_STATUS,
+    SEED_STOCK_UNKNOWN,
+    qty,
+  );
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!purchaseAllowed) {
+      setError(blockMessage ?? "不可购买");
+      return;
+    }
     setBusy(true);
     setError(null);
     setResult(null);
@@ -71,13 +94,18 @@ export function MallPurchasePanel() {
             type="number"
             min={1}
             value={qty}
-            onChange={(e) => setQty(Number(e.target.value) || 1)}
+            onChange={(e) => setQty(Number(e.target.value) || 0)}
           />
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy || !purchaseAllowed}>
           {busy ? "下单中…" : "余额购买"}
         </button>
       </form>
+      {!purchaseAllowed && blockMessage ? (
+        <p className={styles.note} role="status">
+          {blockMessage}
+        </p>
+      ) : null}
       {error ? (
         <p className={styles.error} role="alert">
           {error}
