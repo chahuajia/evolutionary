@@ -72,6 +72,29 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
     };
   }, [list, orderId]);
 
+  const settleGate = useMemo(() => {
+    if (list.length === 0) {
+      return {
+        settleAllowed: true,
+        blockMessage: null as string | null,
+        hint: "列表空 · 交后端判",
+      };
+    }
+    const pending = list.filter((a) => a.settleAllowed);
+    if (pending.length === 0) {
+      return {
+        settleAllowed: false,
+        blockMessage: "列表无 PENDING 意向可入批（settleAllowed）",
+        hint: null as string | null,
+      };
+    }
+    return {
+      settleAllowed: true,
+      blockMessage: null as string | null,
+      hint: `可入批 ${pending.length} 条`,
+    };
+  }, [list]);
+
   async function onAccrue(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -140,6 +163,10 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
 
   async function onBatch(e: FormEvent) {
     e.preventDefault();
+    if (!settleGate.settleAllowed) {
+      setError(settleGate.blockMessage ?? "不可跑批");
+      return;
+    }
     setBusy(true);
     setError(null);
     setResult(null);
@@ -219,7 +246,8 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
         <p className={styles.note}>
           <code>POST /settlement/batches</code>
           {" · "}
-          一次跑完即关账（仅 OPEN 域上可再关；HTTP 返回通常已是 CLOSED）
+          仅 PENDING 可入批（settleAllowed）；一次跑完即关账
+          {settleGate.hint ? ` · ${settleGate.hint}` : ""}
           {batchView ? ` · 上次=${batchView.statusLabel}` : ""}
         </p>
         <form className={styles.repayForm} onSubmit={onBatch}>
@@ -237,10 +265,15 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
               onChange={(e) => setPeriodEnd(e.target.value)}
             />
           </label>
-          <button type="submit" disabled={busy}>
+          <button type="submit" disabled={busy || !settleGate.settleAllowed}>
             {busy ? "提交中…" : "Run batch"}
           </button>
         </form>
+        {!settleGate.settleAllowed && settleGate.blockMessage ? (
+          <p className={styles.note} role="status">
+            {settleGate.blockMessage}
+          </p>
+        ) : null}
       </section>
       {error ? (
         <p className={styles.note} role="alert">
