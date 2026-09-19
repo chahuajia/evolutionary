@@ -3,8 +3,10 @@
  * 契约对齐 21a：orgId / amountCents；batch 字段 id。
  */
 
+import { parseAccrualStatus } from "@/domains/settlement/domain/accrual-view";
 import { apiBase } from "@/shared/http/api-base";
 import { fetchJson } from "@/shared/http/fetch-json";
+import type { AccrualStatus } from "@/domains/settlement/domain/accrual-view";
 
 const TIMEOUT_MS = 8000;
 
@@ -25,12 +27,22 @@ export type AccrueRequest = {
   completedAt?: string;
 };
 
-export type AccrualView = {
+/**
+ * 线格式（wire DTO）—— 网关只负责把服务端 JSON 变成这个形状。
+ *
+ * **不是 `AccrualView`。** 这里原先自己定义了一份同名的 `AccrualView`
+ * （`status: string`），与 `domain/accrual-view.ts` 的那份**并行存在** ——
+ * 两份真相必然漂移（[[patterns/derivation-over-copy]]），
+ * 实际漂出的就是测试里的 "ACCRUED"（后端从来不存在）。
+ *
+ * 现在：类型从领域**派生**（`AccrualStatus`），视图转换仍归 `toAccrualView`。
+ */
+export type AccrualDto = {
   id: string;
   orderId: string;
   orgId: string;
   amountCents: number;
-  status: string;
+  status: AccrualStatus;
 };
 
 /** POST /settlement/batches */
@@ -60,7 +72,7 @@ export async function postRunSettlementBatch(req: {
 /** POST /settlement/accruals */
 export async function postAccrueSettlement(
   req: AccrueRequest,
-): Promise<AccrualView[]> {
+): Promise<AccrualDto[]> {
   const base = apiBase();
   const raw = await fetchJson<unknown[]>(`${base}/settlement/accruals`, {
     method: "POST",
@@ -82,7 +94,8 @@ export async function postAccrueSettlement(
       orderId: String(r.orderId ?? ""),
       orgId: String(r.orgId ?? ""),
       amountCents: typeof r.amountCents === "number" ? r.amountCents : 0,
-      status: String(r.status ?? ""),
+      // 边界解析，不是强转：未知状态当场炸（patterns/parse-dont-validate）。
+      status: parseAccrualStatus(r.status),
     };
   });
 }

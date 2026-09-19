@@ -39,7 +39,16 @@ export function SettlementPanel() {
       const views = rows.map(toAccrualView);
       setResult(
         `已记意向 ${views.length} 条：` +
-          views.map((r) => `${r.orgId}=¥${r.amountYuan}/${r.status}`).join(" · "),
+          views
+            .map(
+              (r) =>
+                `${r.orgId}=¥${r.amountYuan}/${r.status}` +
+                // 不可结算/冲销时把原因一并显示，不让用户对着灰按钮猜。
+                // 新建的必定是 PENDING，这里当前恒空 —— 但状态一旦不是 PENDING
+                // （读路径接上后），说明会立刻生效。
+                (r.blockMessage ? `（${r.blockMessage}）` : ""),
+            )
+            .join(" · "),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
