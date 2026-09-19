@@ -6,6 +6,11 @@
 
 import { FormEvent, useState } from "react";
 import {
+  parsePackageOverrideStatus,
+  toPackageOverrideView,
+  type PackageOverrideView,
+} from "@/domains/operator/domain/package-override-view";
+import {
   DEFAULT_OVERRIDE_ACTOR_ORG_ID,
   DEFAULT_OVERRIDE_ACTOR_USER_ID,
   DEFAULT_OVERRIDE_ID,
@@ -13,7 +18,6 @@ import {
   DEFAULT_OVERRIDE_TEMPLATE_ID,
   getEffectiveProduct,
   postActivatePackageOverride,
-  type ActivatePackageOverrideResult,
   type EffectiveProductResult,
 } from "@/domains/operator/infrastructure/operator-gateway";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
@@ -29,17 +33,22 @@ export function PackageOverridePanel() {
   const [priceCents, setPriceCents] = useState(DEFAULT_OVERRIDE_PRICE_CENTS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activateResult, setActivateResult] =
-    useState<ActivatePackageOverrideResult | null>(null);
+  const [view, setView] = useState<PackageOverrideView | null>(null);
+  const [priceLabel, setPriceLabel] = useState<number | null>(null);
   const [effective, setEffective] = useState<EffectiveProductResult | null>(
     null,
   );
 
   async function onActivate(e: FormEvent) {
     e.preventDefault();
+    if (view && !view.activateAllowed) {
+      setError(view.blockMessage ?? "当前状态不可激活");
+      return;
+    }
     setBusy(true);
     setError(null);
-    setActivateResult(null);
+    setView(null);
+    setPriceLabel(null);
     try {
       const r = await postActivatePackageOverride({
         templateId: templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID,
@@ -52,7 +61,16 @@ export function PackageOverridePanel() {
             : DEFAULT_OVERRIDE_PRICE_CENTS,
         },
       });
-      setActivateResult(r);
+      setView(
+        toPackageOverrideView({
+          overrideId: r.overrideId,
+          orgId: r.orgId,
+          templateId: r.templateId,
+          templateVersion: r.templateVersion,
+          status: parsePackageOverrideStatus(r.status),
+        }),
+      );
+      setPriceLabel(r.priceCents);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -78,6 +96,8 @@ export function PackageOverridePanel() {
     }
   }
 
+  const activateBlocked = view != null && !view.activateAllowed;
+
   return (
     <section className={styles.panel}>
       <h2>套餐覆盖与有效价（HTTP · AC-26）</h2>
@@ -89,7 +109,10 @@ export function PackageOverridePanel() {
           templateId
           <input
             value={templateId}
-            onChange={(e) => setTemplateId(e.target.value)}
+            onChange={(e) => {
+              setTemplateId(e.target.value);
+              setView(null);
+            }}
           />
         </label>
         <label>
@@ -110,7 +133,10 @@ export function PackageOverridePanel() {
           overrideId
           <input
             value={overrideId}
-            onChange={(e) => setOverrideId(e.target.value)}
+            onChange={(e) => {
+              setOverrideId(e.target.value);
+              setView(null);
+            }}
           />
         </label>
         <label>
@@ -120,11 +146,13 @@ export function PackageOverridePanel() {
             min={0}
             value={priceCents}
             onChange={(e) =>
-              setPriceCents(Number(e.target.value) || DEFAULT_OVERRIDE_PRICE_CENTS)
+              setPriceCents(
+                Number(e.target.value) || DEFAULT_OVERRIDE_PRICE_CENTS,
+              )
             }
           />
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy || activateBlocked}>
           {busy ? "提交中…" : "激活覆盖"}
         </button>
       </form>
@@ -133,26 +161,30 @@ export function PackageOverridePanel() {
           {busy ? "查询中…" : "查询有效价"}
         </button>
       </form>
+      {activateBlocked && view?.blockMessage ? (
+        <p className={styles.note} role="status">
+          {view.blockMessage}
+          {view.revokeAllowed ? "（可去「撤销覆盖」页）" : ""}
+        </p>
+      ) : null}
       {error ? (
         <p className={styles.error} role="alert">
           {error}
         </p>
       ) : null}
-      {activateResult ? (
+      {view ? (
         <p>
-          覆盖 {activateResult.overrideId} · {activateResult.orgId || "—"} ·{" "}
-          {activateResult.templateId} v{activateResult.templateVersion} ·{" "}
-          {activateResult.status}
-          {activateResult.priceCents != null
-            ? ` · ¥${formatCentsAsYuan(activateResult.priceCents)}`
-            : ""}
+          覆盖 {view.overrideId} · {view.orgId || "—"} · {view.templateId} v
+          {view.templateVersion} · {view.status}
+          {view.revokeAllowed ? " · 可撤销" : ""}
+          {priceLabel != null ? ` · ¥${formatCentsAsYuan(priceLabel)}` : ""}
         </p>
       ) : null}
       {effective ? (
         <p>
-          有效价 ¥{formatCentsAsYuan(effective.priceCents)} · {effective.displayName || "—"} ·{" "}
-          {effective.durationDays}天 · {effective.templateId} v
-          {effective.templateVersion}
+          有效价 ¥{formatCentsAsYuan(effective.priceCents)} ·{" "}
+          {effective.displayName || "—"} · {effective.durationDays}天 ·{" "}
+          {effective.templateId} v{effective.templateVersion}
           {effective.overrideId
             ? ` · override ${effective.overrideId}`
             : " · 无覆盖"}

@@ -7,12 +7,16 @@
 
 import { FormEvent, useState } from "react";
 import {
+  parsePackageOverrideStatus,
+  toPackageOverrideView,
+  type PackageOverrideView,
+} from "@/domains/operator/domain/package-override-view";
+import {
   DEFAULT_OVERRIDE_ACTOR_ORG_ID,
   DEFAULT_OVERRIDE_ACTOR_USER_ID,
   DEFAULT_OVERRIDE_ID,
   revokePackageOverride,
 } from "@/domains/operator/application/revoke-package-override";
-import type { RevokePackageOverrideResult } from "@/domains/operator/infrastructure/operator-gateway";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import styles from "./page.module.css";
 
@@ -24,28 +28,43 @@ export function RevokeOverridePanel() {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<RevokePackageOverrideResult | null>(
-    null,
-  );
+  const [view, setView] = useState<PackageOverrideView | null>(null);
+  const [priceLabel, setPriceLabel] = useState<number | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (view && !view.revokeAllowed) {
+      setError(view.blockMessage ?? "当前状态不可撤销");
+      return;
+    }
     setBusy(true);
     setError(null);
-    setResult(null);
+    setView(null);
+    setPriceLabel(null);
     try {
       const r = await revokePackageOverride({
         overrideId: overrideId.trim() || DEFAULT_OVERRIDE_ID,
         actorOrgId: actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID,
         actorUserId: actorUserId.trim() || DEFAULT_OVERRIDE_ACTOR_USER_ID,
       });
-      setResult(r);
+      setView(
+        toPackageOverrideView({
+          overrideId: r.overrideId,
+          orgId: r.orgId ?? "",
+          templateId: r.templateId ?? "",
+          templateVersion: 0,
+          status: parsePackageOverrideStatus(r.status),
+        }),
+      );
+      setPriceLabel(r.priceCents ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
     }
   }
+
+  const revokeBlocked = view != null && !view.revokeAllowed;
 
   return (
     <section className={styles.panel}>
@@ -59,7 +78,10 @@ export function RevokeOverridePanel() {
           overrideId
           <input
             value={overrideId}
-            onChange={(e) => setOverrideId(e.target.value)}
+            onChange={(e) => {
+              setOverrideId(e.target.value);
+              setView(null);
+            }}
           />
         </label>
         <label>
@@ -76,23 +98,27 @@ export function RevokeOverridePanel() {
             onChange={(e) => setActorUserId(e.target.value)}
           />
         </label>
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy || revokeBlocked}>
           {busy ? "撤销中…" : "撤销覆盖"}
         </button>
       </form>
+      {revokeBlocked && view?.blockMessage ? (
+        <p className={styles.note} role="status">
+          {view.blockMessage}
+        </p>
+      ) : null}
       {error ? (
         <p className={styles.error} role="alert">
           {error}
         </p>
       ) : null}
-      {result ? (
+      {view ? (
         <p>
-          已撤销 {result.overrideId}
-          {result.orgId ? ` · ${result.orgId}` : ""}
-          {result.templateId ? ` · ${result.templateId}` : ""} ·{" "}
-          {result.status}
-          {result.priceCents != null
-            ? ` · patches ¥${formatCentsAsYuan(result.priceCents)}`
+          已撤销 {view.overrideId}
+          {view.orgId ? ` · ${view.orgId}` : ""}
+          {view.templateId ? ` · ${view.templateId}` : ""} · {view.status}
+          {priceLabel != null
+            ? ` · patches ¥${formatCentsAsYuan(priceLabel)}`
             : ""}
           {" · 有效价已回落模板原价"}
         </p>
