@@ -1,10 +1,14 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-19  
-**读者**：新开对话的 Agent（不是给用户的作业）  
-**当前总状态**：**⏸ 暂停**。用户未说「继续」之前：**不要派子代理、不要 merge 下一波、不要 push。**
+**写于**：2026-09-19 09:00（v2）
+**读者**：新开对话的 Agent（不是给用户的作业）
+**取代**：v1（`303dc35` 那版）与 `collab-cli/working-memory/HANDOVER.md` 的对应段落
 
-本文件与 `D:\actto\front\project\collab-cli\collab-cli\working-memory\HANDOVER.md` 同构。git 事实以本仓为准。
+**当前总状态**：**▶ 集群可运行** —— 用户 2026-09-19 已说「继续」，wave42 已收口。
+但**下一刀派不派要单独判断** —— 见「下一刀」。
+
+> ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
+> 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
 
 ---
 
@@ -12,120 +16,129 @@
 
 你在压 **COLLABORATION 规范能否指导真实项目**，不是在做换电产品。代码是手段。
 
-| 仓 | 绝对路径 | 角色 | 当前 |
-| :--- | :--- | :--- | :--- |
-| **collab-cli** | `D:\actto\front\project\collab-cli\collab-cli` | Cursor 工作区时常在此；CLI/MCP/validate；编排指针 | 分支 `collab-new` |
-| **evolutionary** | `D:\actto\front\project\evolutionary_start\evolutionary` | 换电实现 + 项目 WM/规格 | `topic/fe-ddd-rsc` · HEAD **`303dc35`** · 与 origin 同步、工作区干净 |
-| **collaboration** | `D:\actto\front\project\collaboration_aggregate\collaboration` | 长期 KB | 不要写项目日记；L3 harvest 须用户确认 |
+| 仓 | 绝对路径 | 角色 |
+| :--- | :--- | :--- |
+| **evolutionary** | `D:\actto\front\project\evolutionary_start\evolutionary` | **真相仓**：换电实现 + 项目 WM/规格 |
+| **collab-cli** | `D:\actto\front\project\collab-cli\collab-cli` | CLI/MCP/validate；编排指针 |
+| **collaboration** | `D:\actto\front\project\collaboration_aggregate\collaboration` | 长期 KB（126 条） |
 
-用户语言：**简体中文**。本地 commit 可以；**AI 不 push**。「继续」≠ merge 到 `version/v0`、≠ push。
+用户语言：**简体中文**。本地 commit 可以；**AI 不 push**。
+「继续」= 可派集群，**≠** merge 到 `version/v0`、≠ push。
 
 ---
 
-## 现在停在哪（evo-collab-extreme）
+## 当前基线（硬事实）
 
-**任务**：InMemory → JPA 落库（无人值守双 worktree 集群）。  
-**loop 真相**：`working-memory/tasks/evo-collab-extreme/loop.md`
+```bash
+cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
+```
 
-| 项 | 值 |
+**基线是绿的。** 这很重要，见硬规则 2。
+
+| 域 | JPA 化 |
 | :--- | :--- |
-| 状态 | ⏸ 暂停（用户 2026-09-18 19:17：跑完本轮后暂停、**不要再派集群**） |
-| 已合入 | wave31–41（commerce/credit/mall/settlement 清零；iot 前半 DeviceShadow+Telemetry） |
-| HEAD | `303dc35` `refactor(domain): 将独立的枚举类合并到对应的领域类内部`（用户 heiniao 提交并已与 origin 同步） |
-| 上一 merge | `374d5fd` wave41 45b TelemetryStore |
-| wave42 | **只建了 worktree，未派出 Task** |
+| commerce / credit / mall / settlement / swap / station / battery / iot / admin / **operator** | ✅ 全部清零 |
 
-wave42 已备、恢复时才用：
+**全仓只剩 1 处 InMemory 注入**：
 
-- `D:\actto\front\project\evolutionary_start\evo-wt-46a-be` · `wave42/46a-alert-store-jpa` · 基线 `374d5fd`（比当前 HEAD 旧，恢复时建议从 `303dc35` 重建或 rebase）
-- `D:\actto\front\project\evolutionary_start\evo-wt-46b-be` · `wave42/46b-maintenance-ticket-jpa` · 同上
+```
+operator/interfaces/OperatorConfig.java:89
+    return new InMemoryMerchantProfileRepository();   // ← mall 域的仓储
+```
 
-**恢复口令**：用户明确说「继续」。然后：
-
-1. 刷新 46a/46b 到 `303dc35`（旧 worktree 不含 enum 内嵌，硬 merge 会痛）
-2. 双路 Task：AlertStore ∥ MaintenanceTicket（`IotConfig` 会冲突，父收口）
-3. iot 清零后再派 operator：Organization / PackageTemplate / PackageOverride / OnboardingApplication（AuditLog 已 JPA）
-
-**父进程只做**：merge、冲突、验绿、WM。失败只接管一路。子代理 **composer-2.5-fast**、短 brief、**单消息双 Task**。本地 commit、不 push。
-
-历史 worktree（35a–45b）大量残留。不要擅自 `worktree remove`。恢复前可问用户是否清旧树。
+> ⚠️ **「还剩多少活」看「仍被 new 的数」，不是 `InMemory*.java` 文件数。**
+> 文件剩 32 个是有意保留（迁移后文件留着、只是不再注入）。
+> 曾按文件数误判成 "settlement 3 / credit 4 / mall 7"，全错。
 
 ---
 
-## 硬规则（违反会被用户纠正）
+## 波次
 
-1. **不 push**；不 `--force`；不跳过 hook。  
-2. **暂停期间 idle 允许 >0**，禁止 auto-dispatch。  
-3. **WM 双写**：改 git 之后立刻写本仓 `loop.md` **和** collab-cli `working-memory/AGENTS.md` 活跃表 + 指针 loop。先 git 再登记 HEAD，勿空登记。  
-4. **collaboration 不写轮次日记**；拦截先记 `working-memory/interceptions-candidates.md`。  
-5. **domain 零 Spring/JPA**（`DomainFrameworkFreeTest`）。application 层用户已同意可适度放宽（如将来 `@Transactional`），但不要把 Bean Validation / `@Entity` 推进 domain。  
-6. 中文 commit / 注释 / WM。回答从 H2 开始，不客套。  
-7. 子代理完成通知 = **同轮 merge + 验绿**；暂停中 **到此为止**，不要续派。
+| 波 | 内容 | 结果 |
+| :--- | :--- | :--- |
+| wave41 | iot 前半（DeviceShadow + TelemetryStore） | ✅ |
+| **wave42** | **46a AlertStore ∥ 46b MaintenanceTicket**（双 worktree） | ✅ 收口于 `2a10645` |
+| wave43 | 未派 | — |
 
-集群坍缩根因：follow-up 只汇报不 merge；用户插问后忘续派；WM 不刷新。**插问不暂停 pipeline——除非用户说暂停。**
+wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
+历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
 
 ---
 
-## Collaboration：怎么用（不要全量读）
+## 硬规则
 
-KB 入口：`collaboration/AGENTS.md` **症状表**（不要先读 catalog 当路由）。
+1. **不 push**；不 `--force`；不跳过 hook。
+2. **派工前置：基线必须绿。** 红基线上派功能切片 → 新红**不可归因**。
+   红着只能派「修基线」这一路。（2026-09-19 补进 KB 集群策略，wave42 靠它才可验证）
+3. **WM 双写**：改 git 后立刻写本仓 `loop.md` **和** collab-cli `AGENTS.md` 活跃表。
+   **先 git 再登记**，勿空登记。
+4. **collaboration 不写轮次日记**；拦截先记 `working-memory/interceptions-candidates.md`。
+5. **domain/application 零 Spring/JPA**（`DomainFrameworkFreeTest` 会拦）。
+   事务边界放 **interfaces**（见下表）。
+6. 中文 commit / 注释 / WM。回答从 H2 开始，不客套。
+7. 子代理通知 = **同轮 merge + 验绿**，父收口冲突。
+
+---
+
+## 本会话新立的决定（代码已落，不是待办）
+
+| 题 | 结论 | 证据 |
+| :--- | :--- | :--- |
+| **事务边界** | `interfaces/TransactionalPerformSwap` 包住 `PerformSwap`，Controller 注入包装类。**不在用例上加 `@Transactional`** | `26b4aba` · `PerformSwapAtomicityTest` |
+| **测试隔离** | 每个 Spring context **独立 H2**（`${random.uuid}`）。此前全 JVM 共用一个库 + 种子按 context 跑一次 → 清表后复用缓存 context 报 404 | `3ceda84` |
+| **组织种子时机** | 组织须在 **bean 构造时**同步入仓（`OrgAuthorization` 构造时建索引；`ApplicationRunner` 太晚）。`JpaOrganizationRepository` **刻意不加 `@Component`** | `56861f1` |
+| enum 内嵌 | 单聚合生命周期 → 内嵌；跨聚合共享词汇独立（`BatteryStatus`/`OrgCapability` 故意不内嵌） | `303dc35` |
+
+---
+
+## 下一刀
+
+**JPA 化这条线基本走完了。** 只剩 1 处跨域注入，且**不该盲目 JPA 化** ——
+`InMemoryMerchantProfileRepository` 是 mall 域仓储接在 operator 的 config 里，
+先判断 merchant profile 是不是共享内核（KB 有 `shared-kernel-across-bc` 一行）。
+
+真正的大块是**前端**：
+
+- `topic/fe-ddd-rsc` 决策表仍标「待实施」：App Router 默认 RSC、服务端读模型、
+  客户端仅交互岛、目录按 BC 视图模型
+- **但前端零测试**（`frontend/` 下无任何 `*.test.*`）⇒ **前端没有基线**
+- 按硬规则 2，直接开大改会重演"红着基线派双路"。**先给前端建一条能跑的验收**
+  （哪怕只是 `next build` + 一条冒烟），才谈得上改造
+
+⇒ **合理的第一步是主进程单干（给前端建验收），不是派双路。**
+
+---
+
+## Collaboration：怎么用
+
+KB 入口：`collaboration/AGENTS.md` 的**症状表**（不要拿 catalog 当第一路由）。
+**完整用法见 `collaboration/integrations/usage-guide.md`**（2026-09-19 新增）。
 
 | 场景 | 做 |
 | :--- | :--- |
-| 设计墙（不变量、依赖、边界、错误码） | 症状表 1 行 → 读 1–2 条 → 决策 |
+| 设计墙（不变量、边界、错误码、种子时机） | 症状表 1 行 → 读 1–2 条 → 决策 |
 | 机械 JPA 切片 | **不读 KB**；对标上一切片 + 目标测绿 |
 | 跨对话进度 | 读本文件 + `working-memory/`，不读 KB 全文 |
-| 入库 / 新条目 | **人触发**；说不出「不看它称职模型会做错」就别建 |
-
-D 实验：有规格的实现任务，读库改变 SUMMARY、不改变代码结构。拦截账本「差点」多为自述。项目特异决定留在本仓 `decisions.md`，不要当通用 pattern 往 KB 灌。
-
----
-
-## 本会话已拍板、未全部落代码的架构
-
-| 题 | 结论 | 代码状态 |
-| :--- | :--- | :--- |
-| AOP | domain 绝对纯净；application 可白名单；事务宜放 interfaces/infrastructure | 几乎无 `@Transactional`；`PerformSwap` 注释「同事务」与实现不一致 |
-| 事件 | Fact record + Controller 同步调用；不必上总线 | 保持 |
-| 命令模式 / CQRS | `execute()` 即写侧；读写分离先拆端口 | 保持 |
-| enum | 单聚合 → `Aggregate.Status` | **已 commit** `303dc35`。`BatteryStatus`、`OrgCapability` **故意不内嵌** |
-| Config 种子 | 程序化种子，不换 data.sql | 有意 |
-| `OrgCapability` | BC 级共享词汇，不要塞进 Organization | 保持独立文件 |
-
----
-
-## 代码地图
-
-包按 BC：`swap/` `station/` `battery/` `commerce/` `credit/` `mall/` `settlement/` `iot/` `operator/` `admin/`，每模块 `domain / application / infrastructure / interfaces`。
-
-JPA 对标最近 `Jpa*Repository`：`rehydrate` + Entity + Spring Data + `@Component` 适配；Config 去 InMemory bean；InMemory **文件保留**。测试 `@SpringBootTest`，PowerShell 须 `"-Dtest=A,B"`。双路改同一 `*Config` → 父收口，禁止残留冲突标记。
-
----
-
-## 恢复后的默认下一刀
-
-1. iot：AlertStore ∥ MaintenanceTicket → iot JPA 清零  
-2. operator 四仓储（Organization 种子必须在 **Bean 构造时**写入，供 `OrgAuthorization`）  
-3. 可选：`PerformSwap` 真事务；application 测试放宽 Spring、仍禁 JPA  
-
-不要在 JPA 集群里夹带大改前端（RSC 目标仍标待实施），除非用户点名。
+| 查不到 | **报告"找不到"**，记 `meta/known-gaps`；**不要发明规范** |
 
 ---
 
 ## 不要做
 
-- 项目日记进 `collaboration/meta/evolution-log`  
-- 为「有产出」新建 KB 条目  
-- 未说「继续」就派 wave42  
-- 以本仓 `AGENTS.md`「刚建立 / battery-pressure 待实现」为准——**以代码 + HANDOVER + loop.md 为准**  
-- 发明第三套 commit 规则：本任务惯例是 **L2 本地 commit、不 push**
+- 把项目报告写进 `collaboration/meta/evolution-log`
+- 为「有产出」新建 KB 条目（入库要 `falsifier`）
+- 在**红基线**上派功能切片
+- 假设本文件永远准 —— 以后端代码 + `loop.md` 为准
+- 把「禁止 commit」与「feat commit 当凭证」当同一条 ——
+  本任务惯例是 **L2 切片本地 commit、不 push**
 
 ---
 
-## 读序
+## 读序（新对话）
 
-1. 本文件  
-2. `tasks/evo-collab-extreme/loop.md`  
-3. collab-cli `working-memory/AGENTS.md`（若在该工作区）  
-4. 设计决策：collaboration 症状表 → 1–2 条  
-5. 跑代码：对标最近 `Jpa*Repository`
+1. 本文件
+2. `working-memory/README.md` → `tasks/evo-collab-extreme/loop.md`（波次真相）
+3. 设计决策：`collaboration/AGENTS.md` 症状表 → 1–2 条正文
+4. 跑代码：`mvn -o test`（确认基线）→ `backend/` 对标最近的 `Jpa*Repository`
+5. 想理解判断依据：`tasks/evo-collab-extreme/cluster-policy-pressure.md`
+   （用 wave42 压集群策略的三条证据）
