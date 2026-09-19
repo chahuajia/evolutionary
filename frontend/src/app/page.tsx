@@ -5,9 +5,12 @@
 import { PageHeader } from "@/components/page-header";
 import {
   fetchStationSummaries,
+  fetchSwapLogs,
   type StationSummary,
+  type SwapLog,
 } from "@/domains/swap/infrastructure/station-gateway";
 import { HomeWorkflows } from "./home-workflows";
+import styles from "./page.module.css";
 
 export default async function Home() {
   let stations: readonly StationSummary[] = [];
@@ -24,6 +27,20 @@ export default async function Home() {
 
   const initialStationId = stations[0]?.id ?? "S1";
 
+  let swapLogs: readonly SwapLog[] = [];
+  let logsError: string | null = null;
+
+  try {
+    swapLogs = await fetchSwapLogs(initialStationId);
+  } catch (e) {
+    logsError =
+      e instanceof Error
+        ? e.message
+        : "换电日志拉取失败：请确认 Spring 已启动 :8080。";
+  }
+
+  const recentLogs = swapLogs.slice(-3);
+
   return (
     <>
       <PageHeader
@@ -31,6 +48,29 @@ export default async function Home() {
         title="换电履约"
         description="先选站完成基础换电，再用权益 / 默认选卡 / 计量路径覆盖信用购后的履约场景。"
       />
+      {logsError ? (
+        <p className={styles.logsAlert} role="alert">
+          {logsError}
+        </p>
+      ) : (
+        <section className={styles.logsOverview} aria-label="换电日志概览">
+          <p className={styles.note}>
+            站 {initialStationId} · {swapLogs.length} 条换电日志（只读 · RSC）
+          </p>
+          {recentLogs.length > 0 ? (
+            <ul className={styles.logsPreview}>
+              {recentLogs.map((log) => (
+                <li key={log.id}>
+                  {log.id} · {log.outgoingBatteryId} → {log.incomingBatteryId}{" "}
+                  · {log.occurredAt}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.note}>暂无换电日志</p>
+          )}
+        </section>
+      )}
       <HomeWorkflows
         stations={stations}
         initialStationId={initialStationId}

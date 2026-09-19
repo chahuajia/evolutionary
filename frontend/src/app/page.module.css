@@ -129,6 +129,24 @@
   font-size: 0.9rem;
 }
 
+.logsAlert {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--surface-raised);
+}
+
+.logsOverview {
+  margin: 0 0 1rem;
+}
+
+.logsPreview {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
 @media (max-width: 640px) {
   .form {
     grid-template-columns: 1fr;
