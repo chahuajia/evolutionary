@@ -67,6 +67,12 @@
   font-size: 0.9rem;
 }
 
+.note {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
 @media (max-width: 640px) {
   .form {
     grid-template-columns: 1fr;
