@@ -13,6 +13,7 @@ import {
   revokePackageOverride,
 } from "@/domains/operator/application/revoke-package-override";
 import type { RevokePackageOverrideResult } from "@/domains/operator/infrastructure/operator-gateway";
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import styles from "./page.module.css";
 
 export function RevokeOverridePanel() {
@@ -91,7 +92,7 @@ export function RevokeOverridePanel() {
           {result.templateId ? ` · ${result.templateId}` : ""} ·{" "}
           {result.status}
           {result.priceCents != null
-            ? ` · patches ¥${(result.priceCents / 100).toFixed(2)}`
+            ? ` · patches ¥${formatCentsAsYuan(result.priceCents)}`
             : ""}
           {" · 有效价已回落模板原价"}
         </p>

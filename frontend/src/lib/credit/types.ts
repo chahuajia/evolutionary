@@ -3,6 +3,8 @@
  * 数据经 `/api/credit/...` → Spring。
  */
 
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
+
 export type MoneyCents = number;
 export type UserId = string;
 export type StatementId = string;
@@ -64,7 +66,7 @@ export const STATEMENT_STATUS_LABEL: Record<StatementStatus, string> = {
 };
 
 export function formatYuan(cents: MoneyCents): string {
-  return (cents / 100).toFixed(2);
+  return formatCentsAsYuan(cents);
 }
 
 export function isCreditStatus(v: string): v is CreditStatus {

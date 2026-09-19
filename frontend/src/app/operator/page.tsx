@@ -14,6 +14,7 @@ import {
   loadEffectiveProduct,
 } from "@/domains/operator/application/load-effective-product";
 import type { EffectiveProductResult } from "@/domains/operator/infrastructure/operator-gateway";
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import { OperatorWorkspace } from "./operator-workspace";
 import styles from "./page.module.css";
 
@@ -47,7 +48,7 @@ export default async function OperatorPage() {
             {DEFAULT_OVERRIDE_ACTOR_ORG_ID} / {product.templateId} · 只读 · RSC
           </p>
           <p className={styles.note}>
-            {product.displayName} · ¥{(product.priceCents / 100).toFixed(2)} ·
+            {product.displayName} · ¥{formatCentsAsYuan(product.priceCents)} ·
             覆盖 {product.overrideId ?? "无覆盖"}
           </p>
         </section>

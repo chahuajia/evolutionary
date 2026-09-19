@@ -2,6 +2,8 @@
  * 带券结账展示模型 — 视图边界（切片 52a）。
  */
 
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
+
 export type MallCheckoutView = {
   readonly orderId: string;
   readonly userId: string;
@@ -14,10 +16,6 @@ export type MallCheckoutView = {
   readonly discountCents: number;
   readonly discountYuan: string;
 };
-
-function formatCentsAsYuan(cents: number): string {
-  return (cents / 100).toFixed(2);
-}
 
 export function toCheckoutView(dto: {
   orderId: string;

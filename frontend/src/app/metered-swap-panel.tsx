@@ -6,10 +6,11 @@
 
 import { FormEvent, useState } from "react";
 import { postEntitledSwap } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import styles from "./page.module.css";
 
 function formatCents(cents: number): string {
-  return `¥${(cents / 100).toFixed(2)}（${cents}¢）`;
+  return `¥${formatCentsAsYuan(cents)}（${cents}¢）`;
 }
 
 export function MeteredSwapPanel() {

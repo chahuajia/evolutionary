@@ -2,6 +2,10 @@
  * 钱包展示模型 — 视图边界。
  */
 
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
+
+export { formatCentsAsYuan };
+
 export type WalletView = {
   readonly userId: string;
   readonly balanceCents: number;
@@ -10,10 +14,6 @@ export type WalletView = {
   readonly balanceYuan: string;
   readonly pointsYuan: string;
 };
-
-export function formatCentsAsYuan(cents: number): string {
-  return (cents / 100).toFixed(2);
-}
 
 export function toWalletView(dto: {
   userId: string;

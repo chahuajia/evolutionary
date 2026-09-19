@@ -16,6 +16,7 @@ import {
   type ActivatePackageOverrideResult,
   type EffectiveProductResult,
 } from "@/domains/operator/infrastructure/operator-gateway";
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import styles from "./page.module.css";
 
 export function PackageOverridePanel() {
@@ -143,13 +144,13 @@ export function PackageOverridePanel() {
           {activateResult.templateId} v{activateResult.templateVersion} ·{" "}
           {activateResult.status}
           {activateResult.priceCents != null
-            ? ` · ¥${(activateResult.priceCents / 100).toFixed(2)}`
+            ? ` · ¥${formatCentsAsYuan(activateResult.priceCents)}`
             : ""}
         </p>
       ) : null}
       {effective ? (
         <p>
-          有效价 ¥{(effective.priceCents / 100).toFixed(2)} · {effective.displayName || "—"} ·{" "}
+          有效价 ¥{formatCentsAsYuan(effective.priceCents)} · {effective.displayName || "—"} ·{" "}
           {effective.durationDays}天 · {effective.templateId} v
           {effective.templateVersion}
           {effective.overrideId

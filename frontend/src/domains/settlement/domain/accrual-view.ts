@@ -2,6 +2,10 @@
  * 应计展示模型 — 视图边界。
  */
 
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
+
+export { formatCentsAsYuan };
+
 export type AccrualView = {
   readonly id: string;
   readonly orderId: string;
@@ -10,10 +14,6 @@ export type AccrualView = {
   readonly status: string;
   readonly amountYuan: string;
 };
-
-export function formatCentsAsYuan(cents: number): string {
-  return (cents / 100).toFixed(2);
-}
 
 export function toAccrualView(dto: {
   id: string;
