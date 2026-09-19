@@ -38,6 +38,7 @@ export default async function WalletPage() {
             <span className={styles.metricValue}>¥{wallet.balanceYuan}</span>
             <span className={styles.metricMeta}>
               {wallet.balanceCents} 分 · {wallet.currency}
+              {wallet.hasSpendableBalance ? " · 可扣款" : " · 余额不足扣款"}
             </span>
           </div>
           <div className={styles.metric}>
@@ -45,6 +46,7 @@ export default async function WalletPage() {
             <span className={styles.metricValue}>¥{wallet.pointsYuan}</span>
             <span className={styles.metricMeta}>
               {wallet.pointsCents} 分等价 · {wallet.userId}
+              {wallet.hasSpendablePoints ? " · 可抵扣" : " · 无可用积分"}
             </span>
           </div>
         </div>
