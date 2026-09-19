@@ -5,6 +5,7 @@
  */
 
 import { FormEvent, useState } from "react";
+import { toCheckoutView } from "@/domains/mall/domain/mall-checkout-view";
 import {
   DEFAULT_MALL_CAMPAIGN,
   DEFAULT_MALL_MERCHANT,
@@ -13,7 +14,6 @@ import {
   DEFAULT_MALL_USER,
   postCheckoutWithCoupons,
   postClaimCoupon,
-  type CheckoutWithCouponsResult,
 } from "@/domains/mall/infrastructure/mall-gateway";
 import styles from "./page.module.css";
 
@@ -22,7 +22,9 @@ export function CouponCheckoutPanel() {
   const [couponId, setCouponId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<CheckoutWithCouponsResult | null>(null);
+  const [result, setResult] = useState<ReturnType<
+    typeof toCheckoutView
+  > | null>(null);
 
   async function claimFirst() {
     setBusy(true);
@@ -55,7 +57,7 @@ export function CouponCheckoutPanel() {
         qty: 1,
         userCouponIds: ids,
       });
-      setResult(r);
+      setResult(toCheckoutView(r));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -95,8 +97,8 @@ export function CouponCheckoutPanel() {
       ) : null}
       {result ? (
         <p>
-          {result.orderId} · {result.status} · 实付 {result.paidAmountCents}¢ ·
-          优惠 {result.discountCents}¢
+          {result.orderId} · {result.status} · 实付 ¥{result.paidAmountYuan} ·
+          优惠 ¥{result.discountYuan}
         </p>
       ) : null}
     </section>
