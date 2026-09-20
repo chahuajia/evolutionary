@@ -45,6 +45,7 @@ describe("toMallSkuView", () => {
       status: "OFF_SALE",
     });
     expect(view.purchaseAllowed).toBe(false);
+    expect(view.statusLabel).toBe("下架");
     expect(skuPurchaseBlockMessage(view.status, view.stock, 1)).toContain(
       "未上架",
     );

@@ -57,6 +57,7 @@ describe("toUserCouponView", () => {
     expect(view.lockAllowed).toBe(true);
     expect(view.redeemAllowed).toBe(true);
     expect(view.checkoutSelectable).toBe(true);
+    expect(view.statusLabel).toBe("可用");
     expect(view.blockMessage).toBeNull();
   });
 

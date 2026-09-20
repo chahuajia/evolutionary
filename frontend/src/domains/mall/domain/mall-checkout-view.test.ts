@@ -74,6 +74,7 @@ describe("toCheckoutView", () => {
     expect(view.userId).toBe("u-2");
     expect(view.merchantOrgId).toBe("M2");
     expect(view.status).toBe("PAID");
+    expect(view.statusLabel).toBe("已支付");
     expect(view.paidAmountCents).toBe(199);
     expect(view.paidAmountYuan).toBe("1.99");
     expect(view.skuId).toBe("S2");

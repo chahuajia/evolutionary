@@ -42,6 +42,7 @@ export type AccrualView = {
   readonly orgId: string;
   readonly amountCents: number;
   readonly status: AccrualStatus;
+  readonly statusLabel: string;
   readonly amountYuan: string;
   /** 仅 PENDING 可结算（对齐后端 `settle` 守卫）。 */
   readonly settleAllowed: boolean;
@@ -49,6 +50,12 @@ export type AccrualView = {
   readonly reverseAllowed: boolean;
   /** 不可动时的原因；可动为 null。 */
   readonly blockMessage: string | null;
+};
+
+export const ACCRUAL_STATUS_LABEL: Record<AccrualStatus, string> = {
+  PENDING: "待结算",
+  SETTLED: "已结算",
+  REVERSED: "已冲销",
 };
 
 /**
@@ -98,6 +105,7 @@ export function toAccrualView(dto: {
     orgId: dto.orgId,
     amountCents: dto.amountCents,
     status: dto.status,
+    statusLabel: ACCRUAL_STATUS_LABEL[dto.status],
     amountYuan: formatCentsAsYuan(dto.amountCents),
     settleAllowed: canSettleAccrual(dto.status),
     reverseAllowed: canReverseAccrual(dto.status),

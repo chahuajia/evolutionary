@@ -40,7 +40,7 @@ export function CreditMonthlyBillingPanel() {
           `账单 ${view.id}`,
           `账期 ${view.periodStart} ~ ${view.periodEnd}`,
           `应还 ¥${view.totalDueYuan}`,
-          `${view.statusLabel}（${view.status}）`,
+          `${view.statusLabel}`,
           `到期 ${view.dueDate}`,
           view.repayAllowed ? "可还款" : view.blockMessage ?? "",
         ]

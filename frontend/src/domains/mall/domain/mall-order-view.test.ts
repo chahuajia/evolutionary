@@ -53,6 +53,7 @@ describe("toMallOrderView", () => {
 
     expect(view.orderId).toBe("ord-1");
     expect(view.status).toBe("PAID");
+    expect(view.statusLabel).toBe("已支付");
     expect(view.paidAmountYuan).toBe("1.99");
     expect(view.payAllowed).toBe(false);
     expect(view.entitlementForbidden).toBe(true);

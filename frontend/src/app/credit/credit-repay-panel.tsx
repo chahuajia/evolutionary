@@ -141,7 +141,7 @@ export function CreditRepayPanel({
         userId: DEFAULT_CREDIT_USER,
         statementId: statementId.trim() || DEFAULT_STATEMENT_ID,
       });
-      setStatus(`已标逾期 · 档案 ${profile.status}`);
+      setStatus(`已标逾期 · 档案 ${profile.statusLabel}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

@@ -30,8 +30,14 @@ export type MallSkuView = {
   readonly priceCents: number;
   readonly stock: number;
   readonly status: MallSkuStatus;
+  readonly statusLabel: string;
   readonly purchaseAllowed: boolean;
   readonly blockMessage: string | null;
+};
+
+export const MALL_SKU_STATUS_LABEL: Record<MallSkuStatus, string> = {
+  ON_SALE: "上架",
+  OFF_SALE: "下架",
 };
 
 /** qty 必须为正（对齐 deductStock）。 */
@@ -81,6 +87,7 @@ export function toMallSkuView(
     priceCents: dto.priceCents,
     stock: dto.stock,
     status: dto.status,
+    statusLabel: MALL_SKU_STATUS_LABEL[dto.status],
     purchaseAllowed: canPurchaseSku(dto.status, dto.stock, qty),
     blockMessage: skuPurchaseBlockMessage(dto.status, dto.stock, qty),
   };

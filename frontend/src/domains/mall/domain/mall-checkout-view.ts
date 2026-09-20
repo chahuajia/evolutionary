@@ -9,6 +9,7 @@ import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import {
   forbidsEntitlement,
   mallOrderBlockMessage,
+  MALL_ORDER_STATUS_LABEL,
   parseMallOrderStatus,
   type MallOrderStatus,
 } from "./mall-order-view";
@@ -18,6 +19,7 @@ export type MallCheckoutView = {
   readonly userId: string;
   readonly merchantOrgId: string;
   readonly status: MallOrderStatus;
+  readonly statusLabel: string;
   readonly paidAmountCents: number;
   readonly paidAmountYuan: string;
   readonly skuId: string;
@@ -53,6 +55,7 @@ export function toCheckoutView(dto: {
     userId: dto.userId,
     merchantOrgId: dto.merchantOrgId,
     status,
+    statusLabel: MALL_ORDER_STATUS_LABEL[status],
     paidAmountCents: dto.paidAmountCents,
     paidAmountYuan: formatCentsAsYuan(dto.paidAmountCents),
     skuId: dto.skuId,

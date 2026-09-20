@@ -172,7 +172,7 @@ export function CreditJourneyPanel({
       });
       append(
         `④ Accrue：${views.length} 条 · ` +
-          views.map((r) => `${r.orgId}=¥${r.amountYuan}/${r.status}`).join(" · "),
+          views.map((r) => `${r.orgId}=¥${r.amountYuan}/${r.statusLabel}`).join(" · "),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

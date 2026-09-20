@@ -48,7 +48,7 @@ export default async function MallPage() {
         <section className={styles.overview} aria-label="商城概览">
           {campaign ? (
             <p className={styles.note}>
-              活动 {campaign.id} · {campaign.name} · {campaign.status} · 剩余{" "}
+              活动 {campaign.id} · {campaign.name} · {campaign.statusLabel} · 剩余{" "}
               {campaign.budgetRemainingCents} 分 ·{" "}
               {campaign.claimAllowed
                 ? "可领券"

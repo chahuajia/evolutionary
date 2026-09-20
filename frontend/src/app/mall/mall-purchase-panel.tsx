@@ -183,7 +183,7 @@ export function MallPurchasePanel() {
       <p className={styles.note}>
         GET SKU / Merchant / Wallet 对齐库存、可交易与余额（canCoverCents）
         {skuView
-          ? ` · ${skuView.name} · 库存 ${skuView.stock} · ${skuView.status}`
+          ? ` · ${skuView.name} · 库存 ${skuView.stock} · ${skuView.statusLabel}`
           : ""}
         {merchantView
           ? ` · ${merchantView.shopName}(${merchantView.statusLabel})`
@@ -231,7 +231,7 @@ export function MallPurchasePanel() {
       ) : null}
       {result ? (
         <p>
-          订单 {result.orderId} · {result.status} · ¥{result.paidAmountYuan} ·{" "}
+          订单 {result.orderId} · {result.statusLabel} · ¥{result.paidAmountYuan} ·{" "}
           {result.skuId}×{result.qty}
           {result.entitlementForbidden ? " · 不可开换电权益" : ""}
           {result.blockMessage ? ` · ${result.blockMessage}` : ""}

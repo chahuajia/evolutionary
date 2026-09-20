@@ -28,8 +28,15 @@ export type CampaignView = {
   readonly name: string;
   readonly budgetRemainingCents: number;
   readonly status: CampaignStatus;
+  readonly statusLabel: string;
   readonly claimAllowed: boolean;
   readonly blockMessage: string | null;
+};
+
+export const CAMPAIGN_STATUS_LABEL: Record<CampaignStatus, string> = {
+  DRAFT: "草稿",
+  ACTIVE: "进行中",
+  ENDED: "已结束",
 };
 
 /** 展示不变量：仅 ACTIVE 可领券。 */
@@ -90,6 +97,7 @@ export function toCampaignView(
     name: dto.name,
     budgetRemainingCents: dto.budgetRemainingCents,
     status: dto.status,
+    statusLabel: CAMPAIGN_STATUS_LABEL[dto.status],
     claimAllowed: canClaimCoupon(
       dto.status,
       dto.budgetRemainingCents,

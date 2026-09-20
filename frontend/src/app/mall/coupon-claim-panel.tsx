@@ -119,7 +119,7 @@ export function CouponClaimPanel() {
       <h2>活动领券</h2>
       {campaign && faceCents != null ? (
         <p className={styles.note} role="status">
-          {campaign.id} · {campaign.name} · {campaign.status} · 预算余{" "}
+          {campaign.id} · {campaign.name} · {campaign.statusLabel} · 预算余{" "}
           {campaign.budgetRemainingCents}¢ · 面额 {faceCents}¢
           {campaign.claimAllowed ? " · 可领券" : ""}
         </p>
@@ -177,7 +177,7 @@ function ClaimResultView({ view }: { view: UserCouponView }) {
       <dt>状态</dt>
       <dd>
         <span className={`${styles.badge} ${styles.badgeAvailable}`}>
-          {view.status}
+          {view.statusLabel}
         </span>
       </dd>
       <dt>结账可选</dt>

@@ -53,6 +53,7 @@ describe("toAccrualView", () => {
     expect(view.orgId).toBe("org-1");
     expect(view.amountCents).toBe(10000);
     expect(view.status).toBe("PENDING");
+    expect(view.statusLabel).toBe("待结算");
     expect(view.amountYuan).toBe("100.00");
   });
 });

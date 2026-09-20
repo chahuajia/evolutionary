@@ -33,6 +33,7 @@ export type UserCouponView = {
   readonly userId: string;
   readonly templateId: string;
   readonly status: UserCouponStatus;
+  readonly statusLabel: string;
   /** 仅 AVAILABLE 可锁定到订单（对齐 `UserCoupon.lock`）。 */
   readonly lockAllowed: boolean;
   /** LOCKED 或 AVAILABLE 可核销（对齐 `markUsed`）。 */
@@ -40,6 +41,13 @@ export type UserCouponView = {
   /** 结账时是否可选用本券。 */
   readonly checkoutSelectable: boolean;
   readonly blockMessage: string | null;
+};
+
+export const USER_COUPON_STATUS_LABEL: Record<UserCouponStatus, string> = {
+  AVAILABLE: "可用",
+  LOCKED: "已锁定",
+  USED: "已核销",
+  EXPIRED: "已过期",
 };
 
 /** 展示不变量：仅可用券可锁定。 */
@@ -81,6 +89,7 @@ export function toUserCouponView(dto: {
     userId: dto.userId,
     templateId: dto.templateId,
     status: dto.status,
+    statusLabel: USER_COUPON_STATUS_LABEL[dto.status],
     lockAllowed: canLockCoupon(dto.status),
     redeemAllowed: canRedeemCoupon(dto.status),
     checkoutSelectable: canSelectCouponForCheckout(dto.status),

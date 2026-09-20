@@ -53,6 +53,7 @@ describe("toCampaignView", () => {
       status: "ACTIVE",
     });
     expect(view.claimAllowed).toBe(true);
+    expect(view.statusLabel).toBe("进行中");
     expect(view.blockMessage).toBeNull();
   });
 

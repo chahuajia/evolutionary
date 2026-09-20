@@ -141,7 +141,7 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
           views
             .map(
               (r) =>
-                `${r.orgId}=¥${r.amountYuan}/${r.status}` +
+                `${r.orgId}=¥${r.amountYuan}/${r.statusLabel}` +
                 (r.blockMessage ? `（${r.blockMessage}）` : ""),
             )
             .join(" · "),
@@ -176,7 +176,7 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
           views
             .map(
               (r) =>
-                `${r.orderId}=¥${r.amountYuan}/${r.status}` +
+                `${r.orderId}=¥${r.amountYuan}/${r.statusLabel}` +
                 (r.blockMessage ? `（${r.blockMessage}）` : ""),
             )
             .join(" · "),
@@ -316,7 +316,7 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
               <li key={a.id} className={styles.item}>
                 <div className={styles.itemHead}>
                   <span>{a.orderId}</span>
-                  <span>{a.status}</span>
+                  <span>{a.statusLabel}</span>
                 </div>
                 <div className={styles.meta}>
                   ¥{a.amountYuan} · 可结算 {a.settleAllowed ? "是" : "否"} ·

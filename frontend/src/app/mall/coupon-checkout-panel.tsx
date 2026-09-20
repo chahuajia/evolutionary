@@ -281,7 +281,7 @@ export function CouponCheckoutPanel() {
           : ""}
         {walletView ? ` · 余额 ¥${walletView.balanceYuan}` : ""}
         {couponView
-          ? ` · 券 ${couponView.id}=${couponView.status}`
+          ? ` · 券 ${couponView.id}=${couponView.statusLabel}`
           : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
@@ -318,7 +318,7 @@ export function CouponCheckoutPanel() {
       ) : null}
       {result ? (
         <p>
-          {result.orderId} · {result.status} · 实付 ¥{result.paidAmountYuan}
+          {result.orderId} · {result.statusLabel} · 实付 ¥{result.paidAmountYuan}
           {result.hasDiscount ? ` · 优惠 ¥${result.discountYuan}` : ""}
           {result.entitlementForbidden ? " · 不可开换电权益" : ""}
         </p>

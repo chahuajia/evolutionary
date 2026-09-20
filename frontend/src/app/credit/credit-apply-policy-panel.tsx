@@ -20,7 +20,7 @@ function summarizeProfile(p: CreditProfileView): string {
     `用户 ${p.userId}`,
     `额度 ¥${p.limitYuan}`,
     `已用 ¥${p.usedYuan}`,
-    `${p.statusLabel}（${p.status}）`,
+    `${p.statusLabel}`,
     `档 ${p.scoreTier}`,
     `政策 v${p.policyVersion}`,
   ].join(" · ");
