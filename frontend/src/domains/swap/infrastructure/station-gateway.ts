@@ -23,9 +23,6 @@ export type SwapLog = {
 
 const TIMEOUT_MS = 8000;
 
-/** @deprecated 请用 `@/shared/http/api-base`；保留别名供 swap-panel 兼容 */
-export const resolveApiBase = apiBase;
-
 function triageListError(e: unknown): Error {
   const msg = e instanceof Error ? e.message : String(e);
   if (msg === "Failed to fetch" || msg.includes("NetworkError")) {
@@ -92,4 +89,86 @@ export async function fetchSwapLogs(
     throw new Error("换电日志响应格式无效");
   }
   return raw.map((row) => parseSwapLog(row as Record<string, unknown>));
+}
+
+export type StationBatteryDto = {
+  id: string;
+  status: string;
+};
+
+export type StationDetailDto = {
+  id: string;
+  name: string;
+  canSwapOut: boolean;
+  batteries: StationBatteryDto[];
+};
+
+export type StationSwapResult = {
+  stationId: string;
+  outgoingId: string;
+  incomingId: string;
+};
+
+function triageStationError(e: unknown): Error {
+  const msg = e instanceof Error ? e.message : String(e);
+  if (msg === "Failed to fetch" || msg.includes("NetworkError")) {
+    return new Error(
+      "请求失败（W1）：请确认 Spring 已启动 :8080，且 Next rewrite /api 生效。",
+    );
+  }
+  return e instanceof Error ? e : new Error(msg);
+}
+
+/** GET /stations/{id} — 站详情含电池列表。 */
+export async function fetchStationDetail(
+  stationId: string,
+): Promise<StationDetailDto> {
+  const base = apiBase();
+  try {
+    const raw = await fetchJson<Record<string, unknown>>(
+      `${base}/stations/${encodeURIComponent(stationId)}`,
+      { timeoutMs: TIMEOUT_MS },
+    );
+    const batteriesRaw = Array.isArray(raw.batteries) ? raw.batteries : [];
+    return {
+      id: String(raw.id ?? stationId),
+      name: String(raw.name ?? ""),
+      canSwapOut: Boolean(raw.canSwapOut),
+      batteries: batteriesRaw.map((row) => {
+        const b = row as Record<string, unknown>;
+        return {
+          id: String(b.id ?? ""),
+          status: String(b.status ?? ""),
+        };
+      }),
+    };
+  } catch (e) {
+    throw triageStationError(e);
+  }
+}
+
+/** POST /stations/{id}/swaps */
+export async function postStationSwap(
+  stationId: string,
+  incomingBatteryId: string,
+): Promise<StationSwapResult> {
+  const base = apiBase();
+  try {
+    const raw = await fetchJson<Record<string, unknown>>(
+      `${base}/stations/${encodeURIComponent(stationId)}/swaps`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ incomingBatteryId }),
+        timeoutMs: TIMEOUT_MS,
+      },
+    );
+    return {
+      stationId: String(raw.stationId ?? stationId),
+      outgoingId: String(raw.outgoingId ?? ""),
+      incomingId: String(raw.incomingId ?? ""),
+    };
+  } catch (e) {
+    throw triageStationError(e);
+  }
 }

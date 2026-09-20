@@ -8,33 +8,21 @@
 
 import { FormEvent, useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { StationView } from "@/domains/swap/domain/station-view";
+import type { BatteryView } from "@/domains/battery/domain/battery-view";
 import {
-  toStationView,
-  type StationView,
-} from "@/domains/swap/domain/station-view";
+  loadStationDetail,
+  type StationDetailView,
+} from "@/domains/swap/application/load-station-detail";
 import {
-  parseBatteryStatus,
-  toBatteryView,
-  type BatteryView,
-} from "@/domains/battery/domain/battery-view";
-import {
-  fetchSwapLogs,
-  resolveApiBase,
+  loadSwapLogs,
   type SwapLog,
-} from "@/domains/swap/infrastructure/station-gateway";
-import { fetchJson } from "@/shared/http/fetch-json";
+} from "@/domains/swap/application/load-swap-logs";
+import {
+  runStationSwap,
+  type StationSwapResult,
+} from "@/domains/swap/application/run-station-swap";
 import styles from "./page.module.css";
-
-const TIMEOUT_MS = 8000;
-
-type StationBatteryDto = { id: string; status: string };
-type StationDetailDto = {
-  id: string;
-  name: string;
-  canSwapOut: boolean;
-  batteries: StationBatteryDto[];
-};
-type SwapResult = { stationId: string; outgoingId: string; incomingId: string };
 
 type Props = {
   stations: readonly StationView[];
@@ -52,34 +40,16 @@ function triageFetchError(e: unknown): string {
 
 export function SwapPanel({ stations, initialStationId, listError }: Props) {
   const router = useRouter();
-  const apiBase = resolveApiBase();
   const [stationId, setStationId] = useState(initialStationId);
   const [incomingBatteryId, setIncomingBatteryId] = useState("B-user-1");
-  const [station, setStation] = useState<StationDetailDto | null>(null);
-  const [lastSwap, setLastSwap] = useState<SwapResult | null>(null);
+  const [detail, setDetail] = useState<StationDetailView | null>(null);
+  const [lastSwap, setLastSwap] = useState<StationSwapResult | null>(null);
   const [swapLogs, setSwapLogs] = useState<readonly SwapLog[]>([]);
   const [error, setError] = useState<string | null>(listError);
   const [busy, setBusy] = useState(false);
 
-  const batteryViews: BatteryView[] | null = useMemo(() => {
-    if (!station) return null;
-    return station.batteries.map((b) =>
-      toBatteryView({
-        id: b.id,
-        status: parseBatteryStatus(b.status),
-      }),
-    );
-  }, [station]);
-
-  const stationDetailView = useMemo(() => {
-    if (!station) return null;
-    return toStationView({
-      id: station.id,
-      name: station.name,
-      canSwapOut: Boolean(station.canSwapOut),
-      batteryCount: station.batteries.length,
-    });
-  }, [station]);
+  const batteryViews: readonly BatteryView[] | null = detail?.batteries ?? null;
+  const stationDetailView = detail?.station ?? null;
 
   const swapGate = useMemo(() => {
     if (!stationDetailView || !batteryViews) {
@@ -111,9 +81,9 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
     router.refresh();
   }, [router]);
 
-  const loadSwapLogs = useCallback(async (id: string) => {
+  const refreshLogs = useCallback(async (id: string) => {
     try {
-      setSwapLogs(await fetchSwapLogs(id));
+      setSwapLogs(await loadSwapLogs(id));
     } catch {
       /* 日志失败不阻断主流程 */
     }
@@ -123,18 +93,14 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
     setBusy(true);
     setError(null);
     try {
-      const body = await fetchJson<StationDetailDto>(
-        `${apiBase}/stations/${encodeURIComponent(stationId)}`,
-        { timeoutMs: TIMEOUT_MS },
-      );
-      setStation(body);
-      await loadSwapLogs(stationId);
+      setDetail(await loadStationDetail(stationId));
+      await refreshLogs(stationId);
     } catch (e) {
       setError(triageFetchError(e));
     } finally {
       setBusy(false);
     }
-  }, [apiBase, stationId, loadSwapLogs]);
+  }, [stationId, refreshLogs]);
 
   async function onSwap(e: FormEvent) {
     e.preventDefault();
@@ -146,26 +112,17 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
     setError(null);
     setLastSwap(null);
     try {
-      const swap = await fetchJson<SwapResult>(
-        `${apiBase}/stations/${encodeURIComponent(stationId)}/swaps`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ incomingBatteryId }),
-          timeoutMs: TIMEOUT_MS,
-        },
-      );
+      const swap = await runStationSwap({
+        stationId,
+        incomingBatteryId,
+      });
       setLastSwap(swap);
       try {
-        const next = await fetchJson<StationDetailDto>(
-          `${apiBase}/stations/${encodeURIComponent(stationId)}`,
-          { timeoutMs: TIMEOUT_MS },
-        );
-        setStation(next);
+        setDetail(await loadStationDetail(stationId));
       } catch {
         /* 换电已成功；详情刷新失败不阻断，列表仍 refresh */
       }
-      await loadSwapLogs(stationId);
+      await refreshLogs(stationId);
       router.refresh();
     } catch (err) {
       setError(triageFetchError(err));
@@ -197,7 +154,7 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
                   }
                   onClick={() => {
                     setStationId(view.id);
-                    setStation(null);
+                    setDetail(null);
                   }}
                 >
                   {view.name}（{view.id}）— {view.availabilityLabel} · 电池{" "}
@@ -220,28 +177,28 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
             : ""}
         </p>
         <label>
-          站点 ID
+          stationId
           <input
             value={stationId}
             onChange={(e) => {
               setStationId(e.target.value);
-              setStation(null);
+              setDetail(null);
             }}
           />
         </label>
         <label>
-          归还电池 ID
+          incomingBatteryId
           <input
             value={incomingBatteryId}
             onChange={(e) => setIncomingBatteryId(e.target.value)}
           />
         </label>
-        <div className={styles.actions}>
+        <div className={styles.formActions}>
           <button type="button" onClick={loadStation} disabled={busy}>
-            刷新站点
+            {busy ? "加载中…" : "刷新站点"}
           </button>
           <button type="submit" disabled={busy || !swapGate.swapAllowed}>
-            换电
+            {busy ? "换电中…" : "换电"}
           </button>
         </div>
       </form>
@@ -252,48 +209,53 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
         </p>
       ) : null}
 
-      {error && <p className={styles.error}>{error}</p>}
+      {error ? (
+        <p className={styles.note} role="alert">
+          {error}
+        </p>
+      ) : null}
 
-      {lastSwap && (
+      {lastSwap ? (
         <section className={styles.panel}>
-          <h2>上次换电</h2>
-          <p>
-            站 {lastSwap.stationId}：取出 {lastSwap.outgoingId}，放入{" "}
-            {lastSwap.incomingId}
-          </p>
+          <h2>最近换电</h2>
+          <dl className={styles.dl}>
+            <dt>站</dt>
+            <dd>{lastSwap.stationId}</dd>
+            <dt>换出</dt>
+            <dd>{lastSwap.outgoingId}</dd>
+            <dt>换入</dt>
+            <dd>{lastSwap.incomingId}</dd>
+          </dl>
         </section>
-      )}
+      ) : null}
 
-      {swapLogs.length > 0 && (
+      {batteryViews ? (
+        <section className={styles.panel}>
+          <h2>站内电池</h2>
+          <ul className={styles.list}>
+            {batteryViews.map((b) => (
+              <li key={b.id}>
+                {b.id} · {b.statusLabel}
+                {b.swapOutAllowed ? " · 可换出" : b.blockMessage ? ` · ${b.blockMessage}` : ""}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {swapLogs.length > 0 ? (
         <section className={styles.panel}>
           <h2>换电日志</h2>
-          <ul>
+          <ul className={styles.list}>
             {swapLogs.map((log) => (
               <li key={log.id}>
-                {log.occurredAt}：出 {log.outgoingBatteryId} → 入{" "}
+                {log.occurredAt} · 出 {log.outgoingBatteryId} / 入{" "}
                 {log.incomingBatteryId}
               </li>
             ))}
           </ul>
         </section>
-      )}
-
-      {station && batteryViews && (
-        <section className={styles.panel}>
-          <h2>
-            {station.name}（{station.id}）
-          </h2>
-          <ul>
-            {batteryViews.map((bat) => (
-              <li key={bat.id}>
-                {bat.id} — {bat.statusLabel}
-                {bat.swapOutAllowed ? " · 可换出" : ""}
-                {bat.blockMessage ? ` · ${bat.blockMessage}` : ""}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      ) : null}
     </>
   );
 }
