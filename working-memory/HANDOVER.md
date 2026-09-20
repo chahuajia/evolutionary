@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-20 10:08（v28；波次以 `loop.md` 为准）
+**写于**：2026-09-20 10:17（v29；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v27（10:06 仍写 HEAD `110e0d8` —— 已过时）
+**取代**：v28（10:08 仍写 HEAD `d546fcf` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `d546fcf`。前端 152/152。
-wave103 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `45a2283`。前端 152/152。
+wave104 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -110,6 +110,7 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave101** | GET 组织读口喂操作方门 | ✅ `98d6d8b` · 前端 **152/152** · PublishPackageTemplateHttpIT |
 | **wave102** | GET 入驻申请喂批下线/商家入驻 | ✅ `110e0d8` · 前端 **152/152** · ApproveOperatorDownlineHttpIT |
 | **wave103** | merchant RSC GET 申请真态 | ✅ `d546fcf` · 前端 **152/152** |
+| **wave104** | GET 订单读口喂退款/串联 | ✅ `45a2283` · 前端 **152/152** · RefundOrderHttpIT |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -145,7 +146,7 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **152/152** · HEAD `d546fcf`。父自选推进。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **152/152** · HEAD `45a2283`。父自选推进。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
