@@ -9,6 +9,7 @@
 import { FormEvent, useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StationView } from "@/domains/swap/domain/station-view";
+import { stationNoSwapOutBatteryMessage } from "@/domains/swap/domain/station-view";
 import type { BatteryView } from "@/domains/battery/domain/battery-view";
 import {
   loadStationDetail,
@@ -61,16 +62,14 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
     if (!stationDetailView.selectable) {
       return {
         swapAllowed: false,
-        blockMessage: `${stationDetailView.name} 不可换出，请另选站点`,
+        blockMessage: stationDetailView.blockMessage,
       };
     }
     const anyOut = batteryViews.some((b) => b.swapOutAllowed);
     if (!anyOut) {
       return {
         swapAllowed: false,
-        blockMessage:
-          batteryViews.find((b) => b.blockMessage)?.blockMessage ??
-          "站内无 AVAILABLE 电池可换出",
+        blockMessage: stationNoSwapOutBatteryMessage(batteryViews),
       };
     }
     return { swapAllowed: true, blockMessage: null as string | null };

@@ -4,7 +4,10 @@ import {
   canRevokeEntitlement,
   canSwapWithEntitlement,
   canUnfreezeEntitlement,
+  estimateMeteredChargeCents,
+  hasMeteredRate,
   isExhaustedEntitlement,
+  meteredSocEstimateBlockMessage,
   parseEntitlementStatus,
   toEntitlementView,
 } from "./entitlement-view";
@@ -78,5 +81,25 @@ describe("toEntitlementView", () => {
     expect(view.swapAllowed).toBe(false);
     expect(view.unfreezeAllowed).toBe(true);
     expect(view.blockMessage).toContain("冻结");
+    expect(view.meteredEstimateAllowed).toBe(false);
+  });
+});
+
+describe("metered estimate gates", () => {
+  it("requires rate for meteredEstimateAllowed", () => {
+    const noRate = toEntitlementView({ id: "E-M", status: "ACTIVE" });
+    expect(noRate.meteredEstimateAllowed).toBe(false);
+    expect(noRate.meteredEstimateBlockMessage).toContain("费率");
+
+    const withRate = toEntitlementView({
+      id: "E-M",
+      status: "ACTIVE",
+      meteredRateCents: 10,
+    });
+    expect(withRate.meteredEstimateAllowed).toBe(true);
+    expect(hasMeteredRate(10)).toBe(true);
+    expect(estimateMeteredChargeCents(80, 60, 10)).toBe(200);
+    expect(estimateMeteredChargeCents(60, 80, 10)).toBeNull();
+    expect(meteredSocEstimateBlockMessage(60, 80)).toContain("不得超过");
   });
 });

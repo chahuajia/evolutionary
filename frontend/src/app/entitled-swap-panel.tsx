@@ -28,7 +28,7 @@ export function EntitledSwapPanel() {
     const id = entitlementId.trim() || SEED_ENTITLEMENT_ID;
     setLoadError(null);
     loadEntitlement(id)
-      .then(({ view: next }) => {
+      .then((next) => {
         if (cancelled) return;
         setView(next);
       })
@@ -77,7 +77,7 @@ export function EntitledSwapPanel() {
       const loaded = await loadEntitlement(
         entitlementId.trim() || SEED_ENTITLEMENT_ID,
       );
-      setView(loaded.view);
+      setView(loaded);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

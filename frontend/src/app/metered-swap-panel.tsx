@@ -7,6 +7,10 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { EntitlementView } from "@/domains/commerce/domain/entitlement-view";
+import {
+  estimateMeteredChargeCents,
+  meteredSocEstimateBlockMessage,
+} from "@/domains/commerce/domain/entitlement-view";
 import { loadEntitlement } from "@/domains/commerce/application/load-entitlement";
 import { runEntitledSwap } from "@/domains/commerce/application/run-entitled-swap";
 import type { DeviceShadowView } from "@/domains/iot/domain/device-shadow-view";
@@ -48,7 +52,6 @@ export function MeteredSwapPanel() {
   const [entitlementLoadError, setEntitlementLoadError] = useState<
     string | null
   >(null);
-  const [meteredRateCents, setMeteredRateCents] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,15 +96,13 @@ export function MeteredSwapPanel() {
     const id = entitlementId.trim() || SEED_METERED_ENTITLEMENT;
     setEntitlementLoadError(null);
     loadEntitlement(id)
-      .then(({ view, meteredRateCents: rate }) => {
+      .then((view) => {
         if (cancelled) return;
-        setMeteredRateCents(rate);
         setEntitlementView(view);
       })
       .catch((err) => {
         if (cancelled) return;
         setEntitlementView(null);
-        setMeteredRateCents(null);
         setEntitlementLoadError(
           err instanceof Error ? err.message : String(err),
         );
@@ -112,67 +113,60 @@ export function MeteredSwapPanel() {
   }, [entitlementId]);
 
   const estimatedChargeCents = useMemo(() => {
-    if (meteredRateCents == null || !Number.isFinite(meteredRateCents)) {
+    if (!entitlementView || entitlementView.meteredRateCents == null) {
       return null;
     }
-    const delta = socBefore - socAfter;
-    if (!Number.isFinite(delta) || delta < 0) return null;
-    return delta * meteredRateCents;
-  }, [socBefore, socAfter, meteredRateCents]);
+    return estimateMeteredChargeCents(
+      socBefore,
+      socAfter,
+      entitlementView.meteredRateCents,
+    );
+  }, [socBefore, socAfter, entitlementView]);
 
   const gate = useMemo(() => {
-    const entitlementOk = !entitlementView
-      ? {
-          swapAllowed: false,
-          blockMessage: entitlementLoadError ?? "正在加载权益…",
-          statusLabel: null as string | null,
-        }
-      : !entitlementView.swapAllowed
-        ? {
-            swapAllowed: false,
-            blockMessage: entitlementView.blockMessage,
-            statusLabel: entitlementView.statusLabel,
-          }
-        : meteredRateCents == null
-          ? {
-              swapAllowed: false,
-              blockMessage: "权益未挂计量费率，不可估费换电",
-              statusLabel: entitlementView.statusLabel,
-            }
-          : {
-              swapAllowed: true,
-              blockMessage: null as string | null,
-              statusLabel: entitlementView.statusLabel,
-            };
-    if (!entitlementOk.swapAllowed) {
-      return entitlementOk;
+    if (!entitlementView) {
+      return {
+        swapAllowed: false,
+        blockMessage: entitlementLoadError ?? "正在加载权益…",
+        statusLabel: null as string | null,
+      };
+    }
+    if (!entitlementView.meteredEstimateAllowed) {
+      return {
+        swapAllowed: false,
+        blockMessage:
+          entitlementView.meteredEstimateBlockMessage ??
+          entitlementView.blockMessage,
+        statusLabel: entitlementView.statusLabel,
+      };
     }
     if (!shadowView) {
       return {
         swapAllowed: false,
         blockMessage: shadowLoadError ?? "正在加载设备影子…",
-        statusLabel: entitlementOk.statusLabel,
+        statusLabel: entitlementView.statusLabel,
       };
     }
     if (!shadowView.meteredSwapAllowed) {
       return {
         swapAllowed: false,
         blockMessage: shadowView.blockMessage,
-        statusLabel: entitlementOk.statusLabel,
+        statusLabel: entitlementView.statusLabel,
       };
     }
-    if (estimatedChargeCents == null) {
+    const socBlock = meteredSocEstimateBlockMessage(socBefore, socAfter);
+    if (socBlock || estimatedChargeCents == null) {
       return {
         swapAllowed: false,
-        blockMessage: "socAfter 不得超过 socBefore",
-        statusLabel: entitlementOk.statusLabel,
+        blockMessage: socBlock ?? "无法估算计量费用",
+        statusLabel: entitlementView.statusLabel,
       };
     }
     if (!walletView) {
       return {
         swapAllowed: false,
         blockMessage: walletLoadError ?? "正在加载钱包…",
-        statusLabel: entitlementOk.statusLabel,
+        statusLabel: entitlementView.statusLabel,
       };
     }
     const cover = walletCoverGate(walletView, estimatedChargeCents);
@@ -180,23 +174,24 @@ export function MeteredSwapPanel() {
       return {
         swapAllowed: false,
         blockMessage: cover.blockMessage,
-        statusLabel: entitlementOk.statusLabel,
+        statusLabel: entitlementView.statusLabel,
       };
     }
     return {
       swapAllowed: true,
       blockMessage: null as string | null,
-      statusLabel: entitlementOk.statusLabel,
+      statusLabel: entitlementView.statusLabel,
     };
   }, [
     entitlementView,
     entitlementLoadError,
-    meteredRateCents,
     shadowView,
     shadowLoadError,
     walletView,
     walletLoadError,
     estimatedChargeCents,
+    socBefore,
+    socAfter,
   ]);
 
   async function onSubmit(e: FormEvent) {
@@ -247,7 +242,9 @@ export function MeteredSwapPanel() {
         {gate.statusLabel
           ? ` · ${entitlementId}=${gate.statusLabel}`
           : ""}
-        {meteredRateCents != null ? ` · 费率 ${meteredRateCents}¢/SOC` : ""}
+        {entitlementView?.meteredRateCents != null
+          ? ` · 费率 ${entitlementView.meteredRateCents}¢/SOC`
+          : ""}
         {shadowView
           ? ` · ${shadowView.batteryId}=${shadowView.freshnessLabel}`
           : ""}

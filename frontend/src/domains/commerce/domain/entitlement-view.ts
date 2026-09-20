@@ -35,15 +35,24 @@ export type EntitlementView = {
   readonly statusLabel: string;
   /** null = UNLIMITED；非 null = FINITE 剩余次数。 */
   readonly remainingSwaps: number | null;
+  /** 计量费率（分/%SOC）；非计量权益为 null。 */
+  readonly meteredRateCents: number | null;
   /**
    * ACTIVE ∧ 未用尽可发起权益换电（窗口由后端再判）。
    * 对齐 `Entitlement.isExhausted` / `PerformEntitledSwap`。
    */
   readonly swapAllowed: boolean;
+  /**
+   * 可计量估费换电 = swapAllowed ∧ 已挂费率。
+   * 岛勿再手拼「未挂计量费率」。
+   */
+  readonly meteredEstimateAllowed: boolean;
   readonly freezeAllowed: boolean;
   readonly unfreezeAllowed: boolean;
   readonly revokeAllowed: boolean;
   readonly blockMessage: string | null;
+  /** 可换电但缺费率时的说明；否则 null。 */
+  readonly meteredEstimateBlockMessage: string | null;
 };
 
 export const ENTITLEMENT_STATUS_LABEL: Record<EntitlementStatus, string> = {
@@ -94,24 +103,72 @@ export function entitlementBlockMessage(
   return "权益已撤销，不可换电";
 }
 
+/** 展示不变量：已挂有限正数费率才可估费。 */
+export function hasMeteredRate(rateCents: number | null | undefined): boolean {
+  return rateCents != null && Number.isFinite(rateCents);
+}
+
+export function meteredRateBlockMessage(
+  rateCents: number | null | undefined,
+): string | null {
+  if (hasMeteredRate(rateCents)) return null;
+  return "权益未挂计量费率，不可估费换电";
+}
+
+/**
+ * 估费：ΔSOC × 费率。换后 SOC 高于换前时不可估（返回 null）。
+ */
+export function estimateMeteredChargeCents(
+  socBefore: number,
+  socAfter: number,
+  rateCents: number,
+): number | null {
+  const delta = socBefore - socAfter;
+  if (!Number.isFinite(delta) || delta < 0) return null;
+  if (!Number.isFinite(rateCents)) return null;
+  return delta * rateCents;
+}
+
+/** 展示不变量：换后 SOC 不得超过换前。 */
+export function meteredSocEstimateBlockMessage(
+  socBefore: number,
+  socAfter: number,
+): string | null {
+  const delta = socBefore - socAfter;
+  if (!Number.isFinite(delta) || delta < 0) {
+    return "换后 SOC 不得超过换前 SOC";
+  }
+  return null;
+}
+
 export function toEntitlementView(dto: {
   id: string;
   status: EntitlementStatus;
   remainingSwaps?: number | null;
+  meteredRateCents?: number | null;
 }): EntitlementView {
   const remainingSwaps =
     dto.remainingSwaps === undefined ? null : dto.remainingSwaps;
+  const meteredRateCents =
+    dto.meteredRateCents === undefined ? null : dto.meteredRateCents;
   const statusOk = canSwapWithEntitlement(dto.status);
   const exhausted = isExhaustedEntitlement(remainingSwaps);
+  const swapAllowed = statusOk && !exhausted;
+  const rateOk = hasMeteredRate(meteredRateCents);
   return {
     id: dto.id,
     status: dto.status,
     statusLabel: ENTITLEMENT_STATUS_LABEL[dto.status],
     remainingSwaps,
-    swapAllowed: statusOk && !exhausted,
+    meteredRateCents,
+    swapAllowed,
+    meteredEstimateAllowed: swapAllowed && rateOk,
     freezeAllowed: canFreezeEntitlement(dto.status),
     unfreezeAllowed: canUnfreezeEntitlement(dto.status),
     revokeAllowed: canRevokeEntitlement(dto.status),
     blockMessage: entitlementBlockMessage(dto.status, remainingSwaps),
+    meteredEstimateBlockMessage: swapAllowed
+      ? meteredRateBlockMessage(meteredRateCents)
+      : null,
   };
 }

@@ -26,6 +26,7 @@ describe("toStationView", () => {
     expect(view.batteryCount).toBe(5);
     expect(view.availabilityLabel).toBe("可换出");
     expect(view.selectable).toBe(true);
+    expect(view.blockMessage).toBeNull();
   });
 
   it("passes through station fields and sets availabilityLabel to 不可换出 when canSwapOut is false", () => {
@@ -42,5 +43,6 @@ describe("toStationView", () => {
     expect(view.batteryCount).toBe(0);
     expect(view.availabilityLabel).toBe("不可换出");
     expect(view.selectable).toBe(false);
+    expect(view.blockMessage).toContain("不可换出");
   });
 });
