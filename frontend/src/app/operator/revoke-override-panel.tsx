@@ -11,13 +11,13 @@ import {
   toPackageOverrideView,
   type PackageOverrideView,
 } from "@/domains/operator/domain/package-override-view";
+import { loadPackageOverride } from "@/domains/operator/application/load-package-override";
 import {
   DEFAULT_OVERRIDE_ACTOR_ORG_ID,
   DEFAULT_OVERRIDE_ACTOR_USER_ID,
   DEFAULT_OVERRIDE_ID,
   revokePackageOverride,
 } from "@/domains/operator/application/revoke-package-override";
-import { fetchPackageOverride } from "@/domains/operator/infrastructure/operator-gateway";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
@@ -43,19 +43,11 @@ export function RevokeOverridePanel() {
     const id = overrideId.trim() || DEFAULT_OVERRIDE_ID;
     setLoadError(null);
     setPriceLabel(null);
-    fetchPackageOverride(id)
-      .then((dto) => {
+    loadPackageOverride(id)
+      .then(({ view: next, priceCents }) => {
         if (cancelled) return;
-        setView(
-          toPackageOverrideView({
-            overrideId: dto.overrideId,
-            orgId: dto.orgId,
-            templateId: dto.templateId,
-            templateVersion: dto.templateVersion,
-            status: parsePackageOverrideStatus(dto.status),
-          }),
-        );
-        setPriceLabel(dto.priceCents);
+        setView(next);
+        setPriceLabel(priceCents);
       })
       .catch((err) => {
         if (cancelled) return;
