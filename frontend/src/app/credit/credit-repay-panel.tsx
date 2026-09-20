@@ -7,13 +7,10 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  toBillingStatementView,
-  type BillingStatementView,
-} from "@/domains/credit/domain/billing-statement-view";
+import type { BillingStatementView } from "@/domains/credit/domain/billing-statement-view";
+import { loadCreditStatement } from "@/domains/credit/application/load-credit-statement";
 import {
   DEFAULT_CREDIT_USER,
-  fetchCreditStatement,
   postCreditRepay,
   postMarkCreditOverdue,
 } from "@/domains/credit/infrastructure/credit-gateway";
@@ -54,21 +51,10 @@ export function CreditRepayPanel({
     let cancelled = false;
     const id = statementId.trim() || DEFAULT_STATEMENT_ID;
     setLoadError(null);
-    fetchCreditStatement(id)
-      .then((hit) => {
+    loadCreditStatement(id)
+      .then((view) => {
         if (cancelled) return;
-        setStatementView(
-          toBillingStatementView({
-            id: hit.id,
-            userId: hit.userId,
-            status: hit.status,
-            totalDue: hit.totalDue,
-            periodStart: hit.periodStart,
-            periodEnd: hit.periodEnd,
-            dueDate: hit.dueDate,
-            paidAt: hit.paidAt,
-          }),
-        );
+        setStatementView(view);
       })
       .catch((err) => {
         if (cancelled) return;

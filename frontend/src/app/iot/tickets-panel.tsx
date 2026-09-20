@@ -11,9 +11,9 @@ import {
 } from "@/domains/iot/domain/maintenance-ticket-view";
 import {
   DEFAULT_IOT_BATTERY,
-  fetchMaintenanceTickets,
-  postResolveMaintenanceTicket,
-} from "@/domains/iot/infrastructure/iot-gateway";
+  loadTickets,
+} from "@/domains/iot/application/load-tickets";
+import { postResolveMaintenanceTicket } from "@/domains/iot/infrastructure/iot-gateway";
 import styles from "./page.module.css";
 
 export function TicketsPanel() {
@@ -30,10 +30,9 @@ export function TicketsPanel() {
     setStatus(null);
     setTickets(null);
     try {
-      const list = await fetchMaintenanceTickets(
-        batteryId.trim() || DEFAULT_IOT_BATTERY,
-      );
-      setTickets(list.map(toMaintenanceTicketView));
+      setTickets([
+        ...(await loadTickets(batteryId.trim() || DEFAULT_IOT_BATTERY)),
+      ]);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

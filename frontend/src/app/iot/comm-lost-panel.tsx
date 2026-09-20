@@ -8,12 +8,13 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   canDetectCommLost,
-  toDeviceShadowView,
   type DeviceShadowView,
 } from "@/domains/iot/domain/device-shadow-view";
 import {
   DEFAULT_IOT_BATTERY,
-  fetchDeviceShadow,
+  loadDeviceShadow,
+} from "@/domains/iot/application/load-device-shadow";
+import {
   postDetectCommLost,
   type DetectCommLostResult,
 } from "@/domains/iot/infrastructure/iot-gateway";
@@ -32,20 +33,10 @@ export function CommLostPanel() {
     const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
     setShadowLoadError(null);
     setResult(null);
-    fetchDeviceShadow(id)
-      .then((dto) => {
+    loadDeviceShadow(id)
+      .then((view) => {
         if (cancelled) return;
-        setShadowView(
-          toDeviceShadowView({
-            batteryId: dto.batteryId,
-            soc: dto.soc,
-            voltageMilli: dto.voltageMilli,
-            stale: dto.stale,
-            lastSeenAt: dto.lastSeenAt,
-            status: dto.status,
-            lockState: dto.lockState,
-          }),
-        );
+        setShadowView(view);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -89,18 +80,7 @@ export function CommLostPanel() {
       const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
       const r = await postDetectCommLost(id);
       setResult(r);
-      const dto = await fetchDeviceShadow(id);
-      setShadowView(
-        toDeviceShadowView({
-          batteryId: dto.batteryId,
-          soc: dto.soc,
-          voltageMilli: dto.voltageMilli,
-          stale: dto.stale,
-          lastSeenAt: dto.lastSeenAt,
-          status: dto.status,
-          lockState: dto.lockState,
-        }),
-      );
+      setShadowView(await loadDeviceShadow(id));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

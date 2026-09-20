@@ -18,10 +18,9 @@ import {
   postEntitledSwap,
 } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
 import {
-  toDeviceShadowView,
   type DeviceShadowView,
 } from "@/domains/iot/domain/device-shadow-view";
-import { fetchDeviceShadow } from "@/domains/iot/infrastructure/iot-gateway";
+import { loadDeviceShadow } from "@/domains/iot/application/load-device-shadow";
 import { loadWallet } from "@/domains/wallet/application/load-wallet";
 import {
   canCoverCents,
@@ -66,20 +65,10 @@ export function MeteredSwapPanel() {
     let cancelled = false;
     const id = batteryId.trim() || DEFAULT_METERED_BATTERY;
     setShadowLoadError(null);
-    fetchDeviceShadow(id)
-      .then((dto) => {
+    loadDeviceShadow(id)
+      .then((view) => {
         if (cancelled) return;
-        setShadowView(
-          toDeviceShadowView({
-            batteryId: dto.batteryId,
-            soc: dto.soc,
-            voltageMilli: dto.voltageMilli,
-            stale: dto.stale,
-            lastSeenAt: dto.lastSeenAt,
-            status: dto.status,
-            lockState: dto.lockState,
-          }),
-        );
+        setShadowView(view);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -265,19 +254,8 @@ export function MeteredSwapPanel() {
           (ue.blockMessage ? ` · ${ue.blockMessage}` : "") +
           ` · 电池 ${r.batteryId}${charge}`,
       );
-      const dto = await fetchDeviceShadow(
-        batteryId.trim() || DEFAULT_METERED_BATTERY,
-      );
       setShadowView(
-        toDeviceShadowView({
-          batteryId: dto.batteryId,
-          soc: dto.soc,
-          voltageMilli: dto.voltageMilli,
-          stale: dto.stale,
-          lastSeenAt: dto.lastSeenAt,
-          status: dto.status,
-          lockState: dto.lockState,
-        }),
+        await loadDeviceShadow(batteryId.trim() || DEFAULT_METERED_BATTERY),
       );
       setWalletView(await loadWallet(uid));
     } catch (err) {
