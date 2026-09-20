@@ -1,29 +1,29 @@
 ﻿# evo-collab-extreme（双轴极端 · 无人值守完成）
 
-**更新**：2026-09-20 11:40  
+**更新**：2026-09-20 11:50  
 **模式**：主树父写（小切片）· **禁止**为 <5min 切片建 worktree/派 Task  
 **状态**：**▶ 运行中**（常设规则：父自选推进）  
-**波次**：wave110 ✅  
-**HEAD**：`7f75324`  
+**波次**：wave111 ✅  
+**HEAD**：`747816f`  
 **idle**：— · **lanes**：0  
-**测**：前端 **153/153** · 未 push
+**测**：前端 **153/153** · PublishPackageTemplateHttpIT 5/5 · 未 push
 
 ## 刚落地
 
 | 波 | 内容 | HEAD | 测 |
 | :-- | :--- | :--- | :--- |
-| 109 | 信用页缺档 fail-closed | `569f315` | 153/153 |
-| **110** | **换电/派生/结算门 fail-closed** | `7f75324` | **153/153** |
+| 110 | 换电/派生/结算门 fail-closed | `7f75324` | 153/153 |
+| **111** | **POST 改基产品 · replaceAllowed** | `747816f` | **153/153** · Publish 5/5 |
 
-**选片依据**：110←站详情未加载、意向列表空、派生后硬编码 PUBLISHED 均 fail-open。
+**选片依据**：111←replaceAllowed 有 view 无 HTTP；POST `/templates/{id}/base-product` 对齐 DRAFT / TEMPLATE_IMMUTABLE。
 
 ## 下一刀
 
 | 候选 | 前提 |
 | :--- | :--- |
-| MutatePackageTemplateBaseProduct HTTP+面板 | replaceAllowed 有 view 无读口（略厚） |
+| 面板门禁轴可 idle | 种子态 / fail-open / replaceAllowed 已清 |
 | ReferralBinding / CreditLedgerDebt | 仍无读口 · 拒 |
-| 面板门禁轴可 idle | 种子态/fail-open 基本清完 |
+| 改扫其他轴 | 父自选 |
 
 ## 常设规则
 
