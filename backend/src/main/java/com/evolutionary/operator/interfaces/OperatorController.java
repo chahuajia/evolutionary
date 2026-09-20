@@ -321,12 +321,16 @@ public class OperatorController {
     }
 
     private static TemplateView toTemplateView(PackageTemplate template) {
+        TemplateBaseProduct base = template.baseProduct();
         return new TemplateView(
                 template.id(),
                 template.ownerOrgId(),
                 template.status().name(),
                 template.version(),
-                template.inheritedFrom());
+                template.inheritedFrom(),
+                base.displayName(),
+                base.priceCents(),
+                base.durationDays());
     }
 
     private static OverrideView toOverrideView(PackageOverride override) {
@@ -412,7 +416,14 @@ public class OperatorController {
             int durationDays) {}
 
     public record TemplateView(
-            String id, String ownerOrgId, String status, int version, String inheritedFrom) {}
+            String id,
+            String ownerOrgId,
+            String status,
+            int version,
+            String inheritedFrom,
+            String displayName,
+            long priceCents,
+            int durationDays) {}
 
     public record ActivateOverrideRequest(
             String actorUserId, String actorOrgId, String overrideId, Map<String, Object> patches) {}

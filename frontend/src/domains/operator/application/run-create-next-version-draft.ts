@@ -50,6 +50,10 @@ export async function runCreateNextVersionDraft(
     ownerOrgId: r.ownerOrgId,
     version: r.version,
     status: parsePackageTemplateStatus(r.status),
+    displayName: r.displayName,
+    priceCents: r.priceCents,
+    durationDays: r.durationDays,
+    inheritedFrom: r.inheritedFrom,
   });
 }
 

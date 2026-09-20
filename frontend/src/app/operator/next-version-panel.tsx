@@ -59,6 +59,9 @@ export function NextVersionPanel() {
       .then((view) => {
         if (cancelled) return;
         setSourceView(view);
+        if (view.displayName) setDisplayName(view.displayName);
+        if (view.priceCents != null) setPriceCents(view.priceCents);
+        if (view.durationDays != null) setDurationDays(view.durationDays);
       })
       .catch((err) => {
         if (cancelled) return;

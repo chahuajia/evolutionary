@@ -148,6 +148,9 @@ export type PackageTemplateDto = {
   version: number;
   status: string;
   inheritedFrom: string | null;
+  displayName: string | null;
+  priceCents: number | null;
+  durationDays: number | null;
 };
 
 /**
@@ -162,14 +165,38 @@ export async function fetchPackageTemplate(
     `${base}/operator/templates/${encodeURIComponent(id)}`,
     { timeoutMs: TIMEOUT_MS },
   );
+  return parsePackageTemplateDto(raw, id);
+}
+
+function parsePackageTemplateDto(
+  raw: Record<string, unknown>,
+  fallbackId: string,
+): PackageTemplateDto {
   const versionRaw = raw.version;
   const version =
     typeof versionRaw === "number"
       ? versionRaw
       : Number.parseInt(String(versionRaw ?? ""), 10);
   const inheritedRaw = raw.inheritedFrom;
+  const priceRaw = raw.priceCents ?? raw.price;
+  const priceCents =
+    priceRaw == null || priceRaw === ""
+      ? null
+      : typeof priceRaw === "number"
+        ? priceRaw
+        : Number.parseInt(String(priceRaw), 10);
+  const durationRaw = raw.durationDays;
+  const durationDays =
+    durationRaw == null || durationRaw === ""
+      ? null
+      : typeof durationRaw === "number"
+        ? durationRaw
+        : Number.parseInt(String(durationRaw), 10);
+  const displayRaw = raw.displayName;
+  const displayName =
+    displayRaw == null || displayRaw === "" ? null : String(displayRaw);
   return {
-    templateId: String(raw.templateId ?? raw.id ?? id),
+    templateId: String(raw.templateId ?? raw.id ?? fallbackId),
     ownerOrgId: String(raw.ownerOrgId ?? ""),
     version: Number.isFinite(version) ? version : 0,
     status: String(raw.status ?? ""),
@@ -177,6 +204,13 @@ export async function fetchPackageTemplate(
       inheritedRaw == null || inheritedRaw === ""
         ? null
         : String(inheritedRaw),
+    displayName,
+    priceCents:
+      priceCents != null && Number.isFinite(priceCents) ? priceCents : null,
+    durationDays:
+      durationDays != null && Number.isFinite(durationDays)
+        ? durationDays
+        : null,
   };
 }
 
@@ -314,6 +348,10 @@ export type MutateBaseProductResult = {
   ownerOrgId: string;
   version: number;
   status: string;
+  displayName: string | null;
+  priceCents: number | null;
+  durationDays: number | null;
+  inheritedFrom: string | null;
 };
 
 /**
@@ -340,32 +378,15 @@ export async function postMutatePackageTemplateBaseProduct(
       timeoutMs: TIMEOUT_MS,
     },
   );
-  const versionRaw = raw.version;
-  const version =
-    typeof versionRaw === "number"
-      ? versionRaw
-      : Number.parseInt(String(versionRaw ?? ""), 10);
-  const status = String(raw.status ?? "");
-  const id = String(raw.templateId ?? raw.id ?? templateId);
-  if (!id || !status || !Number.isFinite(version)) {
+  const dto = parsePackageTemplateDto(raw, templateId);
+  if (!dto.templateId || !dto.status || !Number.isFinite(dto.version)) {
     throw new Error("改基产品响应缺少 templateId/status/version");
   }
-  return {
-    templateId: id,
-    ownerOrgId: String(raw.ownerOrgId ?? ""),
-    version,
-    status,
-  };
+  return dto;
 }
 
 /** POST /operator/templates/{id}/next-version 成功读模型（AC-25） */
-export type NextVersionDraftResult = {
-  templateId: string;
-  ownerOrgId: string;
-  version: number;
-  status: string;
-  inheritedFrom: string | null;
-};
+export type NextVersionDraftResult = PackageTemplateDto;
 
 export type NextVersionDraftRequest = {
   sourceTemplateId: string;
@@ -415,23 +436,11 @@ export async function postCreateNextVersionDraft(
       timeoutMs: TIMEOUT_MS,
     },
   );
-  const templateId = String(raw.templateId ?? raw.id ?? newTemplateId);
-  const ownerOrgId = String(raw.ownerOrgId ?? "");
-  const versionRaw = raw.version;
-  const version =
-    typeof versionRaw === "number"
-      ? versionRaw
-      : Number.parseInt(String(versionRaw ?? ""), 10);
-  const status = String(raw.status ?? "");
-  const inheritedRaw = raw.inheritedFrom;
-  const inheritedFrom =
-    inheritedRaw == null || inheritedRaw === ""
-      ? null
-      : String(inheritedRaw);
-  if (!templateId || !status || !Number.isFinite(version)) {
+  const dto = parsePackageTemplateDto(raw, newTemplateId);
+  if (!dto.templateId || !dto.status || !Number.isFinite(dto.version)) {
     throw new Error("派生下一版本响应缺少 templateId/status/version");
   }
-  return { templateId, ownerOrgId, version, status, inheritedFrom };
+  return dto;
 }
 
 /** POST /operator/templates/{templateId}/overrides 成功读模型（AC-26） */

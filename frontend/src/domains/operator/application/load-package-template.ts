@@ -21,6 +21,10 @@ export async function loadPackageTemplate(
     ownerOrgId: dto.ownerOrgId,
     version: dto.version,
     status: parsePackageTemplateStatus(dto.status),
+    displayName: dto.displayName,
+    priceCents: dto.priceCents,
+    durationDays: dto.durationDays,
+    inheritedFrom: dto.inheritedFrom,
   });
 }
 

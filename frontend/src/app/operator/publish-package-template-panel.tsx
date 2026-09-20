@@ -49,6 +49,9 @@ export function PublishPackageTemplatePanel() {
       .then((next) => {
         if (cancelled) return;
         setView(next);
+        if (next.displayName) setDisplayName(next.displayName);
+        if (next.priceCents != null) setPriceCents(next.priceCents);
+        if (next.durationDays != null) setDurationDays(next.durationDays);
       })
       .catch((err) => {
         if (cancelled) return;

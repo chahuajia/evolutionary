@@ -58,6 +58,7 @@ export function PackageOverridePanel() {
       .then((view) => {
         if (cancelled) return;
         setTemplateView(view);
+        if (view.priceCents != null) setPriceCents(view.priceCents);
       })
       .catch((err) => {
         if (cancelled) return;

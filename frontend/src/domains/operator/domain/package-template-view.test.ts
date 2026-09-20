@@ -90,13 +90,20 @@ describe("toPackageTemplateView", () => {
   };
 
   it("carries the gates so the panel never has to re-derive them", () => {
-    const view = toPackageTemplateView(base);
+    const view = toPackageTemplateView({
+      ...base,
+      displayName: "月卡",
+      priceCents: 1999,
+      durationDays: 30,
+    });
     expect(view.publishAllowed).toBe(false);
     expect(view.replaceAllowed).toBe(false);
     expect(view.nextVersionAllowed).toBe(true);
     expect(view.overrideActivateAllowed).toBe(true);
     expect(view.statusLabel).toBe("已发布");
     expect(view.blockMessage).toContain("不可原地修改");
+    expect(view.priceYuan).toBe("19.99");
+    expect(view.displayName).toBe("月卡");
   });
 
   it("DRAFT: publish/replace yes, next-version/override-activate no", () => {
@@ -107,5 +114,6 @@ describe("toPackageTemplateView", () => {
     expect(view.overrideActivateAllowed).toBe(false);
     expect(view.statusLabel).toBe("草稿");
     expect(view.blockMessage).toBeNull();
+    expect(view.priceYuan).toBeNull();
   });
 });

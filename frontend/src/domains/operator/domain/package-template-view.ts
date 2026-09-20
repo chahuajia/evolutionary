@@ -7,6 +7,8 @@
  * 变成**带名字的展示不变量**。
  */
 
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
+
 /**
  * 后端 `PackageTemplate.Status` 的契约。
  *
@@ -53,6 +55,11 @@ export type PackageTemplateView = {
   readonly version: number;
   readonly status: PackageTemplateStatus;
   readonly statusLabel: string;
+  readonly displayName: string | null;
+  readonly priceCents: number | null;
+  readonly priceYuan: string | null;
+  readonly durationDays: number | null;
+  readonly inheritedFrom: string | null;
   /** 仅 DRAFT 可发布（对齐 `PackageTemplate.publish` 守卫）。 */
   readonly publishAllowed: boolean;
   /** 仅 DRAFT 可原地改基产品（对齐 `replaceBaseProduct`：否则 TEMPLATE_IMMUTABLE）。 */
@@ -116,13 +123,34 @@ export function toPackageTemplateView(dto: {
   ownerOrgId: string;
   version: number;
   status: PackageTemplateStatus;
+  displayName?: string | null;
+  priceCents?: number | null;
+  durationDays?: number | null;
+  inheritedFrom?: string | null;
 }): PackageTemplateView {
+  const priceCents =
+    dto.priceCents != null && Number.isFinite(dto.priceCents)
+      ? dto.priceCents
+      : null;
+  const durationDays =
+    dto.durationDays != null && Number.isFinite(dto.durationDays)
+      ? dto.durationDays
+      : null;
+  const displayName =
+    dto.displayName != null && dto.displayName.trim() !== ""
+      ? dto.displayName
+      : null;
   return {
     id: dto.id,
     ownerOrgId: dto.ownerOrgId,
     version: dto.version,
     status: dto.status,
     statusLabel: PACKAGE_TEMPLATE_STATUS_LABEL[dto.status],
+    displayName,
+    priceCents,
+    priceYuan: priceCents != null ? formatCentsAsYuan(priceCents) : null,
+    durationDays,
+    inheritedFrom: dto.inheritedFrom ?? null,
     publishAllowed: canPublishTemplate(dto.status),
     replaceAllowed: canReplaceBaseProduct(dto.status),
     nextVersionAllowed: canCreateNextVersion(dto.status),
