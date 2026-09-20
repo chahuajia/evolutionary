@@ -7,19 +7,15 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { CampaignView } from "@/domains/mall/domain/campaign-view";
-import {
-  parseUserCouponStatus,
-  toUserCouponView,
-  type UserCouponView,
-} from "@/domains/mall/domain/user-coupon-view";
+import type { UserCouponView } from "@/domains/mall/domain/user-coupon-view";
 import { loadCampaign } from "@/domains/mall/application/load-campaign";
 import { loadCouponTemplate } from "@/domains/mall/application/load-coupon-template";
 import {
   DEFAULT_MALL_CAMPAIGN,
   DEFAULT_MALL_TEMPLATE,
   DEFAULT_MALL_USER,
-  postClaimCoupon,
-} from "@/domains/mall/infrastructure/mall-gateway";
+  runClaimCoupon,
+} from "@/domains/mall/application/run-claim-coupon";
 import styles from "./page.module.css";
 
 export function CouponClaimPanel() {
@@ -98,31 +94,16 @@ export function CouponClaimPanel() {
     setError(null);
     setView(null);
     try {
-      const r = await postClaimCoupon({
-        campaignId: campaignId.trim() || DEFAULT_MALL_CAMPAIGN,
-        userId: userId.trim() || DEFAULT_MALL_USER,
-        templateId: templateId.trim() || DEFAULT_MALL_TEMPLATE,
-      });
       setView(
-        toUserCouponView({
-          id: r.id,
-          userId: r.userId,
-          templateId: r.templateId,
-          status: parseUserCouponStatus(r.status),
+        await runClaimCoupon({
+          campaignId: campaignId.trim() || DEFAULT_MALL_CAMPAIGN,
+          userId: userId.trim() || DEFAULT_MALL_USER,
+          templateId: templateId.trim() || DEFAULT_MALL_TEMPLATE,
         }),
       );
-      const dto = await fetchCampaign(
-        campaignId.trim() || DEFAULT_MALL_CAMPAIGN,
-      );
       setCampaign(
-        toCampaignView(
-          {
-            id: dto.id,
-            ownerOrgId: dto.ownerOrgId,
-            name: dto.name,
-            budgetRemainingCents: dto.budgetRemainingCents,
-            status: parseCampaignStatus(dto.status),
-          },
+        await loadCampaign(
+          campaignId.trim() || DEFAULT_MALL_CAMPAIGN,
           faceCents,
         ),
       );

@@ -6,9 +6,8 @@
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { toCheckoutView } from "@/domains/mall/domain/mall-checkout-view";
+import type { MallCheckoutView } from "@/domains/mall/domain/mall-checkout-view";
 import {
-  parseUserCouponStatus,
   toUserCouponView,
   type UserCouponView,
 } from "@/domains/mall/domain/user-coupon-view";
@@ -19,13 +18,15 @@ import { loadMerchantProfile } from "@/domains/mall/application/load-merchant-pr
 import { loadUserCoupon } from "@/domains/mall/application/load-user-coupon";
 import {
   DEFAULT_MALL_CAMPAIGN,
-  DEFAULT_MALL_MERCHANT,
-  DEFAULT_MALL_SKU,
   DEFAULT_MALL_TEMPLATE,
   DEFAULT_MALL_USER,
-  postCheckoutWithCoupons,
-  postClaimCoupon,
-} from "@/domains/mall/infrastructure/mall-gateway";
+  runClaimCoupon,
+} from "@/domains/mall/application/run-claim-coupon";
+import {
+  DEFAULT_MALL_MERCHANT,
+  DEFAULT_MALL_SKU,
+  runCheckoutWithCoupons,
+} from "@/domains/mall/application/run-checkout-with-coupons";
 import {
   canCoverCents,
   formatCentsAsYuan,
@@ -52,9 +53,7 @@ export function CouponCheckoutPanel() {
   const [walletLoadError, setWalletLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<ReturnType<
-    typeof toCheckoutView
-  > | null>(null);
+  const [result, setResult] = useState<MallCheckoutView | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -205,21 +204,14 @@ export function CouponCheckoutPanel() {
     setBusy(true);
     setError(null);
     try {
-      const c = await postClaimCoupon({
+      const c = await runClaimCoupon({
         campaignId: DEFAULT_MALL_CAMPAIGN,
         userId: userId.trim() || DEFAULT_MALL_USER,
         templateId: DEFAULT_MALL_TEMPLATE,
       });
       setCouponId(c.id);
       // couponId effect 会 GET 真态；先本地写入避免按钮闪灰
-      setCouponView(
-        toUserCouponView({
-          id: c.id,
-          userId: c.userId,
-          templateId: c.templateId,
-          status: parseUserCouponStatus(c.status),
-        }),
-      );
+      setCouponView(c);
       setCouponLoadError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -240,14 +232,15 @@ export function CouponCheckoutPanel() {
     try {
       const uid = userId.trim() || DEFAULT_MALL_USER;
       const ids = couponId.trim() ? [couponId.trim()] : [];
-      const r = await postCheckoutWithCoupons({
-        userId: uid,
-        merchantOrgId: DEFAULT_MALL_MERCHANT,
-        skuId: DEFAULT_MALL_SKU,
-        qty: QTY,
-        userCouponIds: ids,
-      });
-      setResult(toCheckoutView(r));
+      setResult(
+        await runCheckoutWithCoupons({
+          userId: uid,
+          merchantOrgId: DEFAULT_MALL_MERCHANT,
+          skuId: DEFAULT_MALL_SKU,
+          qty: QTY,
+          userCouponIds: ids,
+        }),
+      );
       if (ids[0]) {
         try {
           setCouponView(await loadUserCoupon(ids[0]));
@@ -255,7 +248,9 @@ export function CouponCheckoutPanel() {
           if (couponView && ids[0] === couponView.id) {
             setCouponView(
               toUserCouponView({
-                ...couponView,
+                id: couponView.id,
+                userId: couponView.userId,
+                templateId: couponView.templateId,
                 status: "USED",
               }),
             );

@@ -6,18 +6,15 @@
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import {
-  toMallOrderView,
-  type MallOrderView,
-} from "@/domains/mall/domain/mall-order-view";
+import type { MallOrderView } from "@/domains/mall/domain/mall-order-view";
 import type { MallSkuView } from "@/domains/mall/domain/mall-sku-view";
 import type { MerchantProfileView } from "@/domains/mall/domain/merchant-profile-view";
 import {
   DEFAULT_MALL_MERCHANT,
   DEFAULT_MALL_SKU,
   DEFAULT_MALL_USER,
-  postPurchaseMallOrder,
-} from "@/domains/mall/infrastructure/mall-gateway";
+  runPurchaseMallOrder,
+} from "@/domains/mall/application/run-purchase-mall-order";
 import {
   canCoverCents,
   formatCentsAsYuan,
@@ -163,27 +160,15 @@ export function MallPurchasePanel() {
     setResult(null);
     try {
       const uid = userId.trim() || DEFAULT_MALL_USER;
-      const r = await postPurchaseMallOrder({
-        userId: uid,
-        merchantOrgId: merchantOrgId.trim() || DEFAULT_MALL_MERCHANT,
-        skuId: skuId.trim() || DEFAULT_MALL_SKU,
-        qty,
-      });
-      setResult(toMallOrderView(r));
-      const dto = await fetchMallSku(skuId.trim() || DEFAULT_MALL_SKU);
-      setSkuView(
-        toMallSkuView(
-          {
-            id: dto.id,
-            merchantOrgId: dto.merchantOrgId,
-            name: dto.name,
-            priceCents: dto.priceCents,
-            stock: dto.stock,
-            status: parseMallSkuStatus(dto.status),
-          },
+      setResult(
+        await runPurchaseMallOrder({
+          userId: uid,
+          merchantOrgId: merchantOrgId.trim() || DEFAULT_MALL_MERCHANT,
+          skuId: skuId.trim() || DEFAULT_MALL_SKU,
           qty,
-        ),
+        }),
       );
+      setSkuView(await loadMallSku(skuId.trim() || DEFAULT_MALL_SKU, qty));
       setWalletView(await loadWallet(uid));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
