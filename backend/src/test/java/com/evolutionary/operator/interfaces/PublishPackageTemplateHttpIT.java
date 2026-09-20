@@ -1,5 +1,6 @@
 package com.evolutionary.operator.interfaces;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,6 +29,18 @@ class PublishPackageTemplateHttpIT {
             "{\"actorUserId\":\"U-M\",\"actorOrgId\":\"ORG-NEW\"}";
 
     @Autowired private MockMvc mvc;
+
+    @Test
+    @DisplayName("GET /operator/orgs/ORG-L1 → ACTIVE；未知 404")
+    void getOrganization() throws Exception {
+        mvc.perform(get("/operator/orgs/ORG-L1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("ORG-L1"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.operatorCapability").value(true));
+
+        mvc.perform(get("/operator/orgs/NO-SUCH")).andExpect(status().isNotFound());
+    }
 
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)

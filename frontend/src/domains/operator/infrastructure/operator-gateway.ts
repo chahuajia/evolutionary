@@ -180,6 +180,37 @@ export async function fetchPackageTemplate(
   };
 }
 
+export type OrganizationDto = {
+  id: string;
+  name: string;
+  parentId: string | null;
+  status: string;
+  operatorCapability: boolean;
+};
+
+/**
+ * GET /operator/orgs/{orgId}
+ */
+export async function fetchOrganization(
+  orgId: string,
+): Promise<OrganizationDto> {
+  const id = orgId.trim();
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/operator/orgs/${encodeURIComponent(id)}`,
+    { timeoutMs: TIMEOUT_MS },
+  );
+  const parentRaw = raw.parentId;
+  return {
+    id: String(raw.id ?? id),
+    name: String(raw.name ?? ""),
+    parentId:
+      parentRaw == null || parentRaw === "" ? null : String(parentRaw),
+    status: String(raw.status ?? ""),
+    operatorCapability: Boolean(raw.operatorCapability),
+  };
+}
+
 /** POST /operator/templates/{templateId}/publish 成功读模型（AC-24） */
 export type PublishPackageTemplateResult = {
   templateId: string;

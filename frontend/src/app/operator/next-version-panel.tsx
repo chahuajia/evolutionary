@@ -6,7 +6,6 @@
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { toOrganizationView } from "@/domains/operator/domain/organization-view";
 import {
   parsePackageTemplateStatus,
   toPackageTemplateView,
@@ -23,9 +22,8 @@ import {
   fetchPackageTemplate,
   postCreateNextVersionDraft,
 } from "@/domains/operator/infrastructure/operator-gateway";
+import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
-
-const SEED_ACTOR_STATUS = "ACTIVE" as const;
 
 export function NextVersionPanel() {
   const [sourceTemplateId, setSourceTemplateId] = useState(
@@ -52,6 +50,10 @@ export function NextVersionPanel() {
   );
   const [sourceLoadError, setSourceLoadError] = useState<string | null>(null);
   const [draftView, setDraftView] = useState<PackageTemplateView | null>(null);
+  const actorGate = useActorOrganization(
+    actorOrgId,
+    DEFAULT_PUBLISH_ACTOR_ORG_ID,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -78,24 +80,6 @@ export function NextVersionPanel() {
       cancelled = true;
     };
   }, [sourceTemplateId]);
-
-  const actorGate = useMemo(() => {
-    const id = actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID;
-    if (id !== DEFAULT_PUBLISH_ACTOR_ORG_ID) {
-      return { canAct: true, blockMessage: null as string | null };
-    }
-    const actor = toOrganizationView({
-      id,
-      name: "种子操作方",
-      status: SEED_ACTOR_STATUS,
-      operatorCapability: true,
-    });
-    return {
-      canAct: actor.canActAsManager,
-      blockMessage: actor.blockMessage,
-      statusLabel: actor.statusLabel,
-    };
-  }, [actorOrgId]);
 
   const sourceGate = useMemo(() => {
     if (!sourceView) {
@@ -168,9 +152,10 @@ export function NextVersionPanel() {
     <section className={styles.panel}>
       <h2>派生下一版本（HTTP · AC-25）</h2>
       <p className={styles.note}>
-        仅 PUBLISHED 可派生（GET 模板 · nextVersionAllowed）；操作方须 ACTIVE
-        {"statusLabel" in actorGate && actorGate.statusLabel
-          ? ` · 种子操作方=${actorGate.statusLabel}`
+        仅 PUBLISHED 可派生（GET 模板 · nextVersionAllowed）；GET 组织对齐
+        canActAsManager
+        {actorGate.statusLabel
+          ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
         {sourceView ? ` · 源 ${sourceView.id}=${sourceView.status}` : ""}
       </p>

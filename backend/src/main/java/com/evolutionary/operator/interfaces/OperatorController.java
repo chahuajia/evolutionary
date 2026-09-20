@@ -3,6 +3,7 @@ package com.evolutionary.operator.interfaces;
 import com.evolutionary.operator.application.ActivatePackageOverride;
 import com.evolutionary.operator.application.ApproveOperatorDownline;
 import com.evolutionary.operator.application.CreateNextVersionDraft;
+import com.evolutionary.operator.application.OrganizationRepository;
 import com.evolutionary.operator.application.PackageTemplateRepository;
 import com.evolutionary.operator.application.PublishPackageTemplate;
 import com.evolutionary.operator.application.ResolveEffectiveProduct;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/operator")
 public class OperatorController {
 
+    private final OrganizationRepository organizations;
     private final PackageTemplateRepository templates;
     private final PublishPackageTemplate publishPackageTemplate;
     private final CreateNextVersionDraft createNextVersionDraft;
@@ -39,6 +41,7 @@ public class OperatorController {
     private final ApproveOperatorDownline approveOperatorDownline;
 
     public OperatorController(
+            OrganizationRepository organizations,
             PackageTemplateRepository templates,
             PublishPackageTemplate publishPackageTemplate,
             CreateNextVersionDraft createNextVersionDraft,
@@ -46,6 +49,7 @@ public class OperatorController {
             RevokePackageOverride revokePackageOverride,
             ResolveEffectiveProduct resolveEffectiveProduct,
             ApproveOperatorDownline approveOperatorDownline) {
+        this.organizations = organizations;
         this.templates = templates;
         this.publishPackageTemplate = publishPackageTemplate;
         this.createNextVersionDraft = createNextVersionDraft;
@@ -53,6 +57,16 @@ public class OperatorController {
         this.revokePackageOverride = revokePackageOverride;
         this.resolveEffectiveProduct = resolveEffectiveProduct;
         this.approveOperatorDownline = approveOperatorDownline;
+    }
+
+    /** 只读：供操作方面板对齐 canActAsManager（仅 ACTIVE）。 */
+    @GetMapping("/orgs/{orgId}")
+    public ResponseEntity<OrganizationView> organization(@PathVariable String orgId) {
+        return organizations
+                .findById(orgId.trim())
+                .map(OperatorController::toOrganizationView)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /** 只读：供发布/派生面板对齐 publishAllowed / nextVersionAllowed。 */
@@ -279,6 +293,15 @@ public class OperatorController {
                 org.status().name());
     }
 
+    private static OrganizationView toOrganizationView(Organization org) {
+        return new OrganizationView(
+                org.id(),
+                org.name(),
+                org.parentId(),
+                org.status().name(),
+                org.hasCapability(OrgCapability.OPERATOR));
+    }
+
     public record DownlineApproveRequest(String actorUserId, String actorOrgId) {}
 
     public record DownlineView(
@@ -287,6 +310,13 @@ public class OperatorController {
             String parentOrgId,
             boolean operatorCapability,
             String status) {}
+
+    public record OrganizationView(
+            String id,
+            String name,
+            String parentId,
+            String status,
+            boolean operatorCapability) {}
 
     public record PublishRequest(String actorUserId, String actorOrgId) {}
 

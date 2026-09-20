@@ -5,8 +5,7 @@
  * 撤销后目录有效价回落至模板原价。
  */
 
-import { FormEvent, useMemo, useState } from "react";
-import { toOrganizationView } from "@/domains/operator/domain/organization-view";
+import { FormEvent, useState } from "react";
 import {
   parsePackageOverrideStatus,
   toPackageOverrideView,
@@ -19,10 +18,8 @@ import {
   revokePackageOverride,
 } from "@/domains/operator/application/revoke-package-override";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
+import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
-
-/** 无 GET Org 前：种子操作方视为 ACTIVE。 */
-const SEED_ACTOR_STATUS = "ACTIVE" as const;
 
 export function RevokeOverridePanel() {
   const [overrideId, setOverrideId] = useState(DEFAULT_OVERRIDE_ID);
@@ -34,24 +31,10 @@ export function RevokeOverridePanel() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<PackageOverrideView | null>(null);
   const [priceLabel, setPriceLabel] = useState<number | null>(null);
-
-  const actorGate = useMemo(() => {
-    const id = actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID;
-    if (id !== DEFAULT_OVERRIDE_ACTOR_ORG_ID) {
-      return { canAct: true, blockMessage: null as string | null };
-    }
-    const actor = toOrganizationView({
-      id,
-      name: "种子操作方",
-      status: SEED_ACTOR_STATUS,
-      operatorCapability: true,
-    });
-    return {
-      canAct: actor.canActAsManager,
-      blockMessage: actor.blockMessage,
-      statusLabel: actor.statusLabel,
-    };
-  }, [actorOrgId]);
+  const actorGate = useActorOrganization(
+    actorOrgId,
+    DEFAULT_OVERRIDE_ACTOR_ORG_ID,
+  );
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -102,9 +85,9 @@ export function RevokeOverridePanel() {
     <section className={styles.panel}>
       <h2>撤销套餐覆盖（HTTP · AC-31）</h2>
       <p className={styles.note}>
-        L2 撤销已激活覆盖；操作方须 ACTIVE（对齐 canManage / isActive）
-        {"statusLabel" in actorGate && actorGate.statusLabel
-          ? ` · 种子操作方=${actorGate.statusLabel}`
+        L2 撤销已激活覆盖；GET 组织对齐 canActAsManager
+        {actorGate.statusLabel
+          ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>

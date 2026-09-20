@@ -20,6 +20,7 @@ import {
   toOrganizationView,
   type OrganizationView,
 } from "@/domains/operator/domain/organization-view";
+import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
 
 const SEED_DL = {
@@ -28,9 +29,6 @@ const SEED_DL = {
   capability: "OPERATOR",
   status: "SUBMITTED" as OnboardingStatus,
 };
-
-/** 无 GET Org 前：种子操作方 ORG-L1 视为 ACTIVE。 */
-const SEED_ACTOR_STATUS = "ACTIVE" as const;
 
 export function ApproveDownlinePanel() {
   const [applicationId, setApplicationId] = useState(
@@ -46,6 +44,10 @@ export function ApproveDownlinePanel() {
     SEED_DL.status,
   );
   const [orgView, setOrgView] = useState<OrganizationView | null>(null);
+  const actorGate = useActorOrganization(
+    actorOrgId,
+    DEFAULT_DOWNLINE_ACTOR_ORG_ID,
+  );
 
   const appView = useMemo(() => {
     const isSeed =
@@ -63,24 +65,6 @@ export function ApproveDownlinePanel() {
       status: localStatus,
     });
   }, [applicationId, localStatus]);
-
-  const actorGate = useMemo(() => {
-    const id = actorOrgId.trim() || DEFAULT_DOWNLINE_ACTOR_ORG_ID;
-    if (id !== DEFAULT_DOWNLINE_ACTOR_ORG_ID) {
-      return { canAct: true, blockMessage: null as string | null };
-    }
-    const actor = toOrganizationView({
-      id,
-      name: "种子操作方",
-      status: SEED_ACTOR_STATUS,
-      operatorCapability: true,
-    });
-    return {
-      canAct: actor.canActAsManager,
-      blockMessage: actor.blockMessage,
-      statusLabel: actor.statusLabel,
-    };
-  }, [actorOrgId]);
 
   const approveAllowed = appView.approveAllowed && actorGate.canAct;
   const blockMessage = !appView.approveAllowed
@@ -134,8 +118,8 @@ export function ApproveDownlinePanel() {
         批的是运营商下线入驻（OPERATOR），不是批商城商家；商家入驻由总后台
         /admin 审批。{appView.statusLabel}
         {appView.approveAllowed ? " · 可批准" : ""}
-        {"statusLabel" in actorGate && actorGate.statusLabel
-          ? ` · 操作方=${actorGate.statusLabel}`
+        {actorGate.statusLabel
+          ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>

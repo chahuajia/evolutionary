@@ -4,8 +4,7 @@
  * 套餐覆盖客户端岛 — POST overrides + GET effective-product（AC-26）。
  */
 
-import { FormEvent, useMemo, useState } from "react";
-import { toOrganizationView } from "@/domains/operator/domain/organization-view";
+import { FormEvent, useState } from "react";
 import {
   parsePackageOverrideStatus,
   toPackageOverrideView,
@@ -22,10 +21,8 @@ import {
   type EffectiveProductResult,
 } from "@/domains/operator/infrastructure/operator-gateway";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
+import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
-
-/** 无 GET Org 前：种子操作方视为 ACTIVE。 */
-const SEED_ACTOR_STATUS = "ACTIVE" as const;
 
 export function PackageOverridePanel() {
   const [templateId, setTemplateId] = useState(DEFAULT_OVERRIDE_TEMPLATE_ID);
@@ -42,24 +39,10 @@ export function PackageOverridePanel() {
   const [effective, setEffective] = useState<EffectiveProductResult | null>(
     null,
   );
-
-  const actorGate = useMemo(() => {
-    const id = actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID;
-    if (id !== DEFAULT_OVERRIDE_ACTOR_ORG_ID) {
-      return { canAct: true, blockMessage: null as string | null };
-    }
-    const actor = toOrganizationView({
-      id,
-      name: "种子操作方",
-      status: SEED_ACTOR_STATUS,
-      operatorCapability: true,
-    });
-    return {
-      canAct: actor.canActAsManager,
-      blockMessage: actor.blockMessage,
-      statusLabel: actor.statusLabel,
-    };
-  }, [actorOrgId]);
+  const actorGate = useActorOrganization(
+    actorOrgId,
+    DEFAULT_OVERRIDE_ACTOR_ORG_ID,
+  );
 
   async function onActivate(e: FormEvent) {
     e.preventDefault();
@@ -134,10 +117,9 @@ export function PackageOverridePanel() {
     <section className={styles.panel}>
       <h2>套餐覆盖与有效价（HTTP · AC-26）</h2>
       <p className={styles.note}>
-        L2 对已发布模板激活 patches；操作方须 ACTIVE（对齐 canManage /
-        isActive）
-        {"statusLabel" in actorGate && actorGate.statusLabel
-          ? ` · 种子操作方=${actorGate.statusLabel}`
+        L2 对已发布模板激活 patches；GET 组织对齐 canActAsManager
+        {actorGate.statusLabel
+          ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
       </p>
       <form className={styles.form} onSubmit={onActivate}>

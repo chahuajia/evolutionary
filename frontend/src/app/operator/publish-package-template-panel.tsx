@@ -4,8 +4,7 @@
  * 发布套餐模板客户端岛 — POST /operator/templates/{id}/publish（AC-24）。
  */
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { toOrganizationView } from "@/domains/operator/domain/organization-view";
+import { FormEvent, useEffect, useState } from "react";
 import {
   parsePackageTemplateStatus,
   toPackageTemplateView,
@@ -18,10 +17,8 @@ import {
   fetchPackageTemplate,
   postPublishPackageTemplate,
 } from "@/domains/operator/infrastructure/operator-gateway";
+import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
-
-/** 无 GET Org 前：种子操作方视为 ACTIVE。 */
-const SEED_ACTOR_STATUS = "ACTIVE" as const;
 
 export function PublishPackageTemplatePanel() {
   const [templateId, setTemplateId] = useState(DEFAULT_PACKAGE_TEMPLATE_ID);
@@ -33,6 +30,10 @@ export function PublishPackageTemplatePanel() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<PackageTemplateView | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const actorGate = useActorOrganization(
+    actorOrgId,
+    DEFAULT_PUBLISH_ACTOR_ORG_ID,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -59,24 +60,6 @@ export function PublishPackageTemplatePanel() {
       cancelled = true;
     };
   }, [templateId]);
-
-  const actorGate = useMemo(() => {
-    const id = actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID;
-    if (id !== DEFAULT_PUBLISH_ACTOR_ORG_ID) {
-      return { canAct: true, blockMessage: null as string | null };
-    }
-    const actor = toOrganizationView({
-      id,
-      name: "种子操作方",
-      status: SEED_ACTOR_STATUS,
-      operatorCapability: true,
-    });
-    return {
-      canAct: actor.canActAsManager,
-      blockMessage: actor.blockMessage,
-      statusLabel: actor.statusLabel,
-    };
-  }, [actorOrgId]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -126,9 +109,9 @@ export function PublishPackageTemplatePanel() {
     <section className={styles.panel}>
       <h2>发布套餐模板（HTTP · AC-24）</h2>
       <p className={styles.note}>
-        操作方须 ACTIVE（对齐 canManage / isActive）；GET 模板对齐 publishAllowed
-        {"statusLabel" in actorGate && actorGate.statusLabel
-          ? ` · 种子操作方=${actorGate.statusLabel}`
+        GET 组织对齐 canActAsManager；GET 模板对齐 publishAllowed
+        {actorGate.statusLabel
+          ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
         {view ? ` · ${view.id}=${view.status}` : ""}
       </p>
