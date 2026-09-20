@@ -14,8 +14,15 @@ import {
   DEFAULT_OVERRIDE_PRICE_CENTS,
   DEFAULT_OVERRIDE_TEMPLATE_ID,
   postActivatePackageOverride,
-  type ActivatePackageOverrideRequest,
 } from "@/domains/operator/infrastructure/operator-gateway";
+
+export type ActivatePackageOverrideInput = {
+  readonly templateId: string;
+  readonly actorUserId: string;
+  readonly actorOrgId: string;
+  readonly overrideId: string;
+  readonly patches: { readonly price?: number; readonly displayName?: string };
+};
 
 export type ActivatePackageOverrideView = {
   readonly view: PackageOverrideView;
@@ -23,7 +30,7 @@ export type ActivatePackageOverrideView = {
 };
 
 export async function runActivatePackageOverride(
-  req: ActivatePackageOverrideRequest,
+  req: ActivatePackageOverrideInput,
 ): Promise<ActivatePackageOverrideView> {
   const r = await postActivatePackageOverride({
     templateId: req.templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID,

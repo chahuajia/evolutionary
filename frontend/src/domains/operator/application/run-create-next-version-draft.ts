@@ -16,11 +16,20 @@ import {
   DEFAULT_PUBLISH_ACTOR_ORG_ID,
   DEFAULT_PUBLISH_ACTOR_USER_ID,
   postCreateNextVersionDraft,
-  type NextVersionDraftRequest,
 } from "@/domains/operator/infrastructure/operator-gateway";
 
+export type NextVersionDraftInput = {
+  readonly sourceTemplateId: string;
+  readonly newTemplateId: string;
+  readonly actorUserId: string;
+  readonly actorOrgId: string;
+  readonly displayName: string;
+  readonly priceCents: number;
+  readonly durationDays: number;
+};
+
 export async function runCreateNextVersionDraft(
-  req: NextVersionDraftRequest,
+  req: NextVersionDraftInput,
 ): Promise<PackageTemplateView> {
   const r = await postCreateNextVersionDraft({
     sourceTemplateId:

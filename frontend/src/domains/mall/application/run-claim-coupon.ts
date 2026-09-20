@@ -12,11 +12,16 @@ import {
   DEFAULT_MALL_TEMPLATE,
   DEFAULT_MALL_USER,
   postClaimCoupon,
-  type ClaimCouponRequest,
 } from "@/domains/mall/infrastructure/mall-gateway";
 
+export type ClaimCouponInput = {
+  readonly campaignId?: string;
+  readonly userId: string;
+  readonly templateId: string;
+};
+
 export async function runClaimCoupon(
-  req: ClaimCouponRequest,
+  req: ClaimCouponInput,
 ): Promise<UserCouponView> {
   const r = await postClaimCoupon({
     campaignId: req.campaignId?.trim() || DEFAULT_MALL_CAMPAIGN,

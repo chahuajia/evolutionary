@@ -12,11 +12,16 @@ import {
   DEFAULT_PUBLISH_ACTOR_ORG_ID,
   DEFAULT_PUBLISH_ACTOR_USER_ID,
   postPublishPackageTemplate,
-  type PublishPackageTemplateRequest,
 } from "@/domains/operator/infrastructure/operator-gateway";
 
+export type PublishPackageTemplateInput = {
+  readonly templateId: string;
+  readonly actorUserId: string;
+  readonly actorOrgId: string;
+};
+
 export async function runPublishPackageTemplate(
-  req: PublishPackageTemplateRequest,
+  req: PublishPackageTemplateInput,
 ): Promise<PackageTemplateView> {
   const r = await postPublishPackageTemplate({
     templateId: req.templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID,

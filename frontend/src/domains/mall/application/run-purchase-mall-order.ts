@@ -11,11 +11,17 @@ import {
   DEFAULT_MALL_SKU,
   DEFAULT_MALL_USER,
   postPurchaseMallOrder,
-  type PurchaseMallOrderRequest,
 } from "@/domains/mall/infrastructure/mall-gateway";
 
+export type PurchaseMallOrderInput = {
+  readonly userId: string;
+  readonly merchantOrgId?: string;
+  readonly skuId?: string;
+  readonly qty?: number;
+};
+
 export async function runPurchaseMallOrder(
-  req: PurchaseMallOrderRequest,
+  req: PurchaseMallOrderInput,
 ): Promise<MallOrderView> {
   const r = await postPurchaseMallOrder({
     userId: req.userId.trim() || DEFAULT_MALL_USER,

@@ -11,11 +11,18 @@ import {
   DEFAULT_PACKAGE_TEMPLATE_ID,
   DEFAULT_PUBLISH_ACTOR_ORG_ID,
   postMutatePackageTemplateBaseProduct,
-  type MutateBaseProductRequest,
 } from "@/domains/operator/infrastructure/operator-gateway";
 
+export type MutateBaseProductInput = {
+  readonly templateId: string;
+  readonly actorOrgId: string;
+  readonly displayName: string;
+  readonly priceCents: number;
+  readonly durationDays: number;
+};
+
 export async function runMutatePackageTemplateBaseProduct(
-  req: MutateBaseProductRequest,
+  req: MutateBaseProductInput,
 ): Promise<PackageTemplateView> {
   const r = await postMutatePackageTemplateBaseProduct({
     templateId: req.templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID,
