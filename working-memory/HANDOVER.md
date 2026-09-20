@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-20 11:30（v33；波次以 `loop.md` 为准）
+**写于**：2026-09-20 11:32（v34；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v32（11:20 仍写 HEAD `7b1eb29` —— 已过时）
+**取代**：v33（11:30 仍写 HEAD `631e6c0` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `631e6c0`。前端 153/153。
-wave108 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `569f315`。前端 153/153。
+wave109 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -115,6 +115,7 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave106** | 覆盖激活门对齐模板 PUBLISHED | ✅ `24f737b` · 前端 **153/153** |
 | **wave107** | GET 用户券喂带券结账门 | ✅ `7b1eb29` · 前端 **153/153** · ClaimCouponHttpIT 4/4 |
 | **wave108** | 权益 GET 旁路计量费率 | ✅ `631e6c0` · 前端 **153/153** · MeteredEntitledSwapHttpIT 3/3 |
+| **wave109** | 信用页缺档 fail-closed | ✅ `569f315` · 前端 **153/153** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -150,8 +151,8 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **153/153** · HEAD `631e6c0`。父自选推进。
-下一刀：信用页缺档 fail-closed（`?? false`）。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **153/153** · HEAD `569f315`。父自选推进。
+面板侧种子状态/费率门基本清完；下一刀继续扫厚 BE 读口缺口（拒 ReferralBinding/CreditLedgerDebt）。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
