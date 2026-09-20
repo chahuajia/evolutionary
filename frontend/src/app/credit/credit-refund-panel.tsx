@@ -7,19 +7,17 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { CommerceOrderView } from "@/domains/commerce/domain/commerce-order-view";
 import {
   parseCommerceOrderStatus,
   toCommerceOrderView,
-  type CommerceOrderView,
 } from "@/domains/commerce/domain/commerce-order-view";
 import {
   parseEntitlementStatus,
   toEntitlementView,
 } from "@/domains/commerce/domain/entitlement-view";
-import {
-  fetchCommerceOrder,
-  postRefundOrder,
-} from "@/domains/commerce/infrastructure/order-refund-gateway";
+import { loadCommerceOrder } from "@/domains/commerce/application/load-commerce-order";
+import { postRefundOrder } from "@/domains/commerce/infrastructure/order-refund-gateway";
 import {
   DEFAULT_CREDIT_USER,
   postCreditPurchase,
@@ -48,15 +46,10 @@ export function CreditRefundPanel() {
     }
     let cancelled = false;
     setLoadError(null);
-    fetchCommerceOrder(id)
-      .then((dto) => {
+    loadCommerceOrder(id)
+      .then((view) => {
         if (cancelled) return;
-        setOrderView(
-          toCommerceOrderView({
-            orderId: dto.orderId,
-            status: parseCommerceOrderStatus(dto.status),
-          }),
-        );
+        setOrderView(view);
       })
       .catch((err) => {
         if (cancelled) return;

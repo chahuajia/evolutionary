@@ -6,16 +6,13 @@
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { parseEntitlementStatus } from "@/domains/commerce/domain/entitlement-view";
 import { toUsageEventView } from "@/domains/commerce/domain/usage-event-view";
 import {
   selectDefaultEntitlement,
   type SelectableEntitlement,
 } from "@/domains/commerce/domain/select-entitlement";
-import {
-  fetchActiveEntitlements,
-  postEntitledSwap,
-} from "@/domains/commerce/infrastructure/entitled-swap-gateway";
+import { loadActiveEntitlements } from "@/domains/commerce/application/load-active-entitlements";
+import { postEntitledSwap } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
 import styles from "./page.module.css";
 
 export function DefaultSelectPanel() {
@@ -33,16 +30,10 @@ export function DefaultSelectPanel() {
     let cancelled = false;
     const id = userId.trim() || "U1";
     setLoadError(null);
-    fetchActiveEntitlements(id)
+    loadActiveEntitlements(id)
       .then((rows) => {
         if (cancelled) return;
-        setCatalog(
-          rows.map((dto) => ({
-            id: dto.id,
-            status: parseEntitlementStatus(dto.status),
-            remainingSwaps: dto.remainingSwaps,
-          })),
-        );
+        setCatalog(rows);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -104,14 +95,7 @@ export function DefaultSelectPanel() {
           (ue.blockMessage ? ` · ${ue.blockMessage}` : "") +
           ` · 电池 ${r.batteryId}`,
       );
-      const rows = await fetchActiveEntitlements(userId.trim() || "U1");
-      setCatalog(
-        rows.map((dto) => ({
-          id: dto.id,
-          status: parseEntitlementStatus(dto.status),
-          remainingSwaps: dto.remainingSwaps,
-        })),
-      );
+      setCatalog(await loadActiveEntitlements(userId.trim() || "U1"));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
