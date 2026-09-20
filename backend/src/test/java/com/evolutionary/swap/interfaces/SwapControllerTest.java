@@ -103,13 +103,20 @@ class SwapControllerTest {
     }
 
     @Test
-    @DisplayName("GET 站点 → 200 + 视图字段（第 8 轮）")
+    @DisplayName("GET 站点 → 200 + canSwapOut + 电池（详情门）")
     void getStation() throws Exception {
         mockMvc.perform(get("/stations/S1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("S1"))
                 .andExpect(jsonPath("$.name").value("东门站"))
+                .andExpect(jsonPath("$.canSwapOut").value(true))
                 .andExpect(jsonPath("$.batteries[0].id").value("B-out"));
+
+        stations.seed(Station.create("S-empty-get", "空站详情"));
+        mockMvc.perform(get("/stations/S-empty-get"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.canSwapOut").value(false))
+                .andExpect(jsonPath("$.batteries.length()").value(0));
     }
 
     @Test

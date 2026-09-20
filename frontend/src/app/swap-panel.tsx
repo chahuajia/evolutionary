@@ -3,7 +3,7 @@
 /**
  * 客户端岛：表单 / 站详情 / 换电 POST / 换电日志。
  * 站列表由 RSC 首屏注入；刷新列表走 router.refresh()。
- * 换电提交卡门：站 selectable ∧ 站内至少一块 swapOutAllowed。
+ * 换电提交卡门：GET 站详情 canSwapOut ∧ 站内至少一块 swapOutAllowed。
  */
 
 import { FormEvent, useCallback, useMemo, useState } from "react";
@@ -31,6 +31,7 @@ type StationBatteryDto = { id: string; status: string };
 type StationDetailDto = {
   id: string;
   name: string;
+  canSwapOut: boolean;
   batteries: StationBatteryDto[];
 };
 type SwapResult = { stationId: string; outgoingId: string; incomingId: string };
@@ -70,21 +71,27 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
     );
   }, [station]);
 
+  const stationDetailView = useMemo(() => {
+    if (!station) return null;
+    return toStationView({
+      id: station.id,
+      name: station.name,
+      canSwapOut: Boolean(station.canSwapOut),
+      batteryCount: station.batteries.length,
+    });
+  }, [station]);
+
   const swapGate = useMemo(() => {
-    const summary = stations.find((s) => s.id === stationId.trim());
-    if (summary) {
-      const view = toStationView(summary);
-      if (!view.selectable) {
-        return {
-          swapAllowed: false,
-          blockMessage: `${view.name} 不可换出，请另选站点`,
-        };
-      }
-    }
-    if (!batteryViews) {
+    if (!stationDetailView || !batteryViews) {
       return {
         swapAllowed: false,
         blockMessage: "请先加载站详情",
+      };
+    }
+    if (!stationDetailView.selectable) {
+      return {
+        swapAllowed: false,
+        blockMessage: `${stationDetailView.name} 不可换出，请另选站点`,
       };
     }
     const anyOut = batteryViews.some((b) => b.swapOutAllowed);
@@ -97,7 +104,7 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
       };
     }
     return { swapAllowed: true, blockMessage: null as string | null };
-  }, [stations, stationId, batteryViews]);
+  }, [stationDetailView, batteryViews]);
 
   const refreshList = useCallback(() => {
     setError(null);
@@ -207,10 +214,13 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
 
       <form className={styles.form} onSubmit={onSwap}>
         <p className={styles.note}>
-          换出须站可选且站内有 AVAILABLE 电池（canSwapOutBattery）
+          GET 站详情对齐 canSwapOut；站内电池对齐 swapOutAllowed
+          {stationDetailView
+            ? ` · ${stationDetailView.id}=${stationDetailView.availabilityLabel}`
+            : " · 先「刷新站点」拉详情门"}
           {batteryViews
             ? ` · 可换出 ${batteryViews.filter((b) => b.swapOutAllowed).length}/${batteryViews.length}`
-            : " · 先「刷新站点」拉详情门"}
+            : ""}
         </p>
         <label>
           站点 ID

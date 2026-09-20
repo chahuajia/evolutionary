@@ -59,7 +59,8 @@ public class SwapController {
                 station.batteries().stream()
                         .map(b -> new BatteryView(b.id(), b.status().name()))
                         .toList();
-        return new StationView(station.id(), station.name(), batteries);
+        return new StationView(
+                station.id(), station.name(), station.canSwapOut(), batteries);
     }
 
     @GetMapping("/{stationId}/swap-logs")
@@ -105,7 +106,8 @@ public class SwapController {
         }
     }
 
-    public record StationView(String id, String name, List<BatteryView> batteries) {}
+    public record StationView(
+            String id, String name, boolean canSwapOut, List<BatteryView> batteries) {}
 
     public record StationSummaryView(
             String id, String name, boolean canSwapOut, int batteryCount) {}
