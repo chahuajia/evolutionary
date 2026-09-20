@@ -13,8 +13,8 @@ import type { DeviceShadowView } from "@/domains/iot/domain/device-shadow-view";
 import { loadDeviceShadow } from "@/domains/iot/application/load-device-shadow";
 import { loadWallet } from "@/domains/wallet/application/load-wallet";
 import {
-  canCoverCents,
   formatCentsAsYuan,
+  walletCoverGate,
   type WalletView,
 } from "@/domains/wallet/domain/wallet-view";
 import styles from "./page.module.css";
@@ -175,10 +175,11 @@ export function MeteredSwapPanel() {
         statusLabel: entitlementOk.statusLabel,
       };
     }
-    if (!canCoverCents(walletView.balanceCents, estimatedChargeCents)) {
+    const cover = walletCoverGate(walletView, estimatedChargeCents);
+    if (!cover.coverAllowed) {
       return {
         swapAllowed: false,
-        blockMessage: `余额不足（¥${walletView.balanceYuan} < ¥${formatCentsAsYuan(estimatedChargeCents)}）`,
+        blockMessage: cover.blockMessage,
         statusLabel: entitlementOk.statusLabel,
       };
     }

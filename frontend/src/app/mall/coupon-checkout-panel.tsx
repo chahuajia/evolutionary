@@ -28,8 +28,7 @@ import {
   runCheckoutWithCoupons,
 } from "@/domains/mall/application/run-checkout-with-coupons";
 import {
-  canCoverCents,
-  formatCentsAsYuan,
+  walletCoverGate,
   type WalletView,
 } from "@/domains/wallet/domain/wallet-view";
 import { loadWallet } from "@/domains/wallet/application/load-wallet";
@@ -181,10 +180,14 @@ export function CouponCheckoutPanel() {
       }
     }
     const listCents = skuView.priceCents * QTY;
-    if (!canCoverCents(walletView.balanceCents, listCents)) {
+    const cover = walletCoverGate(walletView, listCents, {
+      prefix: "余额不足覆盖标价",
+      suffix: "券后可能更低",
+    });
+    if (!cover.coverAllowed) {
       return {
         checkoutAllowed: false,
-        blockMessage: `余额不足覆盖标价（¥${walletView.balanceYuan} < ¥${formatCentsAsYuan(listCents)}；券后可能更低）`,
+        blockMessage: cover.blockMessage,
       };
     }
     return { checkoutAllowed: true, blockMessage: null as string | null };

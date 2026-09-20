@@ -35,6 +35,34 @@ export function canCoverCents(
   return balanceCents >= amountCents;
 }
 
+export type WalletCoverGate = {
+  readonly coverAllowed: boolean;
+  readonly blockMessage: string | null;
+};
+
+/**
+ * 动作向余额门：能否覆盖应付 + 统一不足文案。
+ * 岛内勿再手拼「余额不足（¥… < ¥…）」。
+ */
+export function walletCoverGate(
+  wallet: Pick<WalletView, "balanceCents" | "balanceYuan">,
+  amountCents: number,
+  opts?: { readonly prefix?: string; readonly suffix?: string },
+): WalletCoverGate {
+  if (!Number.isFinite(amountCents) || amountCents < 0) {
+    return { coverAllowed: false, blockMessage: "应付金额无效" };
+  }
+  if (canCoverCents(wallet.balanceCents, amountCents)) {
+    return { coverAllowed: true, blockMessage: null };
+  }
+  const prefix = opts?.prefix ?? "余额不足";
+  const suffix = opts?.suffix ? `；${opts.suffix}` : "";
+  return {
+    coverAllowed: false,
+    blockMessage: `${prefix}（¥${wallet.balanceYuan} < ¥${formatCentsAsYuan(amountCents)}）${suffix}`,
+  };
+}
+
 /** 有正余额才谈得上「可花」。 */
 export function hasSpendableBalance(balanceCents: number): boolean {
   return balanceCents > 0;

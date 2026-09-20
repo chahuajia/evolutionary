@@ -15,8 +15,7 @@ import {
   runMarkCreditOverdue,
 } from "@/domains/credit/application/run-mark-credit-overdue";
 import {
-  canCoverCents,
-  formatCentsAsYuan,
+  walletCoverGate,
   type WalletView,
 } from "@/domains/wallet/domain/wallet-view";
 import { loadWallet } from "@/domains/wallet/application/load-wallet";
@@ -111,10 +110,11 @@ export function CreditRepayPanel({
         message: walletLoadError ?? "正在加载钱包…",
       };
     }
-    if (!canCoverCents(walletView.balanceCents, amountCents)) {
+    const cover = walletCoverGate(walletView, amountCents);
+    if (!cover.coverAllowed) {
       return {
         allowed: false,
-        message: `余额不足（¥${walletView.balanceYuan} < ¥${formatCentsAsYuan(amountCents)}）`,
+        message: cover.blockMessage,
       };
     }
     return { allowed: true, message: null as string | null };

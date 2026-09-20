@@ -16,8 +16,7 @@ import {
   runPurchaseMallOrder,
 } from "@/domains/mall/application/run-purchase-mall-order";
 import {
-  canCoverCents,
-  formatCentsAsYuan,
+  walletCoverGate,
   type WalletView,
 } from "@/domains/wallet/domain/wallet-view";
 import { loadWallet } from "@/domains/wallet/application/load-wallet";
@@ -132,10 +131,11 @@ export function MallPurchasePanel() {
       };
     }
     const dueCents = skuView.priceCents * qty;
-    if (!canCoverCents(walletView.balanceCents, dueCents)) {
+    const cover = walletCoverGate(walletView, dueCents);
+    if (!cover.coverAllowed) {
       return {
         purchaseAllowed: false,
-        blockMessage: `余额不足（¥${walletView.balanceYuan} < ¥${formatCentsAsYuan(dueCents)}）`,
+        blockMessage: cover.blockMessage,
       };
     }
     return { purchaseAllowed: true, blockMessage: null as string | null };

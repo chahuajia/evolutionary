@@ -4,6 +4,7 @@ import {
   formatCentsAsYuan,
   hasSpendableBalance,
   toWalletView,
+  walletCoverGate,
 } from "./wallet-view";
 
 describe("formatCentsAsYuan", () => {
@@ -25,6 +26,35 @@ describe("hasSpendableBalance", () => {
   it("requires positive cents", () => {
     expect(hasSpendableBalance(1)).toBe(true);
     expect(hasSpendableBalance(0)).toBe(false);
+  });
+});
+
+describe("walletCoverGate", () => {
+  it("allows when balance covers amount", () => {
+    const wallet = toWalletView({
+      userId: "u-1",
+      balanceCents: 500,
+      pointsCents: 0,
+      currency: "CNY",
+    });
+    expect(walletCoverGate(wallet, 250)).toEqual({
+      coverAllowed: true,
+      blockMessage: null,
+    });
+  });
+
+  it("blocks with unified shortfall message", () => {
+    const wallet = toWalletView({
+      userId: "u-1",
+      balanceCents: 100,
+      pointsCents: 0,
+      currency: "CNY",
+    });
+    const gate = walletCoverGate(wallet, 250);
+    expect(gate.coverAllowed).toBe(false);
+    expect(gate.blockMessage).toContain("余额不足");
+    expect(gate.blockMessage).toContain("1.00");
+    expect(gate.blockMessage).toContain("2.50");
   });
 });
 
