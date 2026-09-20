@@ -1,16 +1,18 @@
 /**
- * 用例：加载站换电日志（编排 gateway，不写 fetch 细节）。
+ * 用例：加载站换电日志（编排 gateway → SwapLogView）。
  */
 
 import {
-  fetchSwapLogs,
-  type SwapLog,
-} from "@/domains/swap/infrastructure/station-gateway";
+  toSwapLogView,
+  type SwapLogView,
+} from "@/domains/swap/domain/swap-log-view";
+import { fetchSwapLogs } from "@/domains/swap/infrastructure/station-gateway";
+
+export type { SwapLogView };
 
 export async function loadSwapLogs(
   stationId: string,
-): Promise<readonly SwapLog[]> {
-  return fetchSwapLogs(stationId);
+): Promise<readonly SwapLogView[]> {
+  const rows = await fetchSwapLogs(stationId);
+  return rows.map(toSwapLogView);
 }
-
-export type { SwapLog };

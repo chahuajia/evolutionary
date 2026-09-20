@@ -1,17 +1,19 @@
 /**
- * 用例：站内换电（编排 gateway → 换电结果）。
+ * 用例：站内换电（编排 gateway → StationSwapResultView）。
  */
 
 import {
-  postStationSwap,
-  type StationSwapResult,
-} from "@/domains/swap/infrastructure/station-gateway";
+  toStationSwapResultView,
+  type StationSwapResultView,
+} from "@/domains/swap/domain/station-swap-result-view";
+import { postStationSwap } from "@/domains/swap/infrastructure/station-gateway";
+
+export type { StationSwapResultView };
 
 export async function runStationSwap(input: {
   stationId: string;
   incomingBatteryId: string;
-}): Promise<StationSwapResult> {
-  return postStationSwap(input.stationId, input.incomingBatteryId);
+}): Promise<StationSwapResultView> {
+  const r = await postStationSwap(input.stationId, input.incomingBatteryId);
+  return toStationSwapResultView(r);
 }
-
-export type { StationSwapResult };

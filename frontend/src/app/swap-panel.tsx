@@ -17,11 +17,11 @@ import {
 } from "@/domains/swap/application/load-station-detail";
 import {
   loadSwapLogs,
-  type SwapLog,
+  type SwapLogView,
 } from "@/domains/swap/application/load-swap-logs";
 import {
   runStationSwap,
-  type StationSwapResult,
+  type StationSwapResultView,
 } from "@/domains/swap/application/run-station-swap";
 import styles from "./page.module.css";
 
@@ -44,8 +44,8 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
   const [stationId, setStationId] = useState(initialStationId);
   const [incomingBatteryId, setIncomingBatteryId] = useState("B-user-1");
   const [detail, setDetail] = useState<StationDetailView | null>(null);
-  const [lastSwap, setLastSwap] = useState<StationSwapResult | null>(null);
-  const [swapLogs, setSwapLogs] = useState<readonly SwapLog[]>([]);
+  const [lastSwap, setLastSwap] = useState<StationSwapResultView | null>(null);
+  const [swapLogs, setSwapLogs] = useState<readonly SwapLogView[]>([]);
   const [error, setError] = useState<string | null>(listError);
   const [busy, setBusy] = useState(false);
 
