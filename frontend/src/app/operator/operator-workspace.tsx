@@ -1,12 +1,6 @@
 "use client";
 
 import { WorkflowTabs } from "@/components/workflow-tabs";
-import {
-  DEFAULT_DOWNLINE_APPLICATION_ID,
-  DEFAULT_OVERRIDE_ID,
-  DEFAULT_OVERRIDE_TEMPLATE_ID,
-  DEFAULT_PACKAGE_TEMPLATE_ID,
-} from "@/domains/operator/application/load-effective-product";
 import { ApproveDownlinePanel } from "./approve-downline-panel";
 import { NextVersionPanel } from "./next-version-panel";
 import { PackageOverridePanel } from "./package-override-panel";
