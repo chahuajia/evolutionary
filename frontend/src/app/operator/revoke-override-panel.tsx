@@ -71,7 +71,6 @@ export function RevokeOverridePanel() {
         overrideId: id,
         actorOrgId: actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID,
         actorUserId: actorUserId.trim() || DEFAULT_OVERRIDE_ACTOR_USER_ID,
-        templateVersion: view.templateVersion,
       });
       setView(r);
     } catch (err) {

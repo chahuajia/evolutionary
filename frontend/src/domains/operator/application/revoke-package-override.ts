@@ -18,8 +18,6 @@ export type RevokePackageOverrideInput = {
   overrideId?: string;
   actorUserId?: string;
   actorOrgId?: string;
-  /** 撤销响应无版本字段时沿用当前展示版本。 */
-  templateVersion?: number;
 };
 
 export type { PackageOverrideView };
@@ -35,11 +33,11 @@ export async function revokePackageOverride(
   });
   return toPackageOverrideView({
     overrideId: r.overrideId,
-    orgId: r.orgId ?? "",
-    templateId: r.templateId ?? "",
-    templateVersion: input.templateVersion ?? 0,
+    orgId: r.orgId,
+    templateId: r.templateId,
+    templateVersion: r.templateVersion,
     status: parsePackageOverrideStatus(r.status),
-    priceCents: r.priceCents ?? null,
+    priceCents: r.priceCents,
   });
 }
 

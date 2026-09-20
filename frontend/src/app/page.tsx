@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { loadStationSummaries } from "@/domains/swap/application/load-station-summaries";
 import {
   loadSwapLogs,
-  type SwapLog,
+  type SwapLogView,
 } from "@/domains/swap/application/load-swap-logs";
 import type { StationView } from "@/domains/swap/domain/station-view";
 import { HomeWorkflows } from "./home-workflows";
@@ -27,7 +27,7 @@ export default async function Home() {
 
   const initialStationId = stations[0]?.id ?? "S1";
 
-  let swapLogs: readonly SwapLog[] = [];
+  let swapLogs: readonly SwapLogView[] = [];
   let logsError: string | null = null;
 
   try {

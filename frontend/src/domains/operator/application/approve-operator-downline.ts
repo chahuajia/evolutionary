@@ -33,7 +33,7 @@ export async function approveOperatorDownline(
     id: r.orgId,
     name: r.name,
     parentId: r.parentOrgId,
-    status: r.status || "ACTIVE",
+    status: r.status,
     operatorCapability: r.operatorCapability,
   });
 }

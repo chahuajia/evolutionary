@@ -135,8 +135,8 @@ function parseApproveOperatorDownline(
     raw.operatorCapability ?? raw.hasOperatorCapability ?? false,
   );
   const status = String(raw.status ?? "");
-  if (!orgId) {
-    throw new Error("批下线响应缺少 orgId");
+  if (!orgId || !status) {
+    throw new Error("批下线响应缺少 orgId/status");
   }
   return { orgId, name, parentOrgId, operatorCapability, status };
 }
@@ -539,6 +539,7 @@ export type RevokePackageOverrideResult = {
   overrideId: string;
   orgId: string;
   templateId: string;
+  templateVersion: number;
   status: string;
   priceCents: number | null;
   displayName: string | null;
@@ -630,6 +631,11 @@ function parseRevokePackageOverride(
   const overrideId = String(raw.overrideId ?? raw.id ?? fallbackOverrideId);
   const orgId = String(raw.orgId ?? "");
   const templateId = String(raw.templateId ?? "");
+  const versionRaw = raw.templateVersion;
+  const templateVersion =
+    typeof versionRaw === "number"
+      ? versionRaw
+      : Number.parseInt(String(versionRaw ?? ""), 10);
   const status = String(raw.status ?? "");
   const priceRaw = raw.priceCents ?? raw.price;
   const priceCents =
@@ -641,13 +647,14 @@ function parseRevokePackageOverride(
   const displayRaw = raw.displayName;
   const displayName =
     displayRaw == null || displayRaw === "" ? null : String(displayRaw);
-  if (!overrideId || !status) {
-    throw new Error("撤销覆盖响应缺少 overrideId/status");
+  if (!overrideId || !status || !Number.isFinite(templateVersion)) {
+    throw new Error("撤销覆盖响应缺少 overrideId/status/templateVersion");
   }
   return {
     overrideId,
     orgId,
     templateId,
+    templateVersion,
     status,
     priceCents:
       priceCents != null && Number.isFinite(priceCents) ? priceCents : null,
