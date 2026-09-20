@@ -33,6 +33,9 @@ export type EntitlementDto = {
   userId: string;
   status: string;
   remainingSwaps: number | null;
+  productId: string | null;
+  /** 计量费率（分 / SOC）；非计量为 null */
+  meteredRateCents: number | null;
 };
 
 function parseEntitlementDto(
@@ -40,6 +43,7 @@ function parseEntitlementDto(
   fallbackId = "",
 ): EntitlementDto {
   const remaining = raw.remainingSwaps;
+  const rate = raw.meteredRateCents;
   return {
     id: String(raw.id ?? fallbackId),
     userId: String(raw.userId ?? ""),
@@ -48,6 +52,12 @@ function parseEntitlementDto(
       typeof remaining === "number" && Number.isFinite(remaining)
         ? remaining
         : null,
+    productId:
+      raw.productId == null || String(raw.productId) === ""
+        ? null
+        : String(raw.productId),
+    meteredRateCents:
+      typeof rate === "number" && Number.isFinite(rate) ? rate : null,
   };
 }
 

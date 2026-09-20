@@ -2,7 +2,7 @@
 
 /**
  * 计量权益换电客户端岛 — 默认 U1 / E-M1 / CAB-1 · soc 80→60。
- * GET shadow + wallet + entitlement：对齐影子新鲜度、canCoverCents、swapAllowed（含 FROZEN）。
+ * GET shadow + wallet + entitlement：对齐影子新鲜度、canCoverCents、swapAllowed（含 FROZEN）与计量费率。
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -34,12 +34,10 @@ function formatCents(cents: number): string {
   return `¥${formatCentsAsYuan(cents)}（${cents}¢）`;
 }
 
-/** 种子 E-M1；状态以 GET /entitled-swaps/{id} 为准。 */
+/** 种子 E-M1；状态与费率以 GET /entitled-swaps/{id} 为准。 */
 const SEED_METERED_ENTITLEMENT = "E-M1";
 /** 计量种子电池；findAnyIdle 也可能拿到 BAT-1（同种子新鲜影子）。 */
 const DEFAULT_METERED_BATTERY = "BAT-M1";
-/** 种子 P-M1 meteredRate = 50¢ / SOC 单位（对齐 Money.cny(50) · IT 80→60→1000¢）。 */
-const SEED_METERED_RATE_CENTS = 50;
 
 export function MeteredSwapPanel() {
   const [userId, setUserId] = useState("U1");
@@ -62,6 +60,7 @@ export function MeteredSwapPanel() {
     string | null
   >(null);
   const [remainingSwaps, setRemainingSwaps] = useState<number | null>(null);
+  const [meteredRateCents, setMeteredRateCents] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -119,6 +118,7 @@ export function MeteredSwapPanel() {
       .then((dto) => {
         if (cancelled) return;
         setRemainingSwaps(dto.remainingSwaps);
+        setMeteredRateCents(dto.meteredRateCents);
         setEntitlementView(
           toEntitlementView({
             id: dto.id,
@@ -130,6 +130,7 @@ export function MeteredSwapPanel() {
         if (cancelled) return;
         setEntitlementView(null);
         setRemainingSwaps(null);
+        setMeteredRateCents(null);
         setEntitlementLoadError(
           err instanceof Error ? err.message : String(err),
         );
@@ -140,10 +141,13 @@ export function MeteredSwapPanel() {
   }, [entitlementId]);
 
   const estimatedChargeCents = useMemo(() => {
+    if (meteredRateCents == null || !Number.isFinite(meteredRateCents)) {
+      return null;
+    }
     const delta = socBefore - socAfter;
     if (!Number.isFinite(delta) || delta < 0) return null;
-    return delta * SEED_METERED_RATE_CENTS;
-  }, [socBefore, socAfter]);
+    return delta * meteredRateCents;
+  }, [socBefore, socAfter, meteredRateCents]);
 
   const gate = useMemo(() => {
     const entitlementOk = !entitlementView
@@ -164,6 +168,12 @@ export function MeteredSwapPanel() {
               blockMessage: "权益次数已用尽，不可换电",
               statusLabel: entitlementView.statusLabel,
             }
+          : meteredRateCents == null
+            ? {
+                swapAllowed: false,
+                blockMessage: "权益未挂计量费率，不可估费换电",
+                statusLabel: entitlementView.statusLabel,
+              }
           : {
               swapAllowed: true,
               blockMessage: null as string | null,
@@ -216,6 +226,7 @@ export function MeteredSwapPanel() {
     entitlementView,
     entitlementLoadError,
     remainingSwaps,
+    meteredRateCents,
     shadowView,
     shadowLoadError,
     walletView,
@@ -280,10 +291,12 @@ export function MeteredSwapPanel() {
     <section className={styles.panel}>
       <h2>计量权益换电（HTTP）</h2>
       <p className={styles.note}>
-        GET 权益 / shadow / wallet 对齐 swapAllowed、新鲜度与 canCoverCents
+        GET 权益（含 meteredRateCents）/ shadow / wallet 对齐 swapAllowed、新鲜度与
+        canCoverCents
         {gate.statusLabel
           ? ` · ${entitlementId}=${gate.statusLabel}`
           : ""}
+        {meteredRateCents != null ? ` · 费率 ${meteredRateCents}¢/SOC` : ""}
         {shadowView
           ? ` · ${shadowView.batteryId}=${shadowView.fresh ? "fresh" : "stale"}`
           : ""}

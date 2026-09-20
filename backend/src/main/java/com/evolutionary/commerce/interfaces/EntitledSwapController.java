@@ -2,9 +2,11 @@ package com.evolutionary.commerce.interfaces;
 
 import com.evolutionary.commerce.application.EntitlementRepository;
 import com.evolutionary.commerce.application.PerformEntitledSwap;
+import com.evolutionary.commerce.application.ProductRepository;
 import com.evolutionary.commerce.domain.DomainOutcome;
 import com.evolutionary.commerce.domain.Entitlement;
 import com.evolutionary.commerce.domain.Money;
+import com.evolutionary.commerce.domain.Product;
 import com.evolutionary.commerce.domain.UsageEvent;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -23,11 +25,15 @@ public class EntitledSwapController {
 
     private final PerformEntitledSwap performEntitledSwap;
     private final EntitlementRepository entitlements;
+    private final ProductRepository products;
 
     public EntitledSwapController(
-            PerformEntitledSwap performEntitledSwap, EntitlementRepository entitlements) {
+            PerformEntitledSwap performEntitledSwap,
+            EntitlementRepository entitlements,
+            ProductRepository products) {
         this.performEntitledSwap = performEntitledSwap;
         this.entitlements = entitlements;
+        this.products = products;
     }
 
     /** 只读目录：用户 ACTIVE 权益，供 AC-14 默认选卡预览。 */
@@ -37,17 +43,15 @@ public class EntitledSwapController {
         if (id.isEmpty()) {
             throw new IllegalArgumentException("userId required");
         }
-        return entitlements.findActiveByUser(id).stream()
-                .map(EntitledSwapController::toView)
-                .toList();
+        return entitlements.findActiveByUser(id).stream().map(this::toView).toList();
     }
 
-    /** 只读：供换电岛对齐 swapAllowed（含 FROZEN）。 */
+    /** 只读：供换电岛对齐 swapAllowed（含 FROZEN）与计量费率。 */
     @GetMapping("/{entitlementId}")
     public ResponseEntity<EntitlementView> entitlement(@PathVariable String entitlementId) {
         return entitlements
                 .findById(entitlementId.trim())
-                .map(EntitledSwapController::toView)
+                .map(this::toView)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -123,13 +127,29 @@ public class EntitledSwapController {
             Long chargedAmountCents) {}
 
     public record EntitlementView(
-            String id, String userId, String status, Integer remainingSwaps) {}
+            String id,
+            String userId,
+            String status,
+            Integer remainingSwaps,
+            String productId,
+            Long meteredRateCents) {}
 
-    private static EntitlementView toView(Entitlement entitlement) {
+    private EntitlementView toView(Entitlement entitlement) {
+        Long meteredRateCents = null;
+        try {
+            Product product = products.get(entitlement.productId());
+            if (product.meteredRate() != null) {
+                meteredRateCents = product.meteredRate().cents();
+            }
+        } catch (IllegalArgumentException ignored) {
+            // 产品缺失时仍返回权益态；前端缺费率则禁用估费门
+        }
         return new EntitlementView(
                 entitlement.id(),
                 entitlement.userId(),
                 entitlement.status().name(),
-                entitlement.remainingSwaps());
+                entitlement.remainingSwaps(),
+                entitlement.productId(),
+                meteredRateCents);
     }
 }

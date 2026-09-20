@@ -1,5 +1,6 @@
 package com.evolutionary.commerce.interfaces;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,6 +29,18 @@ import org.springframework.test.web.servlet.MockMvc;
 class MeteredEntitledSwapHttpIT {
 
     @Autowired private MockMvc mvc;
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    @DisplayName("GET E-M1 → productId=P-M1 · meteredRateCents=50")
+    void getMeteredEntitlementExposesRate() throws Exception {
+        mvc.perform(get("/entitled-swaps/E-M1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("E-M1"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.productId").value("P-M1"))
+                .andExpect(jsonPath("$.meteredRateCents").value(50));
+    }
 
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
