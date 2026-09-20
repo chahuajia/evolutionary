@@ -1,10 +1,10 @@
 ﻿# evo-collab-extreme（双轴极端 · 无人值守完成）
 
-**更新**：2026-09-20 17:11  
+**更新**：2026-09-20 17:13  
 **模式**：主树父写（小切片）· **禁止**为 <5min 切片建 worktree/派 Task  
 **状态**：**▶ 运行中**（常设规则：父自选推进）  
-**波次**：wave138 ✅  
-**HEAD**：`c1a3817`  
+**波次**：wave139 ✅  
+**HEAD**：`8727dc1`  
 **idle**：— · **lanes**：0  
 **测**：前端 **153/153** · 未 push
 
@@ -12,10 +12,10 @@
 
 | 波 | 内容 | HEAD | 测 |
 | :-- | :--- | :--- | :--- |
-| 137 | override/nextVersion/publish/onboarding 经用例 | `c59c022` | 153/153 |
-| **138** | **policy/repay/downline/revoke 经用例返 View** | `c1a3817` | **153/153** |
+| 138 | policy/repay/downline/revoke 经用例返 View | `c1a3817` | 153/153 |
+| **139** | **站详情/换电经用例 · 岛内 infrastructure 清零** | `8727dc1` | **153/153** |
 
-**选片依据**：138←信用政策/还款仍直连 gateway；approveDownline/revoke 仍返 DTO。
+**选片依据**：139←swap-panel 仍直连 station-gateway/fetchJson，为 app 下最后一处。
 
 ## 下一刀
 
@@ -23,7 +23,7 @@
 | :--- | :--- |
 | 门禁轴 idle | 列表猜 / fail-open 已清 |
 | ReferralBinding / CreditLedgerDebt | 仍无读口 · 拒 |
-| 同构扩面 | swap-panel 仍经 station-gateway；岛内 infrastructure 引用已基本清空 |
+| 同构扩面 | 客户端岛 POST+toView 已清；可扫 RSC page 是否仍直连 gateway |
 
 ## 常设规则
 
