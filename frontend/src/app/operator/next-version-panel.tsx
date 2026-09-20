@@ -133,14 +133,20 @@ export function NextVersionPanel() {
           status: parsePackageTemplateStatus(r.status),
         }),
       );
-      setSourceView(
-        toPackageTemplateView({
-          id: sourceTemplateId.trim() || DEFAULT_NEXT_VERSION_SOURCE_ID,
-          ownerOrgId: r.ownerOrgId || DEFAULT_PUBLISH_ACTOR_ORG_ID,
-          version: Math.max(1, r.version - 1),
-          status: parsePackageTemplateStatus("PUBLISHED"),
-        }),
-      );
+      const srcId = sourceTemplateId.trim() || DEFAULT_NEXT_VERSION_SOURCE_ID;
+      try {
+        const src = await fetchPackageTemplate(srcId);
+        setSourceView(
+          toPackageTemplateView({
+            id: src.templateId,
+            ownerOrgId: src.ownerOrgId,
+            version: src.version,
+            status: parsePackageTemplateStatus(src.status),
+          }),
+        );
+      } catch {
+        /* 源模板再读失败不阻断派生结果展示 */
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

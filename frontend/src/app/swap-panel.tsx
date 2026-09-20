@@ -81,16 +81,20 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
         };
       }
     }
-    if (batteryViews) {
-      const anyOut = batteryViews.some((b) => b.swapOutAllowed);
-      if (!anyOut) {
-        return {
-          swapAllowed: false,
-          blockMessage:
-            batteryViews.find((b) => b.blockMessage)?.blockMessage ??
-            "站内无 AVAILABLE 电池可换出",
-        };
-      }
+    if (!batteryViews) {
+      return {
+        swapAllowed: false,
+        blockMessage: "请先加载站详情",
+      };
+    }
+    const anyOut = batteryViews.some((b) => b.swapOutAllowed);
+    if (!anyOut) {
+      return {
+        swapAllowed: false,
+        blockMessage:
+          batteryViews.find((b) => b.blockMessage)?.blockMessage ??
+          "站内无 AVAILABLE 电池可换出",
+      };
     }
     return { swapAllowed: true, blockMessage: null as string | null };
   }, [stations, stationId, batteryViews]);

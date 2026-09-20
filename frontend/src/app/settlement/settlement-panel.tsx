@@ -52,9 +52,9 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
     const forOrder = list.filter((a) => a.orderId === orderId.trim());
     if (forOrder.length === 0) {
       return {
-        reverseAllowed: true,
-        blockMessage: null as string | null,
-        hint: "列表无该订单 · 交后端判",
+        reverseAllowed: false,
+        blockMessage: "列表无该订单的意向，不可冲销",
+        hint: null as string | null,
       };
     }
     const blocked = forOrder.find((a) => !a.reverseAllowed);
@@ -75,9 +75,9 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
   const settleGate = useMemo(() => {
     if (list.length === 0) {
       return {
-        settleAllowed: true,
-        blockMessage: null as string | null,
-        hint: "列表空 · 交后端判",
+        settleAllowed: false,
+        blockMessage: "列表无意向，不可入批",
+        hint: null as string | null,
       };
     }
     const pending = list.filter((a) => a.settleAllowed);
