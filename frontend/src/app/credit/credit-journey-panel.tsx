@@ -24,12 +24,8 @@ import {
   postCreditPurchase,
   type CreditPurchaseResult,
 } from "@/domains/credit/infrastructure/credit-gateway";
-import { toAccrualView } from "@/domains/settlement/domain/accrual-view";
-import { toSettlementBatchView } from "@/domains/settlement/domain/settlement-batch-view";
-import {
-  postAccrueSettlement,
-  postRunSettlementBatch,
-} from "@/domains/settlement/infrastructure/settlement-gateway";
+import { runAccrueSettlement } from "@/domains/settlement/application/run-accrue-settlement";
+import { runSettlementBatch } from "@/domains/settlement/application/run-settlement-batch";
 import {
   creditPurchaseBlockMessage,
   type CreditPurchaseBlock,
@@ -202,14 +198,13 @@ export function CreditJourneyPanel({
     setError(null);
     try {
       const amount = paidAmountCents ?? 10000;
-      const rows = await postAccrueSettlement({
+      const views = await runAccrueSettlement({
         orderId,
         orgId: DEFAULT_ORG_ID,
         amountCents: amount,
         userId,
         completedAt: new Date().toISOString(),
       });
-      const views = rows.map(toAccrualView);
       append(
         `④ Accrue：${views.length} 条 · ` +
           views.map((r) => `${r.orgId}=¥${r.amountYuan}/${r.status}`).join(" · "),
@@ -228,11 +223,10 @@ export function CreditJourneyPanel({
       const now = new Date();
       const start = new Date(now);
       start.setUTCDate(start.getUTCDate() - 7);
-      const r = await postRunSettlementBatch({
+      const view = await runSettlementBatch({
         periodStart: start.toISOString(),
         periodEnd: now.toISOString(),
       });
-      const view = toSettlementBatchView(r);
       append(
         `④ Run batch：${view.id} · ${view.statusLabel}` +
           (view.blockMessage ? ` · ${view.blockMessage}` : ""),

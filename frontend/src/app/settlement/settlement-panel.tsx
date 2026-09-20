@@ -6,20 +6,12 @@
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import {
-  toAccrualView,
-  type AccrualView,
-} from "@/domains/settlement/domain/accrual-view";
-import {
-  toSettlementBatchView,
-  type SettlementBatchView,
-} from "@/domains/settlement/domain/settlement-batch-view";
+import type { AccrualView } from "@/domains/settlement/domain/accrual-view";
+import type { SettlementBatchView } from "@/domains/settlement/domain/settlement-batch-view";
 import { loadAccrualsByOrderId } from "@/domains/settlement/application/load-accruals";
-import {
-  postAccrueSettlement,
-  postReverseAccruals,
-  postRunSettlementBatch,
-} from "@/domains/settlement/infrastructure/settlement-gateway";
+import { runAccrueSettlement } from "@/domains/settlement/application/run-accrue-settlement";
+import { runReverseAccruals } from "@/domains/settlement/application/run-reverse-accruals";
+import { runSettlementBatch } from "@/domains/settlement/application/run-settlement-batch";
 import styles from "../credit/page.module.css";
 
 type SettlementPanelProps = {
@@ -135,14 +127,13 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
     setError(null);
     setResult(null);
     try {
-      const rows = await postAccrueSettlement({
+      const views = await runAccrueSettlement({
         orderId,
         orgId,
         amountCents,
         userId,
         completedAt: new Date().toISOString(),
       });
-      const views = rows.map(toAccrualView);
       setLocalAccruals(views);
       setOrderAccruals(views);
       setResult(
@@ -173,8 +164,7 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
     setResult(null);
     try {
       const oid = orderId.trim() || "O-STL-UI";
-      const rows = await postReverseAccruals(oid);
-      const views = rows.map(toAccrualView);
+      const views = await runReverseAccruals(oid);
       setOrderAccruals(views);
       setLocalAccruals((prev) => {
         const byId = new Map((prev ?? list).map((a) => [a.id, a]));
@@ -209,8 +199,7 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
     setResult(null);
     setBatchView(null);
     try {
-      const r = await postRunSettlementBatch({ periodStart, periodEnd });
-      const view = toSettlementBatchView(r);
+      const view = await runSettlementBatch({ periodStart, periodEnd });
       setBatchView(view);
       setResult(
         `批 ${view.id} · ${view.statusLabel}` +
