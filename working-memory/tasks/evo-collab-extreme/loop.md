@@ -1,28 +1,28 @@
 ﻿# evo-collab-extreme（双轴极端 · 无人值守完成）
 
-**更新**：2026-09-20 10:52  
+**更新**：2026-09-20 11:10  
 **模式**：主树父写（小切片）· **禁止**为 <5min 切片建 worktree/派 Task  
 **状态**：**▶ 运行中**（常设规则：父自选推进）  
-**波次**：wave105 ✅  
-**HEAD**：`081cf05`  
+**波次**：wave106 ✅  
+**HEAD**：`24f737b`  
 **idle**：— · **lanes**：0  
-**测**：前端 **152/152** · Revoke/Activate Override IT 4/4 · 未 push
+**测**：前端 **153/153** · 未 push
 
 ## 刚落地
 
 | 波 | 内容 | HEAD | 测 |
 | :-- | :--- | :--- | :--- |
-| 104 | GET 订单读口喂退款/串联 | `45a2283` | 152/152 · RefundOrderHttpIT |
-| **105** | **GET 覆盖读口喂撤销/激活门** | `081cf05` | **152/152** · Override IT 4/4 |
+| 105 | GET 覆盖读口喂撤销/激活门 | `081cf05` | 152/152 · Override IT 4/4 |
+| **106** | **覆盖激活门对齐模板 PUBLISHED** | `24f737b` | **153/153** |
 
-**选片依据**：105←撤销面板未预读覆盖态；GET `/operator/overrides/{id}` 对齐 revokeAllowed / activateAllowed。
+**选片依据**：106←激活面板未预读模板态；GET 模板 `overrideActivateAllowed` 对齐 `TEMPLATE_NOT_PUBLISHED`。
 
 ## 下一刀
 
 | 候选 | 前提 |
 | :--- | :--- |
 | ReferralBinding / CreditLedgerDebt | 仍无读口 · 拒 |
-| 扫余种子门 | 面板侧种子状态基本清完 |
+| 扫余种子门 / 厚 BE 读口缺口 | 面板侧种子状态基本清完 |
 
 ## 常设规则
 
