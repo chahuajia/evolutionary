@@ -12,12 +12,8 @@ import {
   loadOnboardingApplication,
 } from "@/domains/operator/application/load-onboarding-application";
 import type { OnboardingApplicationView } from "@/domains/operator/domain/onboarding-application-view";
-import {
-  parseMerchantProfileStatus,
-  toMerchantProfileView,
-  type MerchantProfileView,
-} from "@/domains/mall/domain/merchant-profile-view";
-import { postApproveOnboarding } from "@/domains/operator/infrastructure/operator-gateway";
+import type { MerchantProfileView } from "@/domains/mall/domain/merchant-profile-view";
+import { runApproveOnboarding } from "@/domains/operator/application/run-approve-onboarding";
 import styles from "./page.module.css";
 
 export function OnboardingApprovePanel() {
@@ -69,15 +65,10 @@ export function OnboardingApprovePanel() {
     setMerchant(null);
     try {
       const id = applicationId.trim() || DEFAULT_ONBOARDING_APPLICATION_ID;
-      const r = await postApproveOnboarding({
-        applicationId: id,
-        shopName: shopName.trim() || DEFAULT_SHOP_NAME,
-      });
       setMerchant(
-        toMerchantProfileView({
-          orgId: r.orgId,
-          shopName: r.shopName,
-          status: parseMerchantProfileStatus(r.status),
+        await runApproveOnboarding({
+          applicationId: id,
+          shopName: shopName.trim() || DEFAULT_SHOP_NAME,
         }),
       );
       setAppView(await loadOnboardingApplication(id));

@@ -6,18 +6,16 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import type { PackageTemplateView } from "@/domains/operator/domain/package-template-view";
-import {
-  parsePackageTemplateStatus,
-  toPackageTemplateView,
-} from "@/domains/operator/domain/package-template-view";
 import { loadPackageTemplate } from "@/domains/operator/application/load-package-template";
 import {
   DEFAULT_PACKAGE_TEMPLATE_ID,
   DEFAULT_PUBLISH_ACTOR_ORG_ID,
+  runMutatePackageTemplateBaseProduct,
+} from "@/domains/operator/application/run-mutate-package-template-base-product";
+import {
   DEFAULT_PUBLISH_ACTOR_USER_ID,
-  postMutatePackageTemplateBaseProduct,
-  postPublishPackageTemplate,
-} from "@/domains/operator/infrastructure/operator-gateway";
+  runPublishPackageTemplate,
+} from "@/domains/operator/application/run-publish-package-template";
 import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
 
@@ -75,17 +73,11 @@ export function PublishPackageTemplatePanel() {
     setBusy(true);
     setError(null);
     try {
-      const r = await postPublishPackageTemplate({
-        templateId: templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID,
-        actorOrgId: actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID,
-        actorUserId: actorUserId.trim() || DEFAULT_PUBLISH_ACTOR_USER_ID,
-      });
       setView(
-        toPackageTemplateView({
-          id: r.templateId,
-          ownerOrgId: r.ownerOrgId,
-          version: r.version,
-          status: parsePackageTemplateStatus(r.status),
+        await runPublishPackageTemplate({
+          templateId: templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID,
+          actorOrgId: actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID,
+          actorUserId: actorUserId.trim() || DEFAULT_PUBLISH_ACTOR_USER_ID,
         }),
       );
     } catch (err) {
@@ -108,23 +100,17 @@ export function PublishPackageTemplatePanel() {
     setBusy(true);
     setError(null);
     try {
-      const r = await postMutatePackageTemplateBaseProduct({
-        templateId: templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID,
-        actorOrgId: actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID,
-        displayName: displayName.trim() || DEFAULT_DISPLAY_NAME,
-        priceCents: Number.isFinite(priceCents)
-          ? priceCents
-          : DEFAULT_PRICE_CENTS,
-        durationDays: Number.isFinite(durationDays)
-          ? durationDays
-          : DEFAULT_DURATION_DAYS,
-      });
       setView(
-        toPackageTemplateView({
-          id: r.templateId,
-          ownerOrgId: r.ownerOrgId,
-          version: r.version,
-          status: parsePackageTemplateStatus(r.status),
+        await runMutatePackageTemplateBaseProduct({
+          templateId: templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID,
+          actorOrgId: actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID,
+          displayName: displayName.trim() || DEFAULT_DISPLAY_NAME,
+          priceCents: Number.isFinite(priceCents)
+            ? priceCents
+            : DEFAULT_PRICE_CENTS,
+          durationDays: Number.isFinite(durationDays)
+            ? durationDays
+            : DEFAULT_DURATION_DAYS,
         }),
       );
     } catch (err) {

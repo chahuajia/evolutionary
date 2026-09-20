@@ -5,11 +5,7 @@
  */
 
 import { FormEvent, useEffect, useState } from "react";
-import {
-  parsePackageOverrideStatus,
-  toPackageOverrideView,
-  type PackageOverrideView,
-} from "@/domains/operator/domain/package-override-view";
+import type { PackageOverrideView } from "@/domains/operator/domain/package-override-view";
 import type { PackageTemplateView } from "@/domains/operator/domain/package-template-view";
 import { loadPackageOverride } from "@/domains/operator/application/load-package-override";
 import {
@@ -23,8 +19,8 @@ import {
   DEFAULT_OVERRIDE_ID,
   DEFAULT_OVERRIDE_PRICE_CENTS,
   DEFAULT_OVERRIDE_TEMPLATE_ID,
-  postActivatePackageOverride,
-} from "@/domains/operator/infrastructure/operator-gateway";
+  runActivatePackageOverride,
+} from "@/domains/operator/application/run-activate-package-override";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
@@ -121,7 +117,7 @@ export function PackageOverridePanel() {
     setBusy(true);
     setError(null);
     try {
-      const r = await postActivatePackageOverride({
+      const r = await runActivatePackageOverride({
         templateId: templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID,
         actorOrgId: actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID,
         actorUserId: actorUserId.trim() || DEFAULT_OVERRIDE_ACTOR_USER_ID,
@@ -133,15 +129,7 @@ export function PackageOverridePanel() {
         },
       });
       setOverrideMissing(false);
-      setView(
-        toPackageOverrideView({
-          overrideId: r.overrideId,
-          orgId: r.orgId,
-          templateId: r.templateId,
-          templateVersion: r.templateVersion,
-          status: parsePackageOverrideStatus(r.status),
-        }),
-      );
+      setView(r.view);
       setPriceLabel(r.priceCents);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

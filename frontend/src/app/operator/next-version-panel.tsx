@@ -6,11 +6,7 @@
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import {
-  parsePackageTemplateStatus,
-  toPackageTemplateView,
-  type PackageTemplateView,
-} from "@/domains/operator/domain/package-template-view";
+import type { PackageTemplateView } from "@/domains/operator/domain/package-template-view";
 import { loadPackageTemplate } from "@/domains/operator/application/load-package-template";
 import {
   DEFAULT_NEXT_VERSION_DISPLAY_NAME,
@@ -20,8 +16,8 @@ import {
   DEFAULT_NEXT_VERSION_SOURCE_ID,
   DEFAULT_PUBLISH_ACTOR_ORG_ID,
   DEFAULT_PUBLISH_ACTOR_USER_ID,
-  postCreateNextVersionDraft,
-} from "@/domains/operator/infrastructure/operator-gateway";
+  runCreateNextVersionDraft,
+} from "@/domains/operator/application/run-create-next-version-draft";
 import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
 
@@ -104,26 +100,20 @@ export function NextVersionPanel() {
     setError(null);
     setDraftView(null);
     try {
-      const r = await postCreateNextVersionDraft({
-        sourceTemplateId:
-          sourceTemplateId.trim() || DEFAULT_NEXT_VERSION_SOURCE_ID,
-        newTemplateId: newTemplateId.trim() || DEFAULT_NEXT_VERSION_NEW_ID,
-        actorOrgId: actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID,
-        actorUserId: actorUserId.trim() || DEFAULT_PUBLISH_ACTOR_USER_ID,
-        displayName: displayName.trim() || DEFAULT_NEXT_VERSION_DISPLAY_NAME,
-        priceCents: Number.isFinite(priceCents)
-          ? priceCents
-          : DEFAULT_NEXT_VERSION_PRICE_CENTS,
-        durationDays: Number.isFinite(durationDays)
-          ? durationDays
-          : DEFAULT_NEXT_VERSION_DURATION_DAYS,
-      });
       setDraftView(
-        toPackageTemplateView({
-          id: r.templateId,
-          ownerOrgId: r.ownerOrgId,
-          version: r.version,
-          status: parsePackageTemplateStatus(r.status),
+        await runCreateNextVersionDraft({
+          sourceTemplateId:
+            sourceTemplateId.trim() || DEFAULT_NEXT_VERSION_SOURCE_ID,
+          newTemplateId: newTemplateId.trim() || DEFAULT_NEXT_VERSION_NEW_ID,
+          actorOrgId: actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID,
+          actorUserId: actorUserId.trim() || DEFAULT_PUBLISH_ACTOR_USER_ID,
+          displayName: displayName.trim() || DEFAULT_NEXT_VERSION_DISPLAY_NAME,
+          priceCents: Number.isFinite(priceCents)
+            ? priceCents
+            : DEFAULT_NEXT_VERSION_PRICE_CENTS,
+          durationDays: Number.isFinite(durationDays)
+            ? durationDays
+            : DEFAULT_NEXT_VERSION_DURATION_DAYS,
         }),
       );
       const srcId = sourceTemplateId.trim() || DEFAULT_NEXT_VERSION_SOURCE_ID;
