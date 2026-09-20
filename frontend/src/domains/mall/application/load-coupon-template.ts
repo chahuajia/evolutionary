@@ -1,29 +1,28 @@
 /**
- * 用例：加载券模板面额（编排 gateway，供领券门 faceCents）。
+ * 用例：加载券模板面额（编排 gateway → CouponTemplateView）。
  */
 
+import {
+  toCouponTemplateView,
+  type CouponTemplateView,
+} from "@/domains/mall/domain/coupon-template-view";
 import {
   DEFAULT_MALL_TEMPLATE,
   fetchCouponTemplate,
 } from "@/domains/mall/infrastructure/mall-gateway";
 
-export type CouponTemplateLoad = {
-  readonly id: string;
-  readonly faceBudgetCents: number;
-  readonly kind: string;
-  readonly campaignId: string;
-};
+export type { CouponTemplateView };
 
 export async function loadCouponTemplate(
   templateId: string = DEFAULT_MALL_TEMPLATE,
-): Promise<CouponTemplateLoad> {
+): Promise<CouponTemplateView> {
   const dto = await fetchCouponTemplate(templateId);
-  return {
+  return toCouponTemplateView({
     id: dto.id,
     faceBudgetCents: dto.faceBudgetCents,
     kind: dto.kind,
     campaignId: dto.campaignId,
-  };
+  });
 }
 
 export { DEFAULT_MALL_TEMPLATE };
