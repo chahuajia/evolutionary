@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-20 18:42（v77；波次以 `loop.md` 为准）
+**写于**：2026-09-20 18:44（v78；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v76（仍写 HEAD `b1fe724` —— 已过时）
+**取代**：v77（仍写 HEAD `95a9cd2` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `95a9cd2`。前端 166/166 · lint 绿。
-wave154 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `91630f2`。前端 166/166 · lint 绿。
+wave155 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -160,6 +160,7 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave151** | DeviceShadow freshnessLabel | ✅ `e8d3bd4` · 前端 **166/166** |
 | **wave152** | 遥测岛 GET shadow 预读 | ✅ `ba66c78` · 前端 **166/166** |
 | **wave153** | triage 岛 GET shadow 预读 | ✅ `b1fe724` · 前端 **166/166** |
+| **wave154** | 应用政策岛 GET profile 预读 | ✅ `95a9cd2` · 前端 **166/166** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -195,8 +196,8 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **166/166** · lint 绿 · HEAD `b1fe724`。父自选推进。
-门禁/同构岛/展示/IoT 预读 idle。下刀厚 BE GET（月账单/政策岛）。拒 ReferralBinding/CreditLedgerDebt。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **166/166** · lint 绿 · HEAD `95a9cd2`。父自选推进。
+门禁/同构岛/展示/IoT 预读 idle。下刀厚 BE GET（月账单岛）。拒 ReferralBinding/CreditLedgerDebt。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
