@@ -9,6 +9,7 @@ import {
 } from "@/domains/operator/domain/onboarding-application-view";
 import {
   DEFAULT_ONBOARDING_APPLICATION_ID,
+  DEFAULT_SHOP_NAME,
   fetchOnboardingApplication,
 } from "@/domains/operator/infrastructure/operator-gateway";
 
@@ -24,4 +25,4 @@ export async function loadOnboardingApplication(
   });
 }
 
-export { DEFAULT_ONBOARDING_APPLICATION_ID };
+export { DEFAULT_ONBOARDING_APPLICATION_ID, DEFAULT_SHOP_NAME };

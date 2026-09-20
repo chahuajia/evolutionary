@@ -5,15 +5,13 @@
 import { PageHeader } from "@/components/page-header";
 import {
   DEFAULT_DOWNLINE_APPLICATION_ID,
-  DEFAULT_OVERRIDE_ID,
-  DEFAULT_PACKAGE_TEMPLATE_ID,
-} from "@/domains/operator/infrastructure/operator-gateway";
-import {
   DEFAULT_OVERRIDE_ACTOR_ORG_ID,
+  DEFAULT_OVERRIDE_ID,
   DEFAULT_OVERRIDE_TEMPLATE_ID,
+  DEFAULT_PACKAGE_TEMPLATE_ID,
   loadEffectiveProduct,
+  type EffectiveProductResult,
 } from "@/domains/operator/application/load-effective-product";
-import type { EffectiveProductResult } from "@/domains/operator/infrastructure/operator-gateway";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import { OperatorWorkspace } from "./operator-workspace";
 import styles from "./page.module.css";

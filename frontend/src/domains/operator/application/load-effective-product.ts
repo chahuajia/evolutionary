@@ -3,8 +3,11 @@
  */
 
 import {
+  DEFAULT_DOWNLINE_APPLICATION_ID,
   DEFAULT_OVERRIDE_ACTOR_ORG_ID,
+  DEFAULT_OVERRIDE_ID,
   DEFAULT_OVERRIDE_TEMPLATE_ID,
+  DEFAULT_PACKAGE_TEMPLATE_ID,
   getEffectiveProduct,
   type EffectiveProductResult,
 } from "@/domains/operator/infrastructure/operator-gateway";
@@ -16,4 +19,11 @@ export async function loadEffectiveProduct(
   return getEffectiveProduct({ orgId, templateId });
 }
 
-export { DEFAULT_OVERRIDE_ACTOR_ORG_ID, DEFAULT_OVERRIDE_TEMPLATE_ID };
+export type { EffectiveProductResult };
+export {
+  DEFAULT_DOWNLINE_APPLICATION_ID,
+  DEFAULT_OVERRIDE_ACTOR_ORG_ID,
+  DEFAULT_OVERRIDE_ID,
+  DEFAULT_OVERRIDE_TEMPLATE_ID,
+  DEFAULT_PACKAGE_TEMPLATE_ID,
+};

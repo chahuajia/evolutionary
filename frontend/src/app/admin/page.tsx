@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import {
   DEFAULT_ONBOARDING_APPLICATION_ID,
   DEFAULT_SHOP_NAME,
-} from "@/domains/operator/infrastructure/operator-gateway";
+} from "@/domains/operator/application/load-onboarding-application";
 import { OnboardingApprovePanel } from "./onboarding-approve-panel";
 import styles from "./page.module.css";
 
