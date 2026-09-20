@@ -102,7 +102,6 @@ export function OnboardingApprovePanel() {
           <input
             value={applicationId}
             onChange={(e) => setApplicationId(e.target.value)}
-            disabled={busy}
           />
         </label>
         <label>
@@ -110,26 +109,26 @@ export function OnboardingApprovePanel() {
           <input
             value={shopName}
             onChange={(e) => setShopName(e.target.value)}
-            disabled={busy}
           />
         </label>
         <button type="submit" disabled={busy || !approveAllowed}>
           {busy ? "批准中…" : "批准入驻"}
         </button>
       </form>
-      {error ? (
-        <p className={styles.note} role="alert">
-          {error}
-        </p>
-      ) : null}
-      {blockMessage && !approveAllowed ? (
+      {!approveAllowed && blockMessage ? (
         <p className={styles.note} role="status">
           {blockMessage}
         </p>
       ) : null}
+      {error ? (
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
+      ) : null}
       {merchant ? (
-        <p className={styles.note}>
+        <p>
           商家 {merchant.orgId} · {merchant.shopName} · {merchant.statusLabel}
+          {merchant.tradeAllowed ? " · 可交易" : ""}
         </p>
       ) : null}
     </section>
