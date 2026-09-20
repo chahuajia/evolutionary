@@ -7,6 +7,7 @@ import com.evolutionary.mall.application.CouponTemplateRepository;
 import com.evolutionary.mall.application.MallSkuRepository;
 import com.evolutionary.mall.application.MerchantProfileRepository;
 import com.evolutionary.mall.application.PurchaseMallOrder;
+import com.evolutionary.mall.application.UserCouponRepository;
 import com.evolutionary.mall.domain.Campaign;
 import com.evolutionary.mall.domain.CouponTemplate;
 import com.evolutionary.mall.domain.MallOrder;
@@ -36,6 +37,7 @@ public class MallController {
     private final CampaignRepository campaigns;
     private final MerchantProfileRepository merchants;
     private final CouponTemplateRepository templates;
+    private final UserCouponRepository userCoupons;
 
     public MallController(
             ClaimCouponFromCampaign claimCouponFromCampaign,
@@ -44,7 +46,8 @@ public class MallController {
             MallSkuRepository skus,
             CampaignRepository campaigns,
             MerchantProfileRepository merchants,
-            CouponTemplateRepository templates) {
+            CouponTemplateRepository templates,
+            UserCouponRepository userCoupons) {
         this.claimCouponFromCampaign = claimCouponFromCampaign;
         this.purchaseMallOrder = purchaseMallOrder;
         this.checkoutMallOrderWithCoupons = checkoutMallOrderWithCoupons;
@@ -52,6 +55,7 @@ public class MallController {
         this.campaigns = campaigns;
         this.merchants = merchants;
         this.templates = templates;
+        this.userCoupons = userCoupons;
     }
 
     /** 只读：供前端展示门对齐 stock / ON_SALE。 */
@@ -88,6 +92,15 @@ public class MallController {
         return templates
                 .findById(templateId.trim())
                 .map(t -> ResponseEntity.ok(toTemplateView(t)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /** 只读：供前端带券结账门对齐 checkoutSelectable（仅 AVAILABLE）。 */
+    @GetMapping("/user-coupons/{userCouponId}")
+    public ResponseEntity<?> getUserCoupon(@PathVariable String userCouponId) {
+        return userCoupons
+                .findById(userCouponId.trim())
+                .map(c -> ResponseEntity.ok(toCouponView(c)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 

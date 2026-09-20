@@ -1,9 +1,11 @@
 package com.evolutionary.mall.interfaces;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 /**
  * 切片10a：活动领券 HTTP（CAMP-OK · 200 id/userId/templateId/status；预算耗尽 409）。
@@ -35,6 +38,35 @@ class ClaimCouponHttpIT {
                 .andExpect(jsonPath("$.userId").value("U1"))
                 .andExpect(jsonPath("$.templateId").value("T-C1"))
                 .andExpect(jsonPath("$.status").value("available"));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    @DisplayName("claim → GET /mall/user-coupons/{id} 对齐 available")
+    void getUserCouponAfterClaim() throws Exception {
+        MvcResult claim =
+                mvc.perform(
+                                post("/mall/campaigns/CAMP-OK/claims")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .content(
+                                                "{\"userId\":\"U1\",\"templateId\":\"T-C1\"}"))
+                        .andExpect(status().isOk())
+                        .andReturn();
+        String couponId = JsonPath.read(claim.getResponse().getContentAsString(), "$.id");
+
+        mvc.perform(get("/mall/user-coupons/" + couponId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(couponId))
+                .andExpect(jsonPath("$.userId").value("U1"))
+                .andExpect(jsonPath("$.templateId").value("T-C1"))
+                .andExpect(jsonPath("$.status").value("available"));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    @DisplayName("GET 不存在券 → 404")
+    void getUserCouponNotFound() throws Exception {
+        mvc.perform(get("/mall/user-coupons/UC-MISSING")).andExpect(status().isNotFound());
     }
 
     @Test

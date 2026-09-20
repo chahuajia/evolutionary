@@ -54,11 +54,34 @@ function parseClaimCoupon(raw: Record<string, unknown>): ClaimCouponResult {
   const id = String(raw.id ?? "");
   const userId = String(raw.userId ?? "");
   const templateId = String(raw.templateId ?? "");
-  const status = String(raw.status ?? "");
+  // BE UserCouponView 历史契约为小写；视图层契约为大写枚举
+  const status = String(raw.status ?? "").toUpperCase();
   if (!id || !status) {
     throw new Error("领券响应缺少 id/status");
   }
   return { id, userId, templateId, status };
+}
+
+/** GET /mall/user-coupons/{id} 读模型（status 已规范化为大写） */
+export type UserCouponDto = {
+  id: string;
+  userId: string;
+  templateId: string;
+  status: string;
+};
+
+/** GET /mall/user-coupons/{id} — 对齐 checkoutSelectable */
+export async function fetchUserCoupon(userCouponId: string): Promise<UserCouponDto> {
+  const base = apiBase();
+  const id = userCouponId.trim();
+  if (!id) {
+    throw new Error("userCouponId required");
+  }
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/mall/user-coupons/${encodeURIComponent(id)}`,
+    { method: "GET", timeoutMs: TIMEOUT_MS },
+  );
+  return parseClaimCoupon(raw);
 }
 
 export const DEFAULT_MALL_SKU = "S1";

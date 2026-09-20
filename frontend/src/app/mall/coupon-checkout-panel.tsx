@@ -2,13 +2,12 @@
 
 /**
  * 带券结账客户端岛 — 先领券再 POST checkout-with-coupons（AC-42..44）。
- * GET SKU / Merchant / Wallet 对齐可购、可交易、余额覆盖标价（券后实付可能更低）。
+ * GET SKU / Merchant / Wallet / UserCoupon 对齐可购、可交易、余额与 checkoutSelectable。
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { toCheckoutView } from "@/domains/mall/domain/mall-checkout-view";
 import {
-  canSelectCouponForCheckout,
   parseUserCouponStatus,
   toUserCouponView,
   type UserCouponView,
@@ -31,6 +30,7 @@ import {
   DEFAULT_MALL_USER,
   fetchMallSku,
   fetchMerchantProfile,
+  fetchUserCoupon,
   postCheckoutWithCoupons,
   postClaimCoupon,
 } from "@/domains/mall/infrastructure/mall-gateway";
@@ -48,6 +48,7 @@ export function CouponCheckoutPanel() {
   const [userId, setUserId] = useState(DEFAULT_MALL_USER);
   const [couponId, setCouponId] = useState("");
   const [couponView, setCouponView] = useState<UserCouponView | null>(null);
+  const [couponLoadError, setCouponLoadError] = useState<string | null>(null);
   const [skuView, setSkuView] = useState<MallSkuView | null>(null);
   const [merchantView, setMerchantView] =
     useState<MerchantProfileView | null>(null);
@@ -136,6 +137,37 @@ export function CouponCheckoutPanel() {
     };
   }, [userId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const id = couponId.trim();
+    if (!id) {
+      setCouponView(null);
+      setCouponLoadError(null);
+      return;
+    }
+    setCouponLoadError(null);
+    fetchUserCoupon(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setCouponView(
+          toUserCouponView({
+            id: dto.id,
+            userId: dto.userId,
+            templateId: dto.templateId,
+            status: parseUserCouponStatus(dto.status),
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setCouponView(null);
+        setCouponLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [couponId]);
+
   const gate = useMemo(() => {
     if (!skuView) {
       return {
@@ -167,15 +199,20 @@ export function CouponCheckoutPanel() {
         blockMessage: merchantView.blockMessage,
       };
     }
-    if (
-      couponView &&
-      couponId.trim() === couponView.id &&
-      !canSelectCouponForCheckout(couponView.status)
-    ) {
-      return {
-        checkoutAllowed: false,
-        blockMessage: couponView.blockMessage,
-      };
+    const pasted = couponId.trim();
+    if (pasted) {
+      if (!couponView || couponView.id !== pasted) {
+        return {
+          checkoutAllowed: false,
+          blockMessage: couponLoadError ?? "正在加载用户券…",
+        };
+      }
+      if (!couponView.checkoutSelectable) {
+        return {
+          checkoutAllowed: false,
+          blockMessage: couponView.blockMessage,
+        };
+      }
     }
     const listCents = skuView.priceCents * QTY;
     if (!canCoverCents(walletView.balanceCents, listCents)) {
@@ -191,6 +228,7 @@ export function CouponCheckoutPanel() {
     walletView,
     couponView,
     couponId,
+    couponLoadError,
     skuLoadError,
     merchantLoadError,
     walletLoadError,
@@ -205,14 +243,17 @@ export function CouponCheckoutPanel() {
         userId: userId.trim() || DEFAULT_MALL_USER,
         templateId: DEFAULT_MALL_TEMPLATE,
       });
-      const view = toUserCouponView({
-        id: c.id,
-        userId: c.userId,
-        templateId: c.templateId,
-        status: parseUserCouponStatus(c.status),
-      });
       setCouponId(c.id);
-      setCouponView(view);
+      // couponId effect 会 GET 真态；先本地写入避免按钮闪灰
+      setCouponView(
+        toUserCouponView({
+          id: c.id,
+          userId: c.userId,
+          templateId: c.templateId,
+          status: parseUserCouponStatus(c.status),
+        }),
+      );
+      setCouponLoadError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -240,13 +281,27 @@ export function CouponCheckoutPanel() {
         userCouponIds: ids,
       });
       setResult(toCheckoutView(r));
-      if (couponView && ids[0] === couponView.id) {
-        setCouponView(
-          toUserCouponView({
-            ...couponView,
-            status: "USED",
-          }),
-        );
+      if (ids[0]) {
+        try {
+          const dto = await fetchUserCoupon(ids[0]);
+          setCouponView(
+            toUserCouponView({
+              id: dto.id,
+              userId: dto.userId,
+              templateId: dto.templateId,
+              status: parseUserCouponStatus(dto.status),
+            }),
+          );
+        } catch {
+          if (couponView && ids[0] === couponView.id) {
+            setCouponView(
+              toUserCouponView({
+                ...couponView,
+                status: "USED",
+              }),
+            );
+          }
+        }
       }
       setWalletView(await loadWallet(uid));
       const dto = await fetchMallSku(DEFAULT_MALL_SKU);
@@ -274,12 +329,16 @@ export function CouponCheckoutPanel() {
     <section className={styles.panel}>
       <h2>带券结账（HTTP · AC-42..44）</h2>
       <p className={styles.note}>
-        GET SKU / Merchant / Wallet 对齐可购、可交易与余额
+        GET SKU / Merchant / Wallet / UserCoupon 对齐可购、可交易、余额与
+        checkoutSelectable
         {skuView ? ` · ${skuView.name}` : ""}
         {merchantView
           ? ` · ${merchantView.shopName}(${merchantView.statusLabel})`
           : ""}
         {walletView ? ` · 余额 ¥${walletView.balanceYuan}` : ""}
+        {couponView
+          ? ` · 券 ${couponView.id}=${couponView.status}`
+          : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
@@ -290,12 +349,7 @@ export function CouponCheckoutPanel() {
           userCouponId
           <input
             value={couponId}
-            onChange={(e) => {
-              setCouponId(e.target.value);
-              if (!couponView || e.target.value.trim() !== couponView.id) {
-                setCouponView(null);
-              }
-            }}
+            onChange={(e) => setCouponId(e.target.value)}
             placeholder="先点领券或粘贴券 id"
           />
         </label>
