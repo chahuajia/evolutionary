@@ -7,10 +7,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { MallCheckoutView } from "@/domains/mall/domain/mall-checkout-view";
-import {
-  toUserCouponView,
-  type UserCouponView,
-} from "@/domains/mall/domain/user-coupon-view";
+import type { UserCouponView } from "@/domains/mall/domain/user-coupon-view";
 import type { MallSkuView } from "@/domains/mall/domain/mall-sku-view";
 import type { MerchantProfileView } from "@/domains/mall/domain/merchant-profile-view";
 import { loadMallSku } from "@/domains/mall/application/load-mall-sku";
@@ -248,16 +245,8 @@ export function CouponCheckoutPanel() {
         try {
           setCouponView(await loadUserCoupon(ids[0]));
         } catch {
-          if (couponView && ids[0] === couponView.id) {
-            setCouponView(
-              toUserCouponView({
-                id: couponView.id,
-                userId: couponView.userId,
-                templateId: couponView.templateId,
-                status: "USED",
-              }),
-            );
-          }
+          // GET 失败不捏造 USED —— 清空等下次真读
+          setCouponView(null);
         }
       }
       setWalletView(await loadWallet(uid));
