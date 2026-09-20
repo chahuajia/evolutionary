@@ -2,11 +2,16 @@
 
 /**
  * IoT SOC 过时诊断客户端岛 — 默认 BAT-IOT-1；展示 nextStep / orderedChecks / shadow。
+ * GET shadow 预读当前新鲜度（厚 GET）；POST triage 出下一步。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import type { DeviceShadowView } from "@/domains/iot/domain/device-shadow-view";
 import {
   DEFAULT_IOT_BATTERY,
+  loadDeviceShadow,
+} from "@/domains/iot/application/load-device-shadow";
+import {
   runTriageOutdatedSoc,
   type TriageOutdatedSocView,
 } from "@/domains/iot/application/run-triage-outdated-soc";
@@ -17,6 +22,28 @@ export function TriagePanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<TriageOutdatedSocView | null>(null);
+  const [preload, setPreload] = useState<DeviceShadowView | null>(null);
+  const [preloadError, setPreloadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
+    setPreloadError(null);
+    setView(null);
+    loadDeviceShadow(id)
+      .then((next) => {
+        if (cancelled) return;
+        setPreload(next);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setPreload(null);
+        setPreloadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [batteryId]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -24,9 +51,10 @@ export function TriagePanel() {
     setError(null);
     setView(null);
     try {
-      setView(
-        await runTriageOutdatedSoc(batteryId.trim() || DEFAULT_IOT_BATTERY),
-      );
+      const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
+      const next = await runTriageOutdatedSoc(id);
+      setView(next);
+      setPreload(next.shadow);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -37,6 +65,14 @@ export function TriagePanel() {
   return (
     <section className={styles.panel}>
       <h2>SOC 过时诊断（HTTP）</h2>
+      <p className={styles.note}>
+        GET shadow 预读；stale 时下一步多为「影子已过期」
+        {preload
+          ? ` · ${preload.batteryId}=${preload.freshnessLabel}`
+          : preloadError
+            ? ` · ${preloadError}`
+            : " · 加载中…"}
+      </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
           batteryId
