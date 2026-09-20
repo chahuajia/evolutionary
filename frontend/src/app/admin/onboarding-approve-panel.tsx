@@ -7,21 +7,17 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import {
-  parseOnboardingStatus,
-  toOnboardingApplicationView,
-  type OnboardingApplicationView,
-} from "@/domains/operator/domain/onboarding-application-view";
+  DEFAULT_ONBOARDING_APPLICATION_ID,
+  DEFAULT_SHOP_NAME,
+  loadOnboardingApplication,
+} from "@/domains/operator/application/load-onboarding-application";
+import type { OnboardingApplicationView } from "@/domains/operator/domain/onboarding-application-view";
 import {
   parseMerchantProfileStatus,
   toMerchantProfileView,
   type MerchantProfileView,
 } from "@/domains/mall/domain/merchant-profile-view";
-import {
-  DEFAULT_ONBOARDING_APPLICATION_ID,
-  DEFAULT_SHOP_NAME,
-  fetchOnboardingApplication,
-  postApproveOnboarding,
-} from "@/domains/operator/infrastructure/operator-gateway";
+import { postApproveOnboarding } from "@/domains/operator/infrastructure/operator-gateway";
 import styles from "./page.module.css";
 
 export function OnboardingApprovePanel() {
@@ -41,17 +37,10 @@ export function OnboardingApprovePanel() {
     let cancelled = false;
     const id = applicationId.trim() || DEFAULT_ONBOARDING_APPLICATION_ID;
     setAppLoadError(null);
-    fetchOnboardingApplication(id)
-      .then((dto) => {
+    loadOnboardingApplication(id)
+      .then((view) => {
         if (cancelled) return;
-        setAppView(
-          toOnboardingApplicationView({
-            id: dto.id,
-            orgId: dto.orgId,
-            capability: dto.capability,
-            status: parseOnboardingStatus(dto.status),
-          }),
-        );
+        setAppView(view);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -91,15 +80,7 @@ export function OnboardingApprovePanel() {
           status: parseMerchantProfileStatus(r.status),
         }),
       );
-      const dto = await fetchOnboardingApplication(id);
-      setAppView(
-        toOnboardingApplicationView({
-          id: dto.id,
-          orgId: dto.orgId,
-          capability: dto.capability,
-          status: parseOnboardingStatus(dto.status),
-        }),
-      );
+      setAppView(await loadOnboardingApplication(id));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -121,6 +102,7 @@ export function OnboardingApprovePanel() {
           <input
             value={applicationId}
             onChange={(e) => setApplicationId(e.target.value)}
+            disabled={busy}
           />
         </label>
         <label>
@@ -128,26 +110,26 @@ export function OnboardingApprovePanel() {
           <input
             value={shopName}
             onChange={(e) => setShopName(e.target.value)}
+            disabled={busy}
           />
         </label>
         <button type="submit" disabled={busy || !approveAllowed}>
           {busy ? "批准中…" : "批准入驻"}
         </button>
       </form>
-      {!approveAllowed && blockMessage ? (
+      {error ? (
+        <p className={styles.note} role="alert">
+          {error}
+        </p>
+      ) : null}
+      {blockMessage && !approveAllowed ? (
         <p className={styles.note} role="status">
           {blockMessage}
         </p>
       ) : null}
-      {error ? (
-        <p className={styles.error} role="alert">
-          {error}
-        </p>
-      ) : null}
       {merchant ? (
-        <p>
+        <p className={styles.note}>
           商家 {merchant.orgId} · {merchant.shopName} · {merchant.statusLabel}
-          {merchant.tradeAllowed ? " · 可交易" : ""}
         </p>
       ) : null}
     </section>

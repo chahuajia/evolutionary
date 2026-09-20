@@ -13,16 +13,12 @@ import {
   DEFAULT_DOWNLINE_ACTOR_USER_ID,
   DEFAULT_DOWNLINE_APPLICATION_ID,
 } from "@/domains/operator/application/approve-operator-downline";
-import {
-  parseOnboardingStatus,
-  toOnboardingApplicationView,
-  type OnboardingApplicationView,
-} from "@/domains/operator/domain/onboarding-application-view";
+import { loadOnboardingApplication } from "@/domains/operator/application/load-onboarding-application";
+import type { OnboardingApplicationView } from "@/domains/operator/domain/onboarding-application-view";
 import {
   toOrganizationView,
   type OrganizationView,
 } from "@/domains/operator/domain/organization-view";
-import { fetchOnboardingApplication } from "@/domains/operator/infrastructure/operator-gateway";
 import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
 
@@ -50,17 +46,10 @@ export function ApproveDownlinePanel() {
     let cancelled = false;
     const id = applicationId.trim() || DEFAULT_DOWNLINE_APPLICATION_ID;
     setAppLoadError(null);
-    fetchOnboardingApplication(id)
-      .then((dto) => {
+    loadOnboardingApplication(id)
+      .then((view) => {
         if (cancelled) return;
-        setAppView(
-          toOnboardingApplicationView({
-            id: dto.id,
-            orgId: dto.orgId,
-            capability: dto.capability,
-            status: parseOnboardingStatus(dto.status),
-          }),
-        );
+        setAppView(view);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -108,15 +97,7 @@ export function ApproveDownlinePanel() {
           operatorCapability: r.operatorCapability,
         }),
       );
-      const dto = await fetchOnboardingApplication(id);
-      setAppView(
-        toOnboardingApplicationView({
-          id: dto.id,
-          orgId: dto.orgId,
-          capability: dto.capability,
-          status: parseOnboardingStatus(dto.status),
-        }),
-      );
+      setAppView(await loadOnboardingApplication(id));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
