@@ -7,6 +7,7 @@
 import {
   canSwapWithEntitlement,
   isExhaustedEntitlement,
+  parseEntitlementStatus,
   type EntitlementStatus,
 } from "./entitlement-view";
 
@@ -16,6 +17,19 @@ export type SelectableEntitlement = {
   /** null = UNLIMITED；非 null = FINITE 剩余次数。 */
   readonly remainingSwaps: number | null;
 };
+
+/** wire → 选卡目录项（parse status，不透 DTO）。 */
+export function toSelectableEntitlement(dto: {
+  id: string;
+  status: unknown;
+  remainingSwaps: number | null;
+}): SelectableEntitlement {
+  return {
+    id: dto.id,
+    status: parseEntitlementStatus(dto.status),
+    remainingSwaps: dto.remainingSwaps,
+  };
+}
 
 export function isFiniteEntitlement(
   remainingSwaps: number | null,

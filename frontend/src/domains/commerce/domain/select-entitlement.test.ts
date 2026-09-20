@@ -4,6 +4,7 @@ import {
   isExhaustedEntitlement,
   isFiniteEntitlement,
   selectDefaultEntitlement,
+  toSelectableEntitlement,
   type SelectableEntitlement,
 } from "./select-entitlement";
 
@@ -79,5 +80,27 @@ describe("defaultSelectBlockMessage", () => {
         { id: "E-1", status: "ACTIVE", remainingSwaps: null },
       ]),
     ).toBeNull();
+  });
+});
+
+describe("toSelectableEntitlement", () => {
+  it("parses status from wire", () => {
+    const row = toSelectableEntitlement({
+      id: "E-1",
+      status: "ACTIVE",
+      remainingSwaps: 2,
+    });
+    expect(row.status).toBe("ACTIVE");
+    expect(row.remainingSwaps).toBe(2);
+  });
+
+  it("rejects unknown status", () => {
+    expect(() =>
+      toSelectableEntitlement({
+        id: "E-X",
+        status: "WEIRD",
+        remainingSwaps: null,
+      }),
+    ).toThrow(/未知/);
   });
 });
