@@ -84,7 +84,7 @@ export function CommLostPanel() {
       <p className={styles.note}>
         GET shadow 对齐 DetectCommLost：仅 stale 时检测有意义
         {shadowView
-          ? ` · ${shadowView.batteryId}=${shadowView.fresh ? "fresh" : "stale"}`
+          ? ` · ${shadowView.batteryId}=${shadowView.fresh ? "新鲜" : "过期"}`
           : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
@@ -118,37 +118,34 @@ export function CommLostPanel() {
 }
 
 function DetectResultView({ result }: { result: DetectCommLostView }) {
-  const alertLabel =
-    result.alertType ?? (result.raised ? "COMM_LOST" : null);
-
   return (
     <dl className={styles.dl}>
       <dt>电池</dt>
       <dd>{result.batteryId}</dd>
 
-      <dt>stale</dt>
+      <dt>影子</dt>
       <dd>
         <span
           className={result.stale ? styles.badgeStale : styles.badgeFresh}
         >
-          {result.stale ? "stale" : "fresh"}
+          {result.staleLabel}
         </span>
         {result.detectUseful ? " · 值得检测" : " · 检测无意义"}
       </dd>
 
-      <dt>raised</dt>
-      <dd>{result.raised ? "是" : "否"}</dd>
+      <dt>告警</dt>
+      <dd>{result.raisedLabel}</dd>
 
-      {alertLabel ? (
+      {result.alertTypeLabel ? (
         <>
-          <dt>alertType</dt>
-          <dd>{alertLabel}</dd>
+          <dt>类型</dt>
+          <dd>{result.alertTypeLabel}</dd>
         </>
       ) : null}
 
       {result.ticketId ? (
         <>
-          <dt>ticketId</dt>
+          <dt>工单</dt>
           <dd>{result.ticketId}</dd>
         </>
       ) : null}

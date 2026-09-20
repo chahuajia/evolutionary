@@ -163,9 +163,6 @@ function parseTelemetryResult(
   };
 }
 
-/** TriageOutdatedSoc.NextStep（BE 枚举名） */
-export type TriageNextStep = "SHADOW_STALE" | "CHECK_ADAPTER" | string;
-
 /** 诊断报告中的影子摘要（对齐 ShadowView 常用字段） */
 export type TriageShadowSummary = {
   batteryId: string;
@@ -177,13 +174,10 @@ export type TriageShadowSummary = {
   lockState: string | null;
 };
 
-/**
- * POST /iot/batteries/{id}/triage-outdated-soc 读模型
- * 含 nextStep / orderedChecks / shadow（AC-61）
- */
+/** TriageOutdatedSoc 读模型（nextStep 由域层 parse） */
 export type TriageOutdatedSocResult = {
   batteryId: string;
-  nextStep: TriageNextStep;
+  nextStep: string;
   orderedChecks: string[];
   shadow: TriageShadowSummary;
 };
