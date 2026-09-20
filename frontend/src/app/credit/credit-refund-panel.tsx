@@ -67,11 +67,7 @@ export function CreditRefundPanel() {
     if (!orderView.refundAllowed) {
       return {
         refundAllowed: false,
-        blockMessage:
-          orderView.blockMessage ??
-          (orderView.status === "CREATED"
-            ? "订单未支付，不可退款"
-            : "当前状态不可退款"),
+        blockMessage: orderView.refundBlockMessage ?? "当前状态不可退款",
         statusLabel: orderView.statusLabel,
       };
     }

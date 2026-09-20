@@ -32,12 +32,22 @@ describe("toCommerceOrderView", () => {
   it("PAID is refundable", () => {
     const view = toCommerceOrderView({ orderId: "O-1", status: "PAID" });
     expect(view.refundAllowed).toBe(true);
+    expect(view.refundBlockMessage).toBeNull();
     expect(view.statusLabel).toBe("已支付");
+  });
+
+  it("CREATED blocks refund with unpaid message", () => {
+    const view = toCommerceOrderView({ orderId: "O-1", status: "CREATED" });
+    expect(view.refundAllowed).toBe(false);
+    expect(view.payAllowed).toBe(true);
+    expect(view.blockMessage).toBeNull();
+    expect(view.refundBlockMessage).toContain("未支付");
   });
 
   it("REFUNDED is blocked", () => {
     const view = toCommerceOrderView({ orderId: "O-1", status: "REFUNDED" });
     expect(view.refundAllowed).toBe(false);
     expect(view.blockMessage).toContain("已退款");
+    expect(view.refundBlockMessage).toContain("已退款");
   });
 });
