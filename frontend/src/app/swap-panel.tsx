@@ -8,11 +8,10 @@
 
 import { FormEvent, useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type {
-  StationSummary,
-  SwapLog,
-} from "@/domains/swap/infrastructure/station-gateway";
-import { toStationView } from "@/domains/swap/domain/station-view";
+import {
+  toStationView,
+  type StationView,
+} from "@/domains/swap/domain/station-view";
 import {
   parseBatteryStatus,
   toBatteryView,
@@ -21,6 +20,7 @@ import {
 import {
   fetchSwapLogs,
   resolveApiBase,
+  type SwapLog,
 } from "@/domains/swap/infrastructure/station-gateway";
 import { fetchJson } from "@/shared/http/fetch-json";
 import styles from "./page.module.css";
@@ -37,7 +37,7 @@ type StationDetailDto = {
 type SwapResult = { stationId: string; outgoingId: string; incomingId: string };
 
 type Props = {
-  stations: readonly StationSummary[];
+  stations: readonly StationView[];
   initialStationId: string;
   listError: string | null;
 };
@@ -185,29 +185,26 @@ export function SwapPanel({ stations, initialStationId, listError }: Props) {
         </div>
         {stations.length > 0 && (
           <ul className={styles.stationList}>
-            {stations.map((s) => {
-              const view = toStationView(s);
-              return (
-                <li key={view.id}>
-                  <button
-                    type="button"
-                    disabled={!view.selectable}
-                    className={
-                      view.id === stationId
-                        ? styles.stationPickActive
-                        : styles.stationPick
-                    }
-                    onClick={() => {
-                      setStationId(view.id);
-                      setStation(null);
-                    }}
-                  >
-                    {view.name}（{view.id}）— {view.availabilityLabel} · 电池{" "}
-                    {view.batteryCount}
-                  </button>
-                </li>
-              );
-            })}
+            {stations.map((view) => (
+              <li key={view.id}>
+                <button
+                  type="button"
+                  disabled={!view.selectable}
+                  className={
+                    view.id === stationId
+                      ? styles.stationPickActive
+                      : styles.stationPick
+                  }
+                  onClick={() => {
+                    setStationId(view.id);
+                    setStation(null);
+                  }}
+                >
+                  {view.name}（{view.id}）— {view.availabilityLabel} · 电池{" "}
+                  {view.batteryCount}
+                </button>
+              </li>
+            ))}
           </ul>
         )}
       </section>

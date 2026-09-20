@@ -5,14 +5,14 @@ import { DefaultSelectPanel } from "./default-select-panel";
 import { EntitledSwapPanel } from "./entitled-swap-panel";
 import { MeteredSwapPanel } from "./metered-swap-panel";
 import { SwapPanel } from "./swap-panel";
-import type { StationSummary } from "@/domains/swap/infrastructure/station-gateway";
+import type { StationView } from "@/domains/swap/domain/station-view";
 
 export function HomeWorkflows({
   stations,
   initialStationId,
   listError,
 }: {
-  stations: readonly StationSummary[];
+  stations: readonly StationView[];
   initialStationId: string;
   listError: string | null;
 }) {

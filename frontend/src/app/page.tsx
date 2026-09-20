@@ -3,21 +3,21 @@
  */
 
 import { PageHeader } from "@/components/page-header";
+import { loadStationSummaries } from "@/domains/swap/application/load-station-summaries";
 import {
-  fetchStationSummaries,
-  fetchSwapLogs,
-  type StationSummary,
+  loadSwapLogs,
   type SwapLog,
-} from "@/domains/swap/infrastructure/station-gateway";
+} from "@/domains/swap/application/load-swap-logs";
+import type { StationView } from "@/domains/swap/domain/station-view";
 import { HomeWorkflows } from "./home-workflows";
 import styles from "./page.module.css";
 
 export default async function Home() {
-  let stations: readonly StationSummary[] = [];
+  let stations: readonly StationView[] = [];
   let listError: string | null = null;
 
   try {
-    stations = await fetchStationSummaries();
+    stations = await loadStationSummaries();
   } catch (e) {
     listError =
       e instanceof Error
@@ -31,7 +31,7 @@ export default async function Home() {
   let logsError: string | null = null;
 
   try {
-    swapLogs = await fetchSwapLogs(initialStationId);
+    swapLogs = await loadSwapLogs(initialStationId);
   } catch (e) {
     logsError =
       e instanceof Error
