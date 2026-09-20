@@ -60,7 +60,7 @@ export function CreditRepayPanel({
         const hit = rows.find((r) => r.id === id);
         if (!hit) {
           setStatementView(null);
-          setLoadError(`未找到账单 ${id}（交后端判态）`);
+          setLoadError(`未找到账单 ${id}`);
           return;
         }
         setStatementView(
@@ -114,10 +114,6 @@ export function CreditRepayPanel({
       };
     }
     if (!statementView) {
-      // 列表未命中时仍允许提交，由后端判；加载中禁用
-      if (loadError?.includes("未找到")) {
-        return { allowed: true, message: null as string | null };
-      }
       return {
         allowed: false,
         message: loadError ?? "正在加载账单…",
