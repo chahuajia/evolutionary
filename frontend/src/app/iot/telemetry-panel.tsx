@@ -5,17 +5,14 @@
  */
 
 import { FormEvent, useState } from "react";
-import {
-  toDeviceShadowView,
-  type DeviceShadowView,
-} from "@/domains/iot/domain/device-shadow-view";
+import type { DeviceShadowView } from "@/domains/iot/domain/device-shadow-view";
 import {
   DEFAULT_IOT_BATTERY,
   DEFAULT_TELEMETRY_SOC,
   DEFAULT_TELEMETRY_VENDOR,
   DEFAULT_TELEMETRY_VOLTAGE_MILLI,
-  postTelemetry,
-} from "@/domains/iot/infrastructure/iot-gateway";
+  runPostTelemetry,
+} from "@/domains/iot/application/run-post-telemetry";
 import styles from "./page.module.css";
 
 export function TelemetryPanel() {
@@ -35,13 +32,13 @@ export function TelemetryPanel() {
     setError(null);
     setView(null);
     try {
-      const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
-      const r = await postTelemetry(id, {
-        vendorId: vendorId.trim() || DEFAULT_TELEMETRY_VENDOR,
-        soc: Number(soc) || DEFAULT_TELEMETRY_SOC,
-        voltageMilli: Number(voltageMilli) || DEFAULT_TELEMETRY_VOLTAGE_MILLI,
-      });
-      setView(toDeviceShadowView(r));
+      setView(
+        await runPostTelemetry(batteryId.trim() || DEFAULT_IOT_BATTERY, {
+          vendorId: vendorId.trim() || DEFAULT_TELEMETRY_VENDOR,
+          soc: Number(soc) || DEFAULT_TELEMETRY_SOC,
+          voltageMilli: Number(voltageMilli) || DEFAULT_TELEMETRY_VOLTAGE_MILLI,
+        }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

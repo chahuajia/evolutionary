@@ -15,16 +15,16 @@ import {
   loadDeviceShadow,
 } from "@/domains/iot/application/load-device-shadow";
 import {
-  postDetectCommLost,
-  type DetectCommLostResult,
-} from "@/domains/iot/infrastructure/iot-gateway";
+  runDetectCommLost,
+  type DetectCommLostView,
+} from "@/domains/iot/application/run-detect-comm-lost";
 import styles from "./page.module.css";
 
 export function CommLostPanel() {
   const [batteryId, setBatteryId] = useState(DEFAULT_IOT_BATTERY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<DetectCommLostResult | null>(null);
+  const [result, setResult] = useState<DetectCommLostView | null>(null);
   const [shadowView, setShadowView] = useState<DeviceShadowView | null>(null);
   const [shadowLoadError, setShadowLoadError] = useState<string | null>(null);
 
@@ -78,8 +78,7 @@ export function CommLostPanel() {
     setResult(null);
     try {
       const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
-      const r = await postDetectCommLost(id);
-      setResult(r);
+      setResult(await runDetectCommLost(id));
       setShadowView(await loadDeviceShadow(id));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -127,7 +126,7 @@ export function CommLostPanel() {
   );
 }
 
-function DetectResultView({ result }: { result: DetectCommLostResult }) {
+function DetectResultView({ result }: { result: DetectCommLostView }) {
   const alertLabel =
     result.alertType ?? (result.raised ? "COMM_LOST" : null);
   const detectUseful = canDetectCommLost(result.stale);

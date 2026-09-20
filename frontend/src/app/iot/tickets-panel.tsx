@@ -5,15 +5,12 @@
  */
 
 import { FormEvent, useState } from "react";
-import {
-  toMaintenanceTicketView,
-  type MaintenanceTicketView,
-} from "@/domains/iot/domain/maintenance-ticket-view";
+import type { MaintenanceTicketView } from "@/domains/iot/domain/maintenance-ticket-view";
 import {
   DEFAULT_IOT_BATTERY,
   loadTickets,
 } from "@/domains/iot/application/load-tickets";
-import { postResolveMaintenanceTicket } from "@/domains/iot/infrastructure/iot-gateway";
+import { runResolveMaintenanceTicket } from "@/domains/iot/application/run-resolve-maintenance-ticket";
 import styles from "./page.module.css";
 
 export function TicketsPanel() {
@@ -49,8 +46,7 @@ export function TicketsPanel() {
     setError(null);
     setStatus(null);
     try {
-      const dto = await postResolveMaintenanceTicket(ticket.ticketId);
-      const view = toMaintenanceTicketView(dto);
+      const view = await runResolveMaintenanceTicket(ticket.ticketId);
       setTickets((prev) =>
         (prev ?? []).map((t) => (t.ticketId === view.ticketId ? view : t)),
       );
