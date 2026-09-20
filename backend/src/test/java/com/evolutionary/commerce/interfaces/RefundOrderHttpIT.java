@@ -1,5 +1,6 @@
 package com.evolutionary.commerce.interfaces;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -44,11 +45,23 @@ class RefundOrderHttpIT {
         String orderId = jsonField(body, "orderId");
         String entitlementId = jsonField(body, "entitlementId");
 
+        mvc.perform(get("/commerce/orders/" + orderId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.orderId").value(orderId))
+                .andExpect(jsonPath("$.userId").value("U1"))
+                .andExpect(jsonPath("$.status").value("PAID"));
+
+        mvc.perform(get("/commerce/orders/NO-SUCH")).andExpect(status().isNotFound());
+
         mvc.perform(post("/commerce/orders/" + orderId + "/refund"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.orderId").value(orderId))
                 .andExpect(jsonPath("$.status").value("REFUNDED"))
                 .andExpect(jsonPath("$.revokedEntitlementId").value(entitlementId));
+
+        mvc.perform(get("/commerce/orders/" + orderId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("REFUNDED"));
 
         mvc.perform(post("/commerce/orders/" + orderId + "/refund"))
                 .andExpect(status().isUnprocessableEntity())

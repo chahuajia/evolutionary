@@ -1,5 +1,5 @@
 /**
- * 订单退款防腐 — POST /commerce/orders/{orderId}/refund
+ * 订单退款防腐 — GET/POST /commerce/orders/{orderId}
  * RSC 直连 Spring；浏览器经 Next `/api` rewrite。
  */
 
@@ -7,6 +7,32 @@ import { apiBase } from "@/shared/http/api-base";
 import { fetchJson } from "@/shared/http/fetch-json";
 
 const TIMEOUT_MS = 8000;
+
+export type CommerceOrderDto = {
+  orderId: string;
+  userId: string;
+  status: string;
+};
+
+/**
+ * GET /commerce/orders/{orderId}
+ */
+export async function fetchCommerceOrder(
+  orderId: string,
+): Promise<CommerceOrderDto> {
+  const id = orderId.trim();
+  if (!id) throw new Error("orderId required");
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/commerce/orders/${encodeURIComponent(id)}`,
+    { timeoutMs: TIMEOUT_MS },
+  );
+  return {
+    orderId: String(raw.orderId ?? id),
+    userId: String(raw.userId ?? ""),
+    status: String(raw.status ?? ""),
+  };
+}
 
 /** POST /commerce/orders/{orderId}/refund 成功读模型（对齐 RefundResult） */
 export type RefundOrderResult = {

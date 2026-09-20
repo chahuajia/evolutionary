@@ -6,7 +6,7 @@
  */
 
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   parseCommerceOrderStatus,
@@ -17,7 +17,10 @@ import {
   parseEntitlementStatus,
   toEntitlementView,
 } from "@/domains/commerce/domain/entitlement-view";
-import { postRefundOrder } from "@/domains/commerce/infrastructure/order-refund-gateway";
+import {
+  fetchCommerceOrder,
+  postRefundOrder,
+} from "@/domains/commerce/infrastructure/order-refund-gateway";
 import {
   DEFAULT_CREDIT_USER,
   postCreditPurchase,
@@ -66,25 +69,70 @@ export function CreditJourneyPanel({
   const [productId, setProductId] = useState(DEFAULT_PRODUCT_ID);
   const [orderId, setOrderId] = useState("");
   const [orderView, setOrderView] = useState<CommerceOrderView | null>(null);
+  const [orderLoadError, setOrderLoadError] = useState<string | null>(null);
   const [entitlementId, setEntitlementId] = useState("");
   const [paidAmountCents, setPaidAmountCents] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [log, setLog] = useState<string[]>([]);
 
+  useEffect(() => {
+    const id = orderId.trim();
+    if (!id) {
+      setOrderView(null);
+      setOrderLoadError(null);
+      return;
+    }
+    let cancelled = false;
+    setOrderLoadError(null);
+    fetchCommerceOrder(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setOrderView(
+          toCommerceOrderView({
+            orderId: dto.orderId,
+            status: parseCommerceOrderStatus(dto.status),
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setOrderView(null);
+        setOrderLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId]);
+
   const refundGate = useMemo(() => {
-    if (!orderId.trim()) {
+    const id = orderId.trim();
+    if (!id) {
       return { refundAllowed: false, blockMessage: null as string | null };
     }
-    if (!orderView || orderView.orderId !== orderId.trim()) {
-      return { refundAllowed: true, blockMessage: null as string | null };
+    if (!orderView) {
+      return {
+        refundAllowed: false,
+        blockMessage: orderLoadError ?? "正在加载订单…",
+      };
+    }
+    if (!orderView.refundAllowed) {
+      return {
+        refundAllowed: false,
+        blockMessage:
+          orderView.blockMessage ??
+          (orderView.status === "CREATED"
+            ? "订单未支付，不可退款"
+            : "当前状态不可退款"),
+        statusLabel: orderView.statusLabel,
+      };
     }
     return {
-      refundAllowed: orderView.refundAllowed,
-      blockMessage: orderView.blockMessage,
+      refundAllowed: true,
+      blockMessage: null as string | null,
       statusLabel: orderView.statusLabel,
     };
-  }, [orderId, orderView]);
+  }, [orderId, orderView, orderLoadError]);
 
   function append(line: string) {
     setLog((prev) => [...prev, line]);
@@ -104,14 +152,9 @@ export function CreditJourneyPanel({
     try {
       const r = await postCreditPurchase({ userId, productId });
       setOrderId(r.orderId);
-      const paidView = toCommerceOrderView({
-        orderId: r.orderId,
-        status: "PAID",
-      });
-      setOrderView(paidView);
       setEntitlementId(r.entitlementId);
       setPaidAmountCents(r.paidAmountCents ?? null);
-      append(`① 信用购：${summarizePurchase(r)} · ${paidView.statusLabel}`);
+      append(`① 信用购：${summarizePurchase(r)}`);
       append(
         "购后 BE 应已自动记分润意向（依赖 22a；未合入时可下方 Accrue 手调）",
       );
@@ -212,8 +255,8 @@ export function CreditJourneyPanel({
     <section className={styles.panel}>
       <h2>业务串联</h2>
       <p className={styles.note}>
-        演示：信用购 → 权益换电 / 分润意向 → 退款冲销 → 可选结算批。默认{" "}
-        {DEFAULT_CREDIT_USER} / {DEFAULT_PRODUCT_ID}。仅已支付可退
+        演示：信用购 → 权益换电 / 分润意向 → 退款冲销 → 可选结算批。GET 订单对齐
+        仅 PAID 可退 · 默认 {DEFAULT_CREDIT_USER} / {DEFAULT_PRODUCT_ID}
         {"statusLabel" in refundGate && refundGate.statusLabel
           ? ` · 当前订单=${refundGate.statusLabel}`
           : ""}
@@ -263,15 +306,7 @@ export function CreditJourneyPanel({
           orderId
           <input
             value={orderId}
-            onChange={(e) => {
-              setOrderId(e.target.value);
-              if (
-                orderView &&
-                e.target.value.trim() !== orderView.orderId
-              ) {
-                setOrderView(null);
-              }
-            }}
+            onChange={(e) => setOrderId(e.target.value)}
             placeholder="由信用购填入或粘贴"
             required
           />

@@ -2,10 +2,10 @@
 
 /**
  * 订单退款客户端岛 — 粘贴 orderId，或先信用购拿 orderId 再退。
- * 契约：POST /commerce/orders/{orderId}/refund
+ * GET /commerce/orders/{id} 对齐 refundAllowed（仅 PAID）。
  */
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   parseCommerceOrderStatus,
@@ -16,7 +16,10 @@ import {
   parseEntitlementStatus,
   toEntitlementView,
 } from "@/domains/commerce/domain/entitlement-view";
-import { postRefundOrder } from "@/domains/commerce/infrastructure/order-refund-gateway";
+import {
+  fetchCommerceOrder,
+  postRefundOrder,
+} from "@/domains/commerce/infrastructure/order-refund-gateway";
 import {
   DEFAULT_CREDIT_USER,
   postCreditPurchase,
@@ -31,24 +34,68 @@ export function CreditRefundPanel() {
   const [productId, setProductId] = useState(DEFAULT_PRODUCT_ID);
   const [orderId, setOrderId] = useState("");
   const [orderView, setOrderView] = useState<CommerceOrderView | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
 
+  useEffect(() => {
+    const id = orderId.trim();
+    if (!id) {
+      setOrderView(null);
+      setLoadError(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadError(null);
+    fetchCommerceOrder(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setOrderView(
+          toCommerceOrderView({
+            orderId: dto.orderId,
+            status: parseCommerceOrderStatus(dto.status),
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setOrderView(null);
+        setLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId]);
+
   const refundGate = useMemo(() => {
-    if (!orderId.trim()) {
+    const id = orderId.trim();
+    if (!id) {
       return { refundAllowed: false, blockMessage: null as string | null };
     }
-    if (!orderView || orderView.orderId !== orderId.trim()) {
-      // 粘贴未知单：交后端；本地有态则走门
-      return { refundAllowed: true, blockMessage: null as string | null };
+    if (!orderView) {
+      return {
+        refundAllowed: false,
+        blockMessage: loadError ?? "正在加载订单…",
+      };
+    }
+    if (!orderView.refundAllowed) {
+      return {
+        refundAllowed: false,
+        blockMessage:
+          orderView.blockMessage ??
+          (orderView.status === "CREATED"
+            ? "订单未支付，不可退款"
+            : "当前状态不可退款"),
+        statusLabel: orderView.statusLabel,
+      };
     }
     return {
-      refundAllowed: orderView.refundAllowed,
-      blockMessage: orderView.blockMessage,
+      refundAllowed: true,
+      blockMessage: null as string | null,
       statusLabel: orderView.statusLabel,
     };
-  }, [orderId, orderView]);
+  }, [orderId, orderView, loadError]);
 
   async function onBuy(e: FormEvent) {
     e.preventDefault();
@@ -58,14 +105,7 @@ export function CreditRefundPanel() {
     try {
       const r = await postCreditPurchase({ userId, productId });
       setOrderId(r.orderId);
-      const paidView = toCommerceOrderView({
-        orderId: r.orderId,
-        status: "PAID",
-      });
-      setOrderView(paidView);
-      setResult(
-        `已购订单 ${r.orderId} · ${paidView.statusLabel} · 权益 ${r.entitlementId}`,
-      );
+      setResult(`已购订单 ${r.orderId} · 权益 ${r.entitlementId}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -113,9 +153,7 @@ export function CreditRefundPanel() {
     <section className={styles.panel}>
       <h2>订单退款</h2>
       <p className={styles.note}>
-        契约 <code>POST /commerce/orders/{"{orderId}"}/refund</code>
-        {" · "}
-        仅已支付可退
+        GET 订单对齐仅 PAID 可退
         {"statusLabel" in refundGate && refundGate.statusLabel
           ? ` · 当前=${refundGate.statusLabel}`
           : ""}
@@ -141,15 +179,7 @@ export function CreditRefundPanel() {
           orderId
           <input
             value={orderId}
-            onChange={(e) => {
-              setOrderId(e.target.value);
-              if (
-                orderView &&
-                e.target.value.trim() !== orderView.orderId
-              ) {
-                setOrderView(null);
-              }
-            }}
+            onChange={(e) => setOrderId(e.target.value)}
             placeholder="粘贴或由信用购填入"
             required
           />

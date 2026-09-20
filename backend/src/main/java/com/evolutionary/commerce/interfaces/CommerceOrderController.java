@@ -1,8 +1,10 @@
 package com.evolutionary.commerce.interfaces;
 
+import com.evolutionary.commerce.application.OrderRepository;
 import com.evolutionary.commerce.application.RefundOrder;
 import com.evolutionary.commerce.application.RefundResult;
 import com.evolutionary.commerce.domain.DomainOutcome;
+import com.evolutionary.commerce.domain.Order;
 import com.evolutionary.credit.application.CreditLedgerDebtRepository;
 import com.evolutionary.credit.application.CreditProfileRepository;
 import com.evolutionary.credit.domain.CreditLedgerDebt;
@@ -14,6 +16,7 @@ import java.time.Clock;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/commerce/orders")
 public class CommerceOrderController {
 
+    private final OrderRepository orders;
     private final RefundOrder refundOrder;
     private final CreditLedgerDebtRepository debts;
     private final CreditProfileRepository profiles;
@@ -39,14 +43,26 @@ public class CommerceOrderController {
     private final Clock clock = Clock.systemUTC();
 
     public CommerceOrderController(
+            OrderRepository orders,
             RefundOrder refundOrder,
             CreditLedgerDebtRepository debts,
             CreditProfileRepository profiles,
             ReverseAccrualsOnRefund reverseAccrualsOnRefund) {
+        this.orders = orders;
         this.refundOrder = refundOrder;
         this.debts = debts;
         this.profiles = profiles;
         this.reverseAccrualsOnRefund = reverseAccrualsOnRefund;
+    }
+
+    /** 只读：供退款岛对齐 refundAllowed（仅 PAID）。 */
+    @GetMapping("/{orderId}")
+    public ResponseEntity<OrderView> order(@PathVariable String orderId) {
+        return orders
+                .findById(orderId.trim())
+                .map(CommerceOrderController::toView)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{orderId}/refund")
@@ -100,4 +116,10 @@ public class CommerceOrderController {
     }
 
     public record RefundResponse(String orderId, String status, String revokedEntitlementId) {}
+
+    public record OrderView(String orderId, String userId, String status) {}
+
+    private static OrderView toView(Order order) {
+        return new OrderView(order.id(), order.userId(), order.status().name());
+    }
 }
