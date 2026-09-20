@@ -2,12 +2,16 @@
 
 /**
  * IoT 遥测入影客户端岛 — 默认 BAT-IOT-1 / vendorA；展示 soc / stale。
+ * GET shadow 预读当前影子（厚 GET）；POST 写入后刷新结果区。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import type { DeviceShadowView } from "@/domains/iot/domain/device-shadow-view";
 import {
   DEFAULT_IOT_BATTERY,
+  loadDeviceShadow,
+} from "@/domains/iot/application/load-device-shadow";
+import {
   DEFAULT_TELEMETRY_SOC,
   DEFAULT_TELEMETRY_VENDOR,
   DEFAULT_TELEMETRY_VOLTAGE_MILLI,
@@ -25,6 +29,27 @@ export function TelemetryPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<DeviceShadowView | null>(null);
+  const [preload, setPreload] = useState<DeviceShadowView | null>(null);
+  const [preloadError, setPreloadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
+    setPreloadError(null);
+    loadDeviceShadow(id)
+      .then((next) => {
+        if (cancelled) return;
+        setPreload(next);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setPreload(null);
+        setPreloadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [batteryId]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -32,13 +57,14 @@ export function TelemetryPanel() {
     setError(null);
     setView(null);
     try {
-      setView(
-        await runPostTelemetry(batteryId.trim() || DEFAULT_IOT_BATTERY, {
-          vendorId: vendorId.trim() || DEFAULT_TELEMETRY_VENDOR,
-          soc: Number(soc) || DEFAULT_TELEMETRY_SOC,
-          voltageMilli: Number(voltageMilli) || DEFAULT_TELEMETRY_VOLTAGE_MILLI,
-        }),
-      );
+      const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
+      const next = await runPostTelemetry(id, {
+        vendorId: vendorId.trim() || DEFAULT_TELEMETRY_VENDOR,
+        soc: Number(soc) || DEFAULT_TELEMETRY_SOC,
+        voltageMilli: Number(voltageMilli) || DEFAULT_TELEMETRY_VOLTAGE_MILLI,
+      });
+      setView(next);
+      setPreload(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -49,6 +75,14 @@ export function TelemetryPanel() {
   return (
     <section className={styles.panel}>
       <h2>遥测入影（HTTP）</h2>
+      <p className={styles.note}>
+        GET shadow 预读当前影子
+        {preload
+          ? ` · ${preload.batteryId}=${preload.freshnessLabel} · SOC ${preload.soc}%`
+          : preloadError
+            ? ` · ${preloadError}`
+            : " · 加载中…"}
+      </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
           batteryId
