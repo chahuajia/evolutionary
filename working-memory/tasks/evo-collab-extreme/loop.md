@@ -4,7 +4,7 @@
 **模式**：主树父写（小切片）· **禁止**为 <5min 切片建 worktree/派 Task  
 **状态**：**▶ 运行中**（常设规则：父自选推进）  
 **波次**：wave166 ✅  
-**HEAD**：`PENDING`  
+**HEAD**：`db3b2a0`  
 **idle**：同构岛 · 展示清洗 · 厚 GET · gateway Request · override 价侧车 · **lanes**：0  
 **测**：前端 **182/182** · lint 绿 · 未 push
 
@@ -15,7 +15,7 @@
 | 163 | CouponTemplateView + CreditPurchaseView | `37ff727` | 176/176 |
 | 164 | toSelectableEntitlement | `bdc378c` | 180/180 |
 | 165 | PackageOverrideView 收 priceCents | `cee7f84` | 180/180 |
-| **166** | **EntitledSwapView** | `PENDING` | **182/182** |
+| **166** | **EntitledSwapView** | `db3b2a0` | **182/182** |
 
 **选片依据**：166←runEntitledSwap 手组 Result 旁挂字段。
 
