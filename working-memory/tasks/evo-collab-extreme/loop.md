@@ -1,28 +1,28 @@
 ﻿# evo-collab-extreme（双轴极端 · 无人值守完成）
 
-**更新**：2026-09-20 11:10  
+**更新**：2026-09-20 11:20  
 **模式**：主树父写（小切片）· **禁止**为 <5min 切片建 worktree/派 Task  
 **状态**：**▶ 运行中**（常设规则：父自选推进）  
-**波次**：wave106 ✅  
-**HEAD**：`24f737b`  
+**波次**：wave107 ✅  
+**HEAD**：`7b1eb29`  
 **idle**：— · **lanes**：0  
-**测**：前端 **153/153** · 未 push
+**测**：前端 **153/153** · ClaimCouponHttpIT 4/4 · 未 push
 
 ## 刚落地
 
 | 波 | 内容 | HEAD | 测 |
 | :-- | :--- | :--- | :--- |
-| 105 | GET 覆盖读口喂撤销/激活门 | `081cf05` | 152/152 · Override IT 4/4 |
-| **106** | **覆盖激活门对齐模板 PUBLISHED** | `24f737b` | **153/153** |
+| 106 | 覆盖激活门对齐模板 PUBLISHED | `24f737b` | 153/153 |
+| **107** | **GET 用户券喂带券结账 checkoutSelectable** | `7b1eb29` | **153/153** · Claim 4/4 |
 
-**选片依据**：106←激活面板未预读模板态；GET 模板 `overrideActivateAllowed` 对齐 `TEMPLATE_NOT_PUBLISHED`。
+**选片依据**：107←粘贴券 id 曾清门跳过券态；GET `/mall/user-coupons/{id}` 对齐 AVAILABLE。
 
 ## 下一刀
 
 | 候选 | 前提 |
 | :--- | :--- |
+| 计量岛 SEED 费率 → 权益/产品 GET 旁路 | 估费与 canCoverCents |
 | ReferralBinding / CreditLedgerDebt | 仍无读口 · 拒 |
-| 扫余种子门 / 厚 BE 读口缺口 | 面板侧种子状态基本清完 |
 
 ## 常设规则
 
