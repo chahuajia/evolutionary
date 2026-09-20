@@ -10,7 +10,7 @@ import type { PackageTemplateView } from "@/domains/operator/domain/package-temp
 import { loadPackageOverride } from "@/domains/operator/application/load-package-override";
 import {
   loadEffectiveProduct,
-  type EffectiveProductResult,
+  type EffectiveProductView,
 } from "@/domains/operator/application/load-effective-product";
 import { loadPackageTemplate } from "@/domains/operator/application/load-package-template";
 import {
@@ -44,7 +44,7 @@ export function PackageOverridePanel() {
     null,
   );
   const [priceLabel, setPriceLabel] = useState<number | null>(null);
-  const [effective, setEffective] = useState<EffectiveProductResult | null>(
+  const [effective, setEffective] = useState<EffectiveProductView | null>(
     null,
   );
   const actorGate = useActorOrganization(
@@ -258,12 +258,9 @@ export function PackageOverridePanel() {
       ) : null}
       {effective ? (
         <p>
-          有效价 ¥{formatCentsAsYuan(effective.priceCents)} ·{" "}
-          {effective.displayName || "—"} · {effective.durationDays}天 ·{" "}
-          {effective.templateId} v{effective.templateVersion}
-          {effective.overrideId
-            ? ` · override ${effective.overrideId}`
-            : " · 无覆盖"}
+          有效价 ¥{effective.priceYuan} · {effective.displayName || "—"} ·{" "}
+          {effective.durationDays}天 · {effective.templateId} v
+          {effective.templateVersion} · {effective.overrideLabel}
         </p>
       ) : null}
     </section>

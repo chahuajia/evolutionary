@@ -5,9 +5,13 @@
 import {
   DEFAULT_CREDIT_USER,
   postCreditPurchase,
-  type CreditPurchaseRequest,
 } from "@/domains/credit/infrastructure/credit-gateway";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
+
+export type CreditPurchaseInput = {
+  readonly userId: string;
+  readonly productId: string;
+};
 
 export type CreditPurchaseView = {
   readonly orderId: string;
@@ -21,7 +25,7 @@ export type CreditPurchaseView = {
 };
 
 export async function runCreditPurchase(
-  req: CreditPurchaseRequest,
+  req: CreditPurchaseInput,
 ): Promise<CreditPurchaseView> {
   const r = await postCreditPurchase({
     userId: req.userId.trim() || DEFAULT_CREDIT_USER,

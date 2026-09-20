@@ -6,10 +6,15 @@ import {
   toUsageEventView,
   type UsageEventView,
 } from "@/domains/commerce/domain/usage-event-view";
-import {
-  postEntitledSwap,
-  type EntitledSwapRequest,
-} from "@/domains/commerce/infrastructure/entitled-swap-gateway";
+import { postEntitledSwap } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
+
+export type EntitledSwapInput = {
+  readonly userId: string;
+  readonly entitlementId?: string;
+  readonly cabinetId: string;
+  readonly socBefore?: number;
+  readonly socAfter?: number;
+};
 
 export type EntitledSwapView = {
   readonly usageEvent: UsageEventView;
@@ -20,7 +25,7 @@ export type EntitledSwapView = {
 };
 
 export async function runEntitledSwap(
-  req: EntitledSwapRequest,
+  req: EntitledSwapInput,
 ): Promise<EntitledSwapView> {
   const r = await postEntitledSwap(req);
   return {

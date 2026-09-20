@@ -10,14 +10,13 @@ import {
   DEFAULT_OVERRIDE_TEMPLATE_ID,
   DEFAULT_PACKAGE_TEMPLATE_ID,
   loadEffectiveProduct,
-  type EffectiveProductResult,
+  type EffectiveProductView,
 } from "@/domains/operator/application/load-effective-product";
-import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import { OperatorWorkspace } from "./operator-workspace";
 import styles from "./page.module.css";
 
 export default async function OperatorPage() {
-  let product: EffectiveProductResult | null = null;
+  let product: EffectiveProductView | null = null;
   let error: string | null = null;
 
   try {
@@ -46,8 +45,7 @@ export default async function OperatorPage() {
             {DEFAULT_OVERRIDE_ACTOR_ORG_ID} / {product.templateId} · 只读 · RSC
           </p>
           <p className={styles.note}>
-            {product.displayName} · ¥{formatCentsAsYuan(product.priceCents)} ·
-            覆盖 {product.overrideId ?? "无覆盖"}
+            {product.displayName} · ¥{product.priceYuan} · {product.overrideLabel}
           </p>
         </section>
       ) : null}

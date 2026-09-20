@@ -5,12 +5,15 @@
 import {
   DEFAULT_CREDIT_USER,
   postCreditRepay,
-  type CreditRepayRequest,
 } from "@/domains/credit/infrastructure/credit-gateway";
 
-export async function runCreditRepay(
-  req: CreditRepayRequest,
-): Promise<void> {
+export type CreditRepayInput = {
+  readonly userId: string;
+  readonly statementId: string;
+  readonly amountCents: number;
+};
+
+export async function runCreditRepay(req: CreditRepayInput): Promise<void> {
   await postCreditRepay({
     userId: req.userId.trim() || DEFAULT_CREDIT_USER,
     statementId: req.statementId,
