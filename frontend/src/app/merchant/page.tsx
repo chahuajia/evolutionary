@@ -6,28 +6,17 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import {
-  parseOnboardingStatus,
-  toOnboardingApplicationView,
-} from "@/domains/operator/domain/onboarding-application-view";
-import {
   DEFAULT_ONBOARDING_APPLICATION_ID,
-  fetchOnboardingApplication,
-} from "@/domains/operator/infrastructure/operator-gateway";
+  loadOnboardingApplication,
+} from "@/domains/operator/application/load-onboarding-application";
+import type { OnboardingApplicationView } from "@/domains/operator/domain/onboarding-application-view";
 import styles from "./page.module.css";
 
 export default async function MerchantPage() {
-  let app = null as ReturnType<typeof toOnboardingApplicationView> | null;
+  let app: OnboardingApplicationView | null = null;
   let loadError: string | null = null;
   try {
-    const dto = await fetchOnboardingApplication(
-      DEFAULT_ONBOARDING_APPLICATION_ID,
-    );
-    app = toOnboardingApplicationView({
-      id: dto.id,
-      orgId: dto.orgId,
-      capability: dto.capability,
-      status: parseOnboardingStatus(dto.status),
-    });
+    app = await loadOnboardingApplication(DEFAULT_ONBOARDING_APPLICATION_ID);
   } catch (err) {
     loadError = err instanceof Error ? err.message : String(err);
   }
