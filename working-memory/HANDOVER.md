@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-20 18:47（v79；波次以 `loop.md` 为准）
+**写于**：2026-09-20 19:20（v80；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v78（仍写 HEAD `91630f2` —— 已过时）
+**取代**：v79（仍写 HEAD `c96a2f5` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `c96a2f5`。前端 167/167 · lint 绿。
-wave157 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `a2e2909`。前端 169/169 · lint 绿。
+wave159 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -164,6 +164,8 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave155** | 月账单岛 GET statements 预读 | ✅ `91630f2` · 前端 **166/166** |
 | **wave156** | 计量估费门 + 换电站去手拼 AVAILABLE | ✅ `724b119` · 前端 **167/167** |
 | **wave157** | 结算/覆盖去裸 PENDING 与手拼激活文案 | ✅ `c96a2f5` · 前端 **167/167** |
+| **wave158** | 工单 GET 预读 + 默认选卡门入域 | ✅ `3a45557` · 前端 **169/169** |
+| **wave159** | 用户可见文案去裸枚举 | ✅ `a2e2909` · 前端 **169/169** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -199,8 +201,8 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **167/167** · lint 绿 · HEAD `c96a2f5`。父自选推进。
-门禁/同构岛/展示/厚 GET/explore P1 idle。下刀 usecase 补洞。拒 ReferralBinding/CreditLedgerDebt。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **169/169** · lint 绿 · HEAD `a2e2909`。父自选推进。
+门禁/同构岛/展示/厚 GET idle。下刀 usecase 补洞 / BE 厚 GET。拒 ReferralBinding/CreditLedgerDebt。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
