@@ -128,15 +128,7 @@ export function NextVersionPanel() {
       );
       const srcId = sourceTemplateId.trim() || DEFAULT_NEXT_VERSION_SOURCE_ID;
       try {
-        const src = await fetchPackageTemplate(srcId);
-        setSourceView(
-          toPackageTemplateView({
-            id: src.templateId,
-            ownerOrgId: src.ownerOrgId,
-            version: src.version,
-            status: parsePackageTemplateStatus(src.status),
-          }),
-        );
+        setSourceView(await loadPackageTemplate(srcId));
       } catch {
         /* 源模板再读失败不阻断派生结果展示 */
       }
