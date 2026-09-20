@@ -90,7 +90,7 @@ export function TicketsPanel() {
           <ul>
             {tickets.map((t) => (
               <li key={t.ticketId}>
-                {t.ticketId} · {t.alertType} · {t.statusLabel}
+                {t.ticketId} · {t.alertTypeLabel} · {t.statusLabel}
                 {t.needsAction ? " · 可解决" : ` · ${t.blockMessage}`}
                 {" "}
                 <button

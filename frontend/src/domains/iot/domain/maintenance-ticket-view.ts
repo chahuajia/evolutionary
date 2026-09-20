@@ -6,6 +6,12 @@
  * - `resolve`：已 RESOLVED 则幂等返回自身（展示上「无需再解」）
  */
 
+import {
+  ALERT_TYPE_LABEL,
+  parseAlertType,
+  type AlertType,
+} from "./alert-type";
+
 export type MaintenanceTicketStatus = "OPEN" | "RESOLVED";
 
 const TICKET_STATUSES = ["OPEN", "RESOLVED"] as const;
@@ -27,7 +33,8 @@ export function parseMaintenanceTicketStatus(
 export type MaintenanceTicketView = {
   readonly ticketId: string;
   readonly batteryId: string;
-  readonly alertType: string;
+  readonly alertType: AlertType;
+  readonly alertTypeLabel: string;
   readonly status: MaintenanceTicketStatus;
   readonly statusLabel: string;
   /** 仅 OPEN 需要处理（对齐 isOpen）。 */
@@ -66,10 +73,12 @@ export function toMaintenanceTicketView(dto: {
   status: string;
 }): MaintenanceTicketView {
   const status = parseMaintenanceTicketStatus(dto.status);
+  const alertType = parseAlertType(dto.alertType);
   return {
     ticketId: dto.ticketId,
     batteryId: dto.batteryId,
-    alertType: dto.alertType,
+    alertType,
+    alertTypeLabel: ALERT_TYPE_LABEL[alertType],
     status,
     statusLabel: TICKET_STATUS_LABEL[status],
     needsAction: ticketNeedsAction(status),

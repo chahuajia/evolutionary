@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { parseAlertType } from "./alert-type";
 import {
-  parseAlertType,
   toDetectCommLostView,
 } from "./detect-comm-lost-view";
 

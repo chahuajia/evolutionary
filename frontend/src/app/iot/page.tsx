@@ -45,7 +45,7 @@ export default async function IotPage() {
             <ul className={styles.preview}>
               {preview.map((t) => (
                 <li key={t.ticketId}>
-                  {t.ticketId} · {t.alertType} · {t.statusLabel}
+                  {t.ticketId} · {t.alertTypeLabel} · {t.statusLabel}
                   {t.needsAction ? " · 需处理" : ""}
                 </li>
               ))}

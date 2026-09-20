@@ -39,6 +39,7 @@ describe("toMaintenanceTicketView", () => {
     expect(view.needsAction).toBe(true);
     expect(view.resolveAllowed).toBe(true);
     expect(view.statusLabel).toBe("待处理");
+    expect(view.alertTypeLabel).toBe("通信丢失");
     expect(view.blockMessage).toBeNull();
   });
 
