@@ -106,7 +106,7 @@ export function PackageOverridePanel() {
       setError(
         templateView == null
           ? (templateLoadError ?? "正在加载模板…")
-          : "仅已发布模板可激活覆盖",
+          : (templateView.blockMessage ?? "当前模板不可激活覆盖"),
       );
       return;
     }
@@ -166,7 +166,7 @@ export function PackageOverridePanel() {
     : templateView == null
       ? (templateLoadError ?? "正在加载模板…")
       : !templateView.overrideActivateAllowed
-        ? "仅已发布模板可激活覆盖"
+        ? (templateView.blockMessage ?? "当前模板不可激活覆盖")
         : view != null && !view.activateAllowed
           ? view.blockMessage
           : null;

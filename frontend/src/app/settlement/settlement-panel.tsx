@@ -110,7 +110,7 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
     if (pending.length === 0) {
       return {
         settleAllowed: false,
-        blockMessage: "列表无 PENDING 意向可入批（settleAllowed）",
+        blockMessage: "列表无待结算意向可入批",
         hint: null as string | null,
       };
     }
@@ -270,7 +270,7 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
         <p className={styles.note}>
           <code>POST /settlement/batches</code>
           {" · "}
-          仅 PENDING 可入批（settleAllowed）；一次跑完即关账
+          仅待结算意向可入批（settleAllowed）；一次跑完即关账
           {settleGate.hint ? ` · ${settleGate.hint}` : ""}
           {batchView ? ` · 上次=${batchView.statusLabel}` : ""}
         </p>
