@@ -94,8 +94,8 @@ class SettlementHttpIT {
 
     @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
-    @DisplayName("GET /settlement/accruals：缺 orgId → 400")
-    void listRequiresOrgId() throws Exception {
+    @DisplayName("GET /settlement/accruals：缺 orgId/orderId → 400")
+    void listRequiresOrgIdOrOrderId() throws Exception {
         mvc.perform(get("/settlement/accruals")).andExpect(status().isBadRequest());
         mvc.perform(get("/settlement/accruals").param("orgId", "  "))
                 .andExpect(status().isBadRequest());
@@ -108,6 +108,35 @@ class SettlementHttpIT {
         // 空列表与 404 的区别很重要：**"这个组织没有意向"是合法答案**，
         // 不是错误。返回 404 会逼前端把"没数据"和"查错了"混为一谈。
         mvc.perform(get("/settlement/accruals").param("orgId", "ORG-NOPE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    @DisplayName("accrue → GET ?orderId= 对齐 PENDING（冲销门真态）")
+    void listByOrderId() throws Exception {
+        mvc.perform(
+                        post("/settlement/accruals")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        """
+                                        {
+                                          "orderId":"O-STL-ORD",
+                                          "orgId":"ORG-L2",
+                                          "amountCents":4000,
+                                          "completedAt":"2026-09-18T02:00:00Z"
+                                        }
+                                        """))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/settlement/accruals").param("orderId", "O-STL-ORD"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$[0].orderId").value("O-STL-ORD"))
+                .andExpect(jsonPath("$[0].status").value("PENDING"));
+
+        mvc.perform(get("/settlement/accruals").param("orderId", "O-NONE"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }

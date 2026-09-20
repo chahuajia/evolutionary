@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>{@code POST /settlement/accruals} body {@code {orderId, orgId, amountCents, completedAt?,
  *       userId?, currency?}} → PENDING Accrual 列表
  *   <li>{@code GET /settlement/accruals?orgId=} → 该组织全部 Accrual（**读侧**，供工作台列表）
+ *   <li>{@code GET /settlement/accruals?orderId=} → 该订单意向（冲销门真态）
  *   <li>{@code POST /settlement/batches} body {@code {periodStart, periodEnd}} → CLOSED Batch
  *   <li>{@code POST /settlement/orders/{orderId}/reverse-accruals} → REVERSED + reversal 行（AC-35）；已
  *       SETTLED → 422 {@code ORDER_NOT_REFUNDABLE_SETTLED}（AC-36）
@@ -61,7 +62,7 @@ public class SettlementController {
     }
 
     /**
-     * 读侧：某组织的全部意向（含已结算/已冲销）。
+     * 读侧：按 orgId 或 orderId 列意向（含已结算/已冲销）。
      *
      * <p>**为什么返回全部状态而不是只返 PENDING**：这是**展示**接口。
      * 只返 PENDING 的话，界面上永远没有"为什么这条不能动"需要解释的东西 ——
@@ -71,9 +72,17 @@ public class SettlementController {
      * （HANDOVER 决定：「读写分离先拆端口，不要 GoF Command」。）
      */
     @GetMapping("/accruals")
-    public ResponseEntity<List<AccrualView>> listAccruals(@RequestParam String orgId) {
+    public ResponseEntity<List<AccrualView>> listAccruals(
+            @RequestParam(required = false) String orgId,
+            @RequestParam(required = false) String orderId) {
+        if (orderId != null && !orderId.isBlank()) {
+            return ResponseEntity.ok(
+                    accruals.findByOrderId(orderId.trim()).stream()
+                            .map(SettlementController::toAccrual)
+                            .toList());
+        }
         if (orgId == null || orgId.isBlank()) {
-            throw new IllegalArgumentException("orgId required");
+            throw new IllegalArgumentException("orgId or orderId required");
         }
         return ResponseEntity.ok(
                 accruals.findByOrgId(orgId.trim()).stream()

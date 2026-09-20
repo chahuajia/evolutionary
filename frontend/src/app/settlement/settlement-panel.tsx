@@ -2,9 +2,10 @@
 
 /**
  * 结算批客户端岛 — accrue + reverse + runBatch（对齐 ORG-L2 种子规则）。
+ * GET ?orderId= 对齐 reverseAllowed；org RSC 列表对齐 settleAllowed。
  */
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   toAccrualView,
   type AccrualView,
@@ -14,6 +15,7 @@ import {
   type SettlementBatchView,
 } from "@/domains/settlement/domain/settlement-batch-view";
 import {
+  fetchAccrualsByOrderId,
   postAccrueSettlement,
   postReverseAccruals,
   postRunSettlementBatch,
@@ -45,19 +47,51 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
   const [localAccruals, setLocalAccruals] = useState<AccrualView[] | null>(
     null,
   );
+  const [orderAccruals, setOrderAccruals] = useState<AccrualView[] | null>(null);
+  const [orderLoadError, setOrderLoadError] = useState<string | null>(null);
 
   const list = localAccruals ?? accruals;
 
+  useEffect(() => {
+    let cancelled = false;
+    const id = orderId.trim();
+    if (!id) {
+      setOrderAccruals(null);
+      setOrderLoadError(null);
+      return;
+    }
+    setOrderLoadError(null);
+    fetchAccrualsByOrderId(id)
+      .then((rows) => {
+        if (cancelled) return;
+        setOrderAccruals(rows.map(toAccrualView));
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setOrderAccruals(null);
+        setOrderLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId]);
+
   const reverseGate = useMemo(() => {
-    const forOrder = list.filter((a) => a.orderId === orderId.trim());
-    if (forOrder.length === 0) {
+    if (orderAccruals == null) {
       return {
         reverseAllowed: false,
-        blockMessage: "列表无该订单的意向，不可冲销",
+        blockMessage: orderLoadError ?? "正在加载该订单意向…",
         hint: null as string | null,
       };
     }
-    const blocked = forOrder.find((a) => !a.reverseAllowed);
+    if (orderAccruals.length === 0) {
+      return {
+        reverseAllowed: false,
+        blockMessage: "该订单无意向，不可冲销",
+        hint: null as string | null,
+      };
+    }
+    const blocked = orderAccruals.find((a) => !a.reverseAllowed);
     if (blocked) {
       return {
         reverseAllowed: false,
@@ -68,9 +102,9 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
     return {
       reverseAllowed: true,
       blockMessage: null as string | null,
-      hint: null as string | null,
+      hint: `订单意向 ${orderAccruals.length} 条可冲销`,
     };
-  }, [list, orderId]);
+  }, [orderAccruals, orderLoadError]);
 
   const settleGate = useMemo(() => {
     if (list.length === 0) {
@@ -110,6 +144,7 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
       });
       const views = rows.map(toAccrualView);
       setLocalAccruals(views);
+      setOrderAccruals(views);
       setResult(
         `已记意向 ${views.length} 条：` +
           views
@@ -137,8 +172,10 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
     setError(null);
     setResult(null);
     try {
-      const rows = await postReverseAccruals(orderId.trim() || "O-STL-UI");
+      const oid = orderId.trim() || "O-STL-UI";
+      const rows = await postReverseAccruals(oid);
       const views = rows.map(toAccrualView);
+      setOrderAccruals(views);
       setLocalAccruals((prev) => {
         const byId = new Map((prev ?? list).map((a) => [a.id, a]));
         for (const v of views) byId.set(v.id, v);
@@ -225,9 +262,7 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
       <section className={styles.panel}>
         <h2>冲销意向（HTTP · AC-35）</h2>
         <p className={styles.note}>
-          <code>POST /settlement/orders/{"{orderId}"}/reverse-accruals</code>
-          {" · "}
-          仅 PENDING 可冲销（reverseAllowed）
+          GET ?orderId= 对齐 reverseAllowed；POST reverse-accruals
           {reverseGate.hint ? ` · ${reverseGate.hint}` : ""}
         </p>
         <form className={styles.repayForm} onSubmit={onReverse}>

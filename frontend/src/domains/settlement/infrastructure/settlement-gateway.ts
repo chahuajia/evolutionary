@@ -108,6 +108,22 @@ export async function fetchAccruals(orgId: string): Promise<AccrualDto[]> {
   return (Array.isArray(raw) ? raw : []).map(toAccrualDto);
 }
 
+/** GET /settlement/accruals?orderId= — 冲销门按订单真态 */
+export async function fetchAccrualsByOrderId(
+  orderId: string,
+): Promise<AccrualDto[]> {
+  const id = orderId.trim();
+  if (!id) {
+    throw new Error("orderId required");
+  }
+  const base = apiBase();
+  const raw = await fetchJson<unknown[]>(
+    `${base}/settlement/accruals?orderId=${encodeURIComponent(id)}`,
+    { method: "GET", timeoutMs: TIMEOUT_MS },
+  );
+  return (Array.isArray(raw) ? raw : []).map(toAccrualDto);
+}
+
 /** POST /settlement/orders/{orderId}/reverse-accruals（AC-35） */
 export async function postReverseAccruals(
   orderId: string,
