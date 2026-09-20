@@ -10,23 +10,19 @@ import {
   toPackageOverrideView,
   type PackageOverrideView,
 } from "@/domains/operator/domain/package-override-view";
-import {
-  parsePackageTemplateStatus,
-  toPackageTemplateView,
-  type PackageTemplateView,
-} from "@/domains/operator/domain/package-template-view";
+import type { PackageTemplateView } from "@/domains/operator/domain/package-template-view";
 import { loadPackageOverride } from "@/domains/operator/application/load-package-override";
 import {
   loadEffectiveProduct,
   type EffectiveProductResult,
 } from "@/domains/operator/application/load-effective-product";
+import { loadPackageTemplate } from "@/domains/operator/application/load-package-template";
 import {
   DEFAULT_OVERRIDE_ACTOR_ORG_ID,
   DEFAULT_OVERRIDE_ACTOR_USER_ID,
   DEFAULT_OVERRIDE_ID,
   DEFAULT_OVERRIDE_PRICE_CENTS,
   DEFAULT_OVERRIDE_TEMPLATE_ID,
-  fetchPackageTemplate,
   postActivatePackageOverride,
 } from "@/domains/operator/infrastructure/operator-gateway";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
@@ -64,17 +60,10 @@ export function PackageOverridePanel() {
     let cancelled = false;
     const id = templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID;
     setTemplateLoadError(null);
-    fetchPackageTemplate(id)
-      .then((dto) => {
+    loadPackageTemplate(id)
+      .then((view) => {
         if (cancelled) return;
-        setTemplateView(
-          toPackageTemplateView({
-            id: dto.templateId,
-            ownerOrgId: dto.ownerOrgId,
-            version: dto.version,
-            status: parsePackageTemplateStatus(dto.status),
-          }),
-        );
+        setTemplateView(view);
       })
       .catch((err) => {
         if (cancelled) return;

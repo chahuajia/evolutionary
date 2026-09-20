@@ -5,16 +5,16 @@
  */
 
 import { FormEvent, useEffect, useState } from "react";
+import type { PackageTemplateView } from "@/domains/operator/domain/package-template-view";
 import {
   parsePackageTemplateStatus,
   toPackageTemplateView,
-  type PackageTemplateView,
 } from "@/domains/operator/domain/package-template-view";
+import { loadPackageTemplate } from "@/domains/operator/application/load-package-template";
 import {
   DEFAULT_PACKAGE_TEMPLATE_ID,
   DEFAULT_PUBLISH_ACTOR_ORG_ID,
   DEFAULT_PUBLISH_ACTOR_USER_ID,
-  fetchPackageTemplate,
   postMutatePackageTemplateBaseProduct,
   postPublishPackageTemplate,
 } from "@/domains/operator/infrastructure/operator-gateway";
@@ -47,17 +47,10 @@ export function PublishPackageTemplatePanel() {
     let cancelled = false;
     const id = templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID;
     setLoadError(null);
-    fetchPackageTemplate(id)
-      .then((dto) => {
+    loadPackageTemplate(id)
+      .then((next) => {
         if (cancelled) return;
-        setView(
-          toPackageTemplateView({
-            id: dto.templateId,
-            ownerOrgId: dto.ownerOrgId,
-            version: dto.version,
-            status: parsePackageTemplateStatus(dto.status),
-          }),
-        );
+        setView(next);
       })
       .catch((err) => {
         if (cancelled) return;

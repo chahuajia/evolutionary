@@ -11,6 +11,7 @@ import {
   toPackageTemplateView,
   type PackageTemplateView,
 } from "@/domains/operator/domain/package-template-view";
+import { loadPackageTemplate } from "@/domains/operator/application/load-package-template";
 import {
   DEFAULT_NEXT_VERSION_DISPLAY_NAME,
   DEFAULT_NEXT_VERSION_DURATION_DAYS,
@@ -19,7 +20,6 @@ import {
   DEFAULT_NEXT_VERSION_SOURCE_ID,
   DEFAULT_PUBLISH_ACTOR_ORG_ID,
   DEFAULT_PUBLISH_ACTOR_USER_ID,
-  fetchPackageTemplate,
   postCreateNextVersionDraft,
 } from "@/domains/operator/infrastructure/operator-gateway";
 import { useActorOrganization } from "./use-actor-organization";
@@ -59,17 +59,10 @@ export function NextVersionPanel() {
     let cancelled = false;
     const id = sourceTemplateId.trim() || DEFAULT_NEXT_VERSION_SOURCE_ID;
     setSourceLoadError(null);
-    fetchPackageTemplate(id)
-      .then((dto) => {
+    loadPackageTemplate(id)
+      .then((view) => {
         if (cancelled) return;
-        setSourceView(
-          toPackageTemplateView({
-            id: dto.templateId,
-            ownerOrgId: dto.ownerOrgId,
-            version: dto.version,
-            status: parsePackageTemplateStatus(dto.status),
-          }),
-        );
+        setSourceView(view);
       })
       .catch((err) => {
         if (cancelled) return;
