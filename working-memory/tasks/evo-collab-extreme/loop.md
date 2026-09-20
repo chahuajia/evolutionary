@@ -1,21 +1,21 @@
 ﻿# evo-collab-extreme（双轴极端 · 无人值守完成）
 
-**更新**：2026-09-20 18:44  
+**更新**：2026-09-20 18:47  
 **模式**：主树父写（小切片）· **禁止**为 <5min 切片建 worktree/派 Task  
 **状态**：**▶ 运行中**（常设规则：父自选推进）  
-**波次**：wave155 ✅  
-**HEAD**：`91630f2`  
-**idle**：同构岛 · 展示清洗 · IoT/信用政策预读 · **lanes**：0  
-**测**：前端 **166/166** · lint 绿 · 未 push
+**波次**：wave157 ✅  
+**HEAD**：`c96a2f5`  
+**idle**：同构岛 · 展示清洗 · 厚 GET · explore P1/邻近 · **lanes**：0  
+**测**：前端 **167/167** · lint 绿 · 未 push
 
 ## 刚落地
 
 | 波 | 内容 | HEAD | 测 |
 | :-- | :--- | :--- | :--- |
-| 154 | 应用政策岛 GET profile 预读 | `95a9cd2` | 166/166 |
-| **155** | **月账单岛 GET statements 预读** | `91630f2` | **166/166** |
+| 156 | 计量估费门 + 换电站去手拼 AVAILABLE | `724b119` | 167/167 |
+| **157** | **结算/覆盖去裸 PENDING 与手拼激活文案** | `c96a2f5` | **167/167** |
 
-**选片依据**：155←monthly-billing 无 GET；厚 GET 展示最近账单再出账。
+**选片依据**：156←explore P1；157←explore 邻近 settlement PENDING / override 手拼。
 
 ## 下一刀
 
@@ -23,8 +23,8 @@
 | :--- | :--- |
 | 门禁轴 idle | 列表猜 / fail-open 已清 |
 | ReferralBinding / CreditLedgerDebt | 仍无读口 · 拒 |
-| 同构岛 / 展示 / 厚 GET 预读（IoT+信用政策/出账） | ✅ idle |
-| 下一主题 | usecase 补洞；扫仍无预读的 POST 岛 |
+| explore 轴 | ✅ P1+邻近已收 |
+| 下一主题 | usecase 补洞；再扫 POST 岛 |
 
 ## 常设规则
 
