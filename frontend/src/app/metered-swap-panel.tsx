@@ -213,8 +213,8 @@ export function MeteredSwapPanel() {
         socAfter,
       });
       const charge =
-        r.chargedAmountCents != null
-          ? ` · 扣费 ${formatCents(r.chargedAmountCents)}`
+        r.chargedAmountYuan != null
+          ? ` · 扣费 ¥${r.chargedAmountYuan}`
           : "";
       const ue = r.usageEvent;
       setResult(
