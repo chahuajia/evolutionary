@@ -1,34 +1,28 @@
 /**
- * 用例：SOC 过时诊断（编排 gateway → 影子展示模型）。
+ * 用例：SOC 过时诊断（编排 gateway → TriageOutdatedSocView）。
  */
 
 import {
-  toDeviceShadowView,
-  type DeviceShadowView,
-} from "@/domains/iot/domain/device-shadow-view";
+  toTriageOutdatedSocView,
+  type TriageOutdatedSocView,
+} from "@/domains/iot/domain/triage-outdated-soc-view";
 import {
   DEFAULT_IOT_BATTERY,
   postTriageOutdatedSoc,
-  type TriageNextStep,
 } from "@/domains/iot/infrastructure/iot-gateway";
 
-export type TriageOutdatedSocView = {
-  readonly batteryId: string;
-  readonly nextStep: TriageNextStep;
-  readonly orderedChecks: readonly string[];
-  readonly shadow: DeviceShadowView;
-};
+export type { TriageOutdatedSocView };
 
 export async function runTriageOutdatedSoc(
   batteryId: string = DEFAULT_IOT_BATTERY,
 ): Promise<TriageOutdatedSocView> {
   const r = await postTriageOutdatedSoc(batteryId);
-  return {
+  return toTriageOutdatedSocView({
     batteryId: r.batteryId,
     nextStep: r.nextStep,
     orderedChecks: r.orderedChecks,
-    shadow: toDeviceShadowView(r.shadow),
-  };
+    shadow: r.shadow,
+  });
 }
 
 export { DEFAULT_IOT_BATTERY };

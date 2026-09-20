@@ -64,21 +64,19 @@ export function TriagePanel() {
 function TriageResultView({ view }: { view: TriageOutdatedSocView }) {
   const { shadow } = view;
   const nextStepClass =
-    view.nextStep === "SHADOW_STALE"
+    view.nextStepBadgeTone === "stale"
       ? styles.badgeStale
-      : view.nextStep === "CHECK_ADAPTER"
-        ? styles.badgeFresh
-        : styles.badgeLost;
+      : styles.badgeFresh;
 
   return (
     <dl className={styles.dl}>
       <dt>电池</dt>
       <dd>{view.batteryId}</dd>
 
-      <dt>nextStep</dt>
+      <dt>下一步</dt>
       <dd>
         <span className={`${styles.badge} ${nextStepClass}`}>
-          {view.nextStep || "—"}
+          {view.nextStepLabel}
         </span>
       </dd>
 
