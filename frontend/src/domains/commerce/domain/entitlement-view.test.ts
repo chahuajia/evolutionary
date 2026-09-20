@@ -4,6 +4,7 @@ import {
   canRevokeEntitlement,
   canSwapWithEntitlement,
   canUnfreezeEntitlement,
+  isExhaustedEntitlement,
   parseEntitlementStatus,
   toEntitlementView,
 } from "./entitlement-view";
@@ -36,13 +37,40 @@ describe("entitlement gates", () => {
     expect(canRevokeEntitlement("ACTIVE")).toBe(true);
     expect(canRevokeEntitlement("REVOKED")).toBe(false);
   });
+
+  it("exhausted when remaining is 0", () => {
+    expect(isExhaustedEntitlement(0)).toBe(true);
+    expect(isExhaustedEntitlement(1)).toBe(false);
+    expect(isExhaustedEntitlement(null)).toBe(false);
+  });
 });
 
 describe("toEntitlementView", () => {
-  it("ACTIVE is swappable", () => {
+  it("ACTIVE unlimited is swappable", () => {
     const view = toEntitlementView({ id: "E-1", status: "ACTIVE" });
     expect(view.swapAllowed).toBe(true);
+    expect(view.remainingSwaps).toBeNull();
     expect(view.blockMessage).toBeNull();
+  });
+
+  it("ACTIVE with remaining > 0 is swappable", () => {
+    const view = toEntitlementView({
+      id: "E-1",
+      status: "ACTIVE",
+      remainingSwaps: 2,
+    });
+    expect(view.swapAllowed).toBe(true);
+    expect(view.blockMessage).toBeNull();
+  });
+
+  it("ACTIVE exhausted is not swappable", () => {
+    const view = toEntitlementView({
+      id: "E-1",
+      status: "ACTIVE",
+      remainingSwaps: 0,
+    });
+    expect(view.swapAllowed).toBe(false);
+    expect(view.blockMessage).toContain("用尽");
   });
 
   it("FROZEN points to repay", () => {

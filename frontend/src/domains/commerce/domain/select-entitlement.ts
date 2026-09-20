@@ -4,8 +4,11 @@
  * 优先 FINITE 次卡（未用尽）；无可用次卡则用 UNLIMITED。
  */
 
-import type { EntitlementStatus } from "./entitlement-view";
-import { canSwapWithEntitlement } from "./entitlement-view";
+import {
+  canSwapWithEntitlement,
+  isExhaustedEntitlement,
+  type EntitlementStatus,
+} from "./entitlement-view";
 
 export type SelectableEntitlement = {
   readonly id: string;
@@ -20,11 +23,7 @@ export function isFiniteEntitlement(
   return remainingSwaps != null;
 }
 
-export function isExhaustedEntitlement(
-  remainingSwaps: number | null,
-): boolean {
-  return remainingSwaps != null && remainingSwaps === 0;
-}
+export { isExhaustedEntitlement };
 
 /**
  * 展示不变量：默认选卡。
@@ -40,5 +39,5 @@ export function selectDefaultEntitlement(
   );
   const finite = usable.find((e) => isFiniteEntitlement(e.remainingSwaps));
   if (finite) return finite;
-  return usable.find((e) => !isFiniteEntitlement(e.remainingSwaps)) ?? null;
+  return usable[0] ?? null;
 }

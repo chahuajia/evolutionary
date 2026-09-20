@@ -19,12 +19,14 @@ export async function loadEntitlement(
   entitlementId: string,
 ): Promise<EntitlementLoad> {
   const dto = await fetchEntitlement(entitlementId);
+  const remainingSwaps = dto.remainingSwaps;
   return {
-    remainingSwaps: dto.remainingSwaps,
+    remainingSwaps,
     meteredRateCents: dto.meteredRateCents,
     view: toEntitlementView({
       id: dto.id,
       status: parseEntitlementStatus(dto.status),
+      remainingSwaps,
     }),
   };
 }

@@ -7,7 +7,6 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { EntitlementView } from "@/domains/commerce/domain/entitlement-view";
-import { isExhaustedEntitlement } from "@/domains/commerce/domain/select-entitlement";
 import { loadEntitlement } from "@/domains/commerce/application/load-entitlement";
 import { runEntitledSwap } from "@/domains/commerce/application/run-entitled-swap";
 import type { DeviceShadowView } from "@/domains/iot/domain/device-shadow-view";
@@ -49,7 +48,6 @@ export function MeteredSwapPanel() {
   const [entitlementLoadError, setEntitlementLoadError] = useState<
     string | null
   >(null);
-  const [remainingSwaps, setRemainingSwaps] = useState<number | null>(null);
   const [meteredRateCents, setMeteredRateCents] = useState<number | null>(null);
 
   useEffect(() => {
@@ -95,16 +93,14 @@ export function MeteredSwapPanel() {
     const id = entitlementId.trim() || SEED_METERED_ENTITLEMENT;
     setEntitlementLoadError(null);
     loadEntitlement(id)
-      .then(({ view, remainingSwaps: remaining, meteredRateCents: rate }) => {
+      .then(({ view, meteredRateCents: rate }) => {
         if (cancelled) return;
-        setRemainingSwaps(remaining);
         setMeteredRateCents(rate);
         setEntitlementView(view);
       })
       .catch((err) => {
         if (cancelled) return;
         setEntitlementView(null);
-        setRemainingSwaps(null);
         setMeteredRateCents(null);
         setEntitlementLoadError(
           err instanceof Error ? err.message : String(err),
@@ -137,18 +133,12 @@ export function MeteredSwapPanel() {
             blockMessage: entitlementView.blockMessage,
             statusLabel: entitlementView.statusLabel,
           }
-        : isExhaustedEntitlement(remainingSwaps)
+        : meteredRateCents == null
           ? {
               swapAllowed: false,
-              blockMessage: "权益次数已用尽，不可换电",
+              blockMessage: "权益未挂计量费率，不可估费换电",
               statusLabel: entitlementView.statusLabel,
             }
-          : meteredRateCents == null
-            ? {
-                swapAllowed: false,
-                blockMessage: "权益未挂计量费率，不可估费换电",
-                statusLabel: entitlementView.statusLabel,
-              }
           : {
               swapAllowed: true,
               blockMessage: null as string | null,
@@ -200,7 +190,6 @@ export function MeteredSwapPanel() {
   }, [
     entitlementView,
     entitlementLoadError,
-    remainingSwaps,
     meteredRateCents,
     shadowView,
     shadowLoadError,

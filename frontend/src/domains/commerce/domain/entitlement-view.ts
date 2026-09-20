@@ -2,7 +2,7 @@
  * 权益展示模型 — 视图边界。
  *
  * 对齐后端 `Entitlement`：
- * - 履约：仅 ACTIVE（isActiveAt 另卡窗口）
+ * - 履约：仅 ACTIVE（isActiveAt 另卡窗口）∧ !isExhausted
  * - freeze：仅 ACTIVE → FROZEN
  * - unfreeze：仅 FROZEN → ACTIVE
  * - revoke：ACTIVE / EXPIRED / FROZEN（已 REVOKED 幂等）
@@ -33,7 +33,12 @@ export type EntitlementView = {
   readonly id: string;
   readonly status: EntitlementStatus;
   readonly statusLabel: string;
-  /** 仅 ACTIVE 可发起权益换电（窗口由后端再判）。 */
+  /** null = UNLIMITED；非 null = FINITE 剩余次数。 */
+  readonly remainingSwaps: number | null;
+  /**
+   * ACTIVE ∧ 未用尽可发起权益换电（窗口由后端再判）。
+   * 对齐 `Entitlement.isExhausted` / `PerformEntitledSwap`。
+   */
   readonly swapAllowed: boolean;
   readonly freezeAllowed: boolean;
   readonly unfreezeAllowed: boolean;
@@ -50,6 +55,13 @@ export const ENTITLEMENT_STATUS_LABEL: Record<EntitlementStatus, string> = {
 
 export function canSwapWithEntitlement(status: EntitlementStatus): boolean {
   return status === "ACTIVE";
+}
+
+/** 展示不变量：FINITE 且 remaining==0 为用尽。null = UNLIMITED。 */
+export function isExhaustedEntitlement(
+  remainingSwaps: number | null | undefined,
+): boolean {
+  return remainingSwaps != null && remainingSwaps === 0;
 }
 
 export function canFreezeEntitlement(status: EntitlementStatus): boolean {
@@ -69,8 +81,14 @@ export function canRevokeEntitlement(status: EntitlementStatus): boolean {
 
 export function entitlementBlockMessage(
   status: EntitlementStatus,
+  remainingSwaps?: number | null,
 ): string | null {
-  if (status === "ACTIVE") return null;
+  if (status === "ACTIVE") {
+    if (isExhaustedEntitlement(remainingSwaps ?? null)) {
+      return "权益次数已用尽，不可换电";
+    }
+    return null;
+  }
   if (status === "FROZEN") return "权益已冻结（信用逾期），还款后方可换电";
   if (status === "EXPIRED") return "权益已过期，不可换电";
   return "权益已撤销，不可换电";
@@ -79,15 +97,21 @@ export function entitlementBlockMessage(
 export function toEntitlementView(dto: {
   id: string;
   status: EntitlementStatus;
+  remainingSwaps?: number | null;
 }): EntitlementView {
+  const remainingSwaps =
+    dto.remainingSwaps === undefined ? null : dto.remainingSwaps;
+  const statusOk = canSwapWithEntitlement(dto.status);
+  const exhausted = isExhaustedEntitlement(remainingSwaps);
   return {
     id: dto.id,
     status: dto.status,
     statusLabel: ENTITLEMENT_STATUS_LABEL[dto.status],
-    swapAllowed: canSwapWithEntitlement(dto.status),
+    remainingSwaps,
+    swapAllowed: statusOk && !exhausted,
     freezeAllowed: canFreezeEntitlement(dto.status),
     unfreezeAllowed: canUnfreezeEntitlement(dto.status),
     revokeAllowed: canRevokeEntitlement(dto.status),
-    blockMessage: entitlementBlockMessage(dto.status),
+    blockMessage: entitlementBlockMessage(dto.status, remainingSwaps),
   };
 }

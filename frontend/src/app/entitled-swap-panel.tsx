@@ -7,7 +7,6 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { EntitlementView } from "@/domains/commerce/domain/entitlement-view";
-import { isExhaustedEntitlement } from "@/domains/commerce/domain/select-entitlement";
 import { loadEntitlement } from "@/domains/commerce/application/load-entitlement";
 import { runEntitledSwap } from "@/domains/commerce/application/run-entitled-swap";
 import styles from "./page.module.css";
@@ -22,7 +21,6 @@ export function EntitledSwapPanel() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [view, setView] = useState<EntitlementView | null>(null);
-  const [remainingSwaps, setRemainingSwaps] = useState<number | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,15 +28,13 @@ export function EntitledSwapPanel() {
     const id = entitlementId.trim() || SEED_ENTITLEMENT_ID;
     setLoadError(null);
     loadEntitlement(id)
-      .then(({ view: next, remainingSwaps: remaining }) => {
+      .then(({ view: next }) => {
         if (cancelled) return;
-        setRemainingSwaps(remaining);
         setView(next);
       })
       .catch((err) => {
         if (cancelled) return;
         setView(null);
-        setRemainingSwaps(null);
         setLoadError(err instanceof Error ? err.message : String(err));
       });
     return () => {
@@ -54,26 +50,12 @@ export function EntitledSwapPanel() {
         statusLabel: null as string | null,
       };
     }
-    if (!view.swapAllowed) {
-      return {
-        swapAllowed: false,
-        blockMessage: view.blockMessage,
-        statusLabel: view.statusLabel,
-      };
-    }
-    if (isExhaustedEntitlement(remainingSwaps)) {
-      return {
-        swapAllowed: false,
-        blockMessage: "权益次数已用尽，不可换电",
-        statusLabel: view.statusLabel,
-      };
-    }
     return {
-      swapAllowed: true,
-      blockMessage: null as string | null,
+      swapAllowed: view.swapAllowed,
+      blockMessage: view.blockMessage,
       statusLabel: view.statusLabel,
     };
-  }, [view, loadError, remainingSwaps]);
+  }, [view, loadError]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -95,7 +77,6 @@ export function EntitledSwapPanel() {
       const loaded = await loadEntitlement(
         entitlementId.trim() || SEED_ENTITLEMENT_ID,
       );
-      setRemainingSwaps(loaded.remainingSwaps);
       setView(loaded.view);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -110,7 +91,7 @@ export function EntitledSwapPanel() {
       <p className={styles.note}>
         GET 权益对齐仅 ACTIVE 且未用尽可履约
         {gate.statusLabel ? ` · ${entitlementId}=${gate.statusLabel}` : ""}
-        {remainingSwaps != null ? ` · 余 ${remainingSwaps} 次` : ""}
+        {view?.remainingSwaps != null ? ` · 余 ${view.remainingSwaps} 次` : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
