@@ -2,9 +2,10 @@
 
 /**
  * IoT 运维工单列表客户端岛 — GET tickets + POST resolve（resolveAllowed）。
+ * GET 随 batteryId 预读（厚 GET）。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import type { MaintenanceTicketView } from "@/domains/iot/domain/maintenance-ticket-view";
 import {
   DEFAULT_IOT_BATTERY,
@@ -18,19 +19,40 @@ export function TicketsPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tickets, setTickets] = useState<MaintenanceTicketView[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = batteryId.trim() || DEFAULT_IOT_BATTERY;
+    setLoadError(null);
+    setStatus(null);
+    loadTickets(id)
+      .then((list) => {
+        if (cancelled) return;
+        setTickets([...list]);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setTickets(null);
+        setLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [batteryId]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
     setStatus(null);
-    setTickets(null);
     try {
-      setTickets([
-        ...(await loadTickets(batteryId.trim() || DEFAULT_IOT_BATTERY)),
-      ]);
+      const list = await loadTickets(batteryId.trim() || DEFAULT_IOT_BATTERY);
+      setTickets([...list]);
+      setLoadError(null);
     } catch (err) {
+      setTickets(null);
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
@@ -58,12 +80,19 @@ export function TicketsPanel() {
     }
   }
 
+  const openCount = tickets?.filter((t) => t.needsAction).length ?? 0;
+
   return (
     <section className={styles.panel}>
       <h2>运维工单列表（HTTP）</h2>
       <p className={styles.note}>
-        GET tickets · POST /iot/tickets/{"{id}"}/resolve（仅 OPEN ·
-        resolveAllowed）
+        GET tickets 预读 · POST resolve（仅待处理 · resolveAllowed）
+        {tickets
+          ? ` · ${batteryId} 共 ${tickets.length} 条` +
+            (openCount > 0 ? ` · 待处理 ${openCount}` : "")
+          : loadError
+            ? ` · ${loadError}`
+            : " · 加载中…"}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
@@ -74,7 +103,7 @@ export function TicketsPanel() {
           />
         </label>
         <button type="submit" disabled={busy}>
-          {busy ? "查询中…" : "查询工单"}
+          {busy ? "查询中…" : "刷新工单"}
         </button>
       </form>
       {error ? (
@@ -91,8 +120,7 @@ export function TicketsPanel() {
             {tickets.map((t) => (
               <li key={t.ticketId}>
                 {t.ticketId} · {t.alertTypeLabel} · {t.statusLabel}
-                {t.needsAction ? " · 可解决" : ` · ${t.blockMessage}`}
-                {" "}
+                {t.needsAction ? " · 可解决" : ` · ${t.blockMessage}`}{" "}
                 <button
                   type="button"
                   disabled={busy || !t.resolveAllowed}

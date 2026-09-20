@@ -81,7 +81,7 @@ export function CreditWorkspace({
         {
           id: "refund",
           label: "订单退款",
-          description: "撤销权益并冲销 PENDING 分润。",
+          description: "撤销权益并冲销待结算分润。",
           content: <CreditRefundPanel />,
         },
       ]}

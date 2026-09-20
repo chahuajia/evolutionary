@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  defaultSelectBlockMessage,
   isExhaustedEntitlement,
   isFiniteEntitlement,
   selectDefaultEntitlement,
@@ -59,5 +60,24 @@ describe("selectDefaultEntitlement", () => {
 
   it("returns null when empty", () => {
     expect(selectDefaultEntitlement([])).toBeNull();
+  });
+});
+
+describe("defaultSelectBlockMessage", () => {
+  it("explains empty usable catalog without raw ACTIVE", () => {
+    const msg = defaultSelectBlockMessage([
+      { id: "E-DONE", status: "ACTIVE", remainingSwaps: 0 },
+      { id: "E-F", status: "FROZEN", remainingSwaps: 1 },
+    ]);
+    expect(msg).toContain("无可用权益");
+    expect(msg).not.toContain("ACTIVE");
+  });
+
+  it("is null when a default exists", () => {
+    expect(
+      defaultSelectBlockMessage([
+        { id: "E-1", status: "ACTIVE", remainingSwaps: null },
+      ]),
+    ).toBeNull();
   });
 });

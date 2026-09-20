@@ -8,6 +8,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   selectDefaultEntitlement,
+  defaultSelectBlockMessage,
   type SelectableEntitlement,
 } from "@/domains/commerce/domain/select-entitlement";
 import { loadActiveEntitlements } from "@/domains/commerce/application/load-active-entitlements";
@@ -59,7 +60,7 @@ export function DefaultSelectPanel() {
     if (!preview) {
       return {
         swapAllowed: false,
-        blockMessage: "无可用权益（ACTIVE 且未用尽）",
+        blockMessage: defaultSelectBlockMessage(catalog),
       };
     }
     return {
@@ -103,7 +104,7 @@ export function DefaultSelectPanel() {
     <section className={styles.panel}>
       <h2>默认选卡换电（HTTP · AC-14）</h2>
       <p className={styles.note}>
-        GET ACTIVE 目录 · FE 预览 selectDefaultEntitlement（FINITE 优先）
+        GET 有效权益目录 · FE 预览 selectDefaultEntitlement（次卡优先）
         {catalog != null ? ` · 目录 ${catalog.length} 张` : ""}
         {preview
           ? ` · 预览选中 ${preview.id}${

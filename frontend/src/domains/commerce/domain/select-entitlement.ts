@@ -41,3 +41,12 @@ export function selectDefaultEntitlement(
   if (finite) return finite;
   return usable[0] ?? null;
 }
+
+/** 目录加载后仍无可用默认卡时的说明（勿岛内裸写 ACTIVE）。 */
+export function defaultSelectBlockMessage(
+  candidates: readonly SelectableEntitlement[] | null,
+): string | null {
+  if (candidates == null) return null;
+  if (selectDefaultEntitlement(candidates) != null) return null;
+  return "无可用权益（须有效且未用尽）";
+}

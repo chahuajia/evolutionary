@@ -19,7 +19,7 @@ export function IotWorkspace() {
         },
         {
           id: "comm",
-          label: "COMM_LOST",
+          label: "通信丢失",
           description: "检测通信丢失。",
           content: <CommLostPanel />,
         },
