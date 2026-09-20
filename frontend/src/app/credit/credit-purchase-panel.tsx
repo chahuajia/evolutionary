@@ -8,14 +8,12 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   DEFAULT_CREDIT_USER,
-  postCreditPurchase,
-  type CreditPurchaseResult,
-} from "@/domains/credit/infrastructure/credit-gateway";
+  runCreditPurchase,
+} from "@/domains/credit/application/run-credit-purchase";
 import {
   creditPurchaseBlockMessage,
   type CreditPurchaseBlock,
 } from "@/domains/credit/domain/credit-profile-view";
-import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import styles from "./page.module.css";
 
 const DEFAULT_PRODUCT_ID = "P-CREDIT-1";
@@ -26,19 +24,6 @@ type CreditPurchasePanelProps = {
   readonly statusLabel?: string;
   readonly availableYuan?: string;
 };
-
-function summarizePurchase(r: CreditPurchaseResult): string {
-  const parts = [
-    `订单 ${r.orderId}`,
-    `权益 ${r.entitlementId}`,
-  ];
-  if (r.productId) parts.push(`商品 ${r.productId}`);
-  if (r.paidAmountCents != null) {
-    parts.push(`金额 ¥${formatCentsAsYuan(r.paidAmountCents)}`);
-  }
-  if (r.debtId) parts.push(`债务 ${r.debtId}`);
-  return parts.join(" · ");
-}
 
 export function CreditPurchasePanel({
   purchaseAllowed = false,
@@ -66,8 +51,8 @@ export function CreditPurchasePanel({
     setError(null);
     setResult(null);
     try {
-      const r = await postCreditPurchase({ userId, productId });
-      setResult(summarizePurchase(r));
+      const r = await runCreditPurchase({ userId, productId });
+      setResult(r.summary);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

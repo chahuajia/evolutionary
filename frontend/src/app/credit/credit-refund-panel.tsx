@@ -8,20 +8,12 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CommerceOrderView } from "@/domains/commerce/domain/commerce-order-view";
-import {
-  parseCommerceOrderStatus,
-  toCommerceOrderView,
-} from "@/domains/commerce/domain/commerce-order-view";
-import {
-  parseEntitlementStatus,
-  toEntitlementView,
-} from "@/domains/commerce/domain/entitlement-view";
 import { loadCommerceOrder } from "@/domains/commerce/application/load-commerce-order";
-import { postRefundOrder } from "@/domains/commerce/infrastructure/order-refund-gateway";
+import { runRefundOrder } from "@/domains/commerce/application/run-refund-order";
 import {
   DEFAULT_CREDIT_USER,
-  postCreditPurchase,
-} from "@/domains/credit/infrastructure/credit-gateway";
+  runCreditPurchase,
+} from "@/domains/credit/application/run-credit-purchase";
 import styles from "./page.module.css";
 
 const DEFAULT_PRODUCT_ID = "P-CREDIT-1";
@@ -96,7 +88,7 @@ export function CreditRefundPanel() {
     setError(null);
     setResult(null);
     try {
-      const r = await postCreditPurchase({ userId, productId });
+      const r = await runCreditPurchase({ userId, productId });
       setOrderId(r.orderId);
       setResult(`已购订单 ${r.orderId} · 权益 ${r.entitlementId}`);
       router.refresh();
@@ -117,23 +109,11 @@ export function CreditRefundPanel() {
     setError(null);
     setResult(null);
     try {
-      const r = await postRefundOrder(orderId);
-      const status = parseCommerceOrderStatus(r.status);
-      const view = toCommerceOrderView({ orderId: r.orderId, status });
-      setOrderView(view);
-      let entLabel = r.entitlementId ?? "(revoked)";
-      if (r.entitlementStatus) {
-        try {
-          const ev = toEntitlementView({
-            id: r.entitlementId ?? "?",
-            status: parseEntitlementStatus(r.entitlementStatus),
-          });
-          entLabel = `${ev.id}/${ev.statusLabel}`;
-        } catch {
-          entLabel = `${entLabel}/${r.entitlementStatus}`;
-        }
-      }
-      setResult(`已退 ${view.orderId} · ${view.statusLabel} · 权益 ${entLabel}`);
+      const r = await runRefundOrder(orderId);
+      setOrderView(r.order);
+      setResult(
+        `已退 ${r.order.orderId} · ${r.order.statusLabel} · 权益 ${r.entitlementLabel}`,
+      );
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

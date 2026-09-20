@@ -6,13 +6,12 @@
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { toUsageEventView } from "@/domains/commerce/domain/usage-event-view";
 import {
   selectDefaultEntitlement,
   type SelectableEntitlement,
 } from "@/domains/commerce/domain/select-entitlement";
 import { loadActiveEntitlements } from "@/domains/commerce/application/load-active-entitlements";
-import { postEntitledSwap } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
+import { runEntitledSwap } from "@/domains/commerce/application/run-entitled-swap";
 import styles from "./page.module.css";
 
 export function DefaultSelectPanel() {
@@ -79,11 +78,8 @@ export function DefaultSelectPanel() {
     setError(null);
     setResult(null);
     try {
-      const r = await postEntitledSwap({ userId, cabinetId });
-      const ue = toUsageEventView({
-        id: r.usageEventId,
-        status: r.status,
-      });
+      const r = await runEntitledSwap({ userId, cabinetId });
+      const ue = r.usageEvent;
       setResult(
         `默认选中 ${r.entitlementId}` +
           (preview && r.entitlementId === preview.id

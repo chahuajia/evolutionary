@@ -8,9 +8,8 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { EntitlementView } from "@/domains/commerce/domain/entitlement-view";
 import { isExhaustedEntitlement } from "@/domains/commerce/domain/select-entitlement";
-import { toUsageEventView } from "@/domains/commerce/domain/usage-event-view";
 import { loadEntitlement } from "@/domains/commerce/application/load-entitlement";
-import { postEntitledSwap } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
+import { runEntitledSwap } from "@/domains/commerce/application/run-entitled-swap";
 import styles from "./page.module.css";
 
 const SEED_ENTITLEMENT_ID = "E-1";
@@ -86,11 +85,8 @@ export function EntitledSwapPanel() {
     setError(null);
     setResult(null);
     try {
-      const r = await postEntitledSwap({ userId, entitlementId, cabinetId });
-      const ue = toUsageEventView({
-        id: r.usageEventId,
-        status: r.status,
-      });
+      const r = await runEntitledSwap({ userId, entitlementId, cabinetId });
+      const ue = r.usageEvent;
       setResult(
         `事件 ${ue.id} · ${ue.statusLabel}` +
           (ue.blockMessage ? ` · ${ue.blockMessage}` : "") +

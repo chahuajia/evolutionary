@@ -8,9 +8,8 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { EntitlementView } from "@/domains/commerce/domain/entitlement-view";
 import { isExhaustedEntitlement } from "@/domains/commerce/domain/select-entitlement";
-import { toUsageEventView } from "@/domains/commerce/domain/usage-event-view";
 import { loadEntitlement } from "@/domains/commerce/application/load-entitlement";
-import { postEntitledSwap } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
+import { runEntitledSwap } from "@/domains/commerce/application/run-entitled-swap";
 import type { DeviceShadowView } from "@/domains/iot/domain/device-shadow-view";
 import { loadDeviceShadow } from "@/domains/iot/application/load-device-shadow";
 import { loadWallet } from "@/domains/wallet/application/load-wallet";
@@ -221,7 +220,7 @@ export function MeteredSwapPanel() {
     setResult(null);
     try {
       const uid = userId.trim() || "U1";
-      const r = await postEntitledSwap({
+      const r = await runEntitledSwap({
         userId: uid,
         entitlementId,
         cabinetId,
@@ -232,10 +231,7 @@ export function MeteredSwapPanel() {
         r.chargedAmountCents != null
           ? ` · 扣费 ${formatCents(r.chargedAmountCents)}`
           : "";
-      const ue = toUsageEventView({
-        id: r.usageEventId,
-        status: r.status,
-      });
+      const ue = r.usageEvent;
       setResult(
         `事件 ${ue.id} · ${ue.statusLabel}` +
           (ue.blockMessage ? ` · ${ue.blockMessage}` : "") +

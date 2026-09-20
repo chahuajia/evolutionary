@@ -9,28 +9,18 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CommerceOrderView } from "@/domains/commerce/domain/commerce-order-view";
-import {
-  parseCommerceOrderStatus,
-  toCommerceOrderView,
-} from "@/domains/commerce/domain/commerce-order-view";
-import {
-  parseEntitlementStatus,
-  toEntitlementView,
-} from "@/domains/commerce/domain/entitlement-view";
 import { loadCommerceOrder } from "@/domains/commerce/application/load-commerce-order";
-import { postRefundOrder } from "@/domains/commerce/infrastructure/order-refund-gateway";
+import { runRefundOrder } from "@/domains/commerce/application/run-refund-order";
 import {
   DEFAULT_CREDIT_USER,
-  postCreditPurchase,
-  type CreditPurchaseResult,
-} from "@/domains/credit/infrastructure/credit-gateway";
+  runCreditPurchase,
+} from "@/domains/credit/application/run-credit-purchase";
 import { runAccrueSettlement } from "@/domains/settlement/application/run-accrue-settlement";
 import { runSettlementBatch } from "@/domains/settlement/application/run-settlement-batch";
 import {
   creditPurchaseBlockMessage,
   type CreditPurchaseBlock,
 } from "@/domains/credit/domain/credit-profile-view";
-import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import styles from "./page.module.css";
 
 const DEFAULT_PRODUCT_ID = "P-CREDIT-1";
@@ -42,15 +32,6 @@ type CreditJourneyPanelProps = {
   readonly statusLabel?: string;
   readonly availableYuan?: string;
 };
-
-function summarizePurchase(r: CreditPurchaseResult): string {
-  const parts = [`订单 ${r.orderId}`, `权益 ${r.entitlementId}`];
-  if (r.paidAmountCents != null) {
-    parts.push(`金额 ¥${formatCentsAsYuan(r.paidAmountCents)}`);
-  }
-  if (r.debtId) parts.push(`债务 ${r.debtId}`);
-  return parts.join(" · ");
-}
 
 export function CreditJourneyPanel({
   purchaseAllowed = false,
@@ -139,11 +120,11 @@ export function CreditJourneyPanel({
     setBusy(true);
     setError(null);
     try {
-      const r = await postCreditPurchase({ userId, productId });
+      const r = await runCreditPurchase({ userId, productId });
       setOrderId(r.orderId);
       setEntitlementId(r.entitlementId);
-      setPaidAmountCents(r.paidAmountCents ?? null);
-      append(`① 信用购：${summarizePurchase(r)}`);
+      setPaidAmountCents(r.paidAmountCents);
+      append(`① 信用购：${r.summary}`);
       append(
         "购后 BE 应已自动记分润意向（依赖 22a；未合入时可下方 Accrue 手调）",
       );
@@ -164,23 +145,11 @@ export function CreditJourneyPanel({
     setBusy(true);
     setError(null);
     try {
-      const r = await postRefundOrder(orderId);
-      const status = parseCommerceOrderStatus(r.status);
-      const view = toCommerceOrderView({ orderId: r.orderId, status });
-      setOrderView(view);
-      let ent = r.entitlementId ?? (entitlementId || "(revoked)");
-      if (r.entitlementStatus) {
-        try {
-          const ev = toEntitlementView({
-            id: r.entitlementId ?? (entitlementId || "?"),
-            status: parseEntitlementStatus(r.entitlementStatus),
-          });
-          ent = `${ev.id}/${ev.statusLabel}`;
-        } catch {
-          ent = `${ent}/${r.entitlementStatus}`;
-        }
-      }
-      append(`③ 退款冲销：${view.orderId} · ${view.statusLabel} · 权益 ${ent}`);
+      const r = await runRefundOrder(orderId);
+      setOrderView(r.order);
+      append(
+        `③ 退款冲销：${r.order.orderId} · ${r.order.statusLabel} · 权益 ${r.entitlementLabel}`,
+      );
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
