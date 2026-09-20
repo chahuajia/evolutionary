@@ -2,23 +2,21 @@
 
 /**
  * 默认选卡换电客户端岛 — 省略 entitlementId，展示 BE AC-14 选中的权益。
- * 无 GET 目录前：种子 E-FINITE / E-1 对齐 CommerceConfig。
+ * GET /entitled-swaps?userId= 对齐 ACTIVE 目录，再跑 selectDefaultEntitlement。
  */
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { parseEntitlementStatus } from "@/domains/commerce/domain/entitlement-view";
 import { toUsageEventView } from "@/domains/commerce/domain/usage-event-view";
 import {
   selectDefaultEntitlement,
   type SelectableEntitlement,
 } from "@/domains/commerce/domain/select-entitlement";
-import { postEntitledSwap } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
+import {
+  fetchActiveEntitlements,
+  postEntitledSwap,
+} from "@/domains/commerce/infrastructure/entitled-swap-gateway";
 import styles from "./page.module.css";
-
-/** 对齐 CommerceConfig 种子：E-FINITE 次卡优先于 E-1 无限。 */
-const SEED_CATALOG: readonly SelectableEntitlement[] = [
-  { id: "E-1", status: "ACTIVE", remainingSwaps: null },
-  { id: "E-FINITE", status: "ACTIVE", remainingSwaps: 5 },
-];
 
 export function DefaultSelectPanel() {
   const [userId, setUserId] = useState("U1");
@@ -26,24 +24,59 @@ export function DefaultSelectPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<readonly SelectableEntitlement[] | null>(
+    null,
+  );
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = userId.trim() || "U1";
+    setLoadError(null);
+    fetchActiveEntitlements(id)
+      .then((rows) => {
+        if (cancelled) return;
+        setCatalog(
+          rows.map((dto) => ({
+            id: dto.id,
+            status: parseEntitlementStatus(dto.status),
+            remainingSwaps: dto.remainingSwaps,
+          })),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setCatalog(null);
+        setLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const preview = useMemo(
-    () => selectDefaultEntitlement(SEED_CATALOG),
-    [],
+    () => (catalog == null ? null : selectDefaultEntitlement(catalog)),
+    [catalog],
   );
 
   const gate = useMemo(() => {
+    if (catalog == null) {
+      return {
+        swapAllowed: false,
+        blockMessage: loadError ?? "正在加载权益目录…",
+      };
+    }
     if (!preview) {
       return {
         swapAllowed: false,
-        blockMessage: "无可用权益（AC-14 种子目录为空）",
+        blockMessage: "无可用权益（ACTIVE 且未用尽）",
       };
     }
     return {
       swapAllowed: true,
       blockMessage: null as string | null,
     };
-  }, [preview]);
+  }, [catalog, preview, loadError]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -71,6 +104,14 @@ export function DefaultSelectPanel() {
           (ue.blockMessage ? ` · ${ue.blockMessage}` : "") +
           ` · 电池 ${r.batteryId}`,
       );
+      const rows = await fetchActiveEntitlements(userId.trim() || "U1");
+      setCatalog(
+        rows.map((dto) => ({
+          id: dto.id,
+          status: parseEntitlementStatus(dto.status),
+          remainingSwaps: dto.remainingSwaps,
+        })),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -82,7 +123,8 @@ export function DefaultSelectPanel() {
     <section className={styles.panel}>
       <h2>默认选卡换电（HTTP · AC-14）</h2>
       <p className={styles.note}>
-        省略 entitlementId；FE 预览 selectDefaultEntitlement（FINITE 优先）
+        GET ACTIVE 目录 · FE 预览 selectDefaultEntitlement（FINITE 优先）
+        {catalog != null ? ` · 目录 ${catalog.length} 张` : ""}
         {preview
           ? ` · 预览选中 ${preview.id}${
               preview.remainingSwaps != null

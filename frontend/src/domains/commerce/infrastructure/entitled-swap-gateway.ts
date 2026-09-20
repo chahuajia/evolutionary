@@ -35,6 +35,46 @@ export type EntitlementDto = {
   remainingSwaps: number | null;
 };
 
+function parseEntitlementDto(
+  raw: Record<string, unknown>,
+  fallbackId = "",
+): EntitlementDto {
+  const remaining = raw.remainingSwaps;
+  return {
+    id: String(raw.id ?? fallbackId),
+    userId: String(raw.userId ?? ""),
+    status: String(raw.status ?? ""),
+    remainingSwaps:
+      typeof remaining === "number" && Number.isFinite(remaining)
+        ? remaining
+        : null,
+  };
+}
+
+/**
+ * GET /entitled-swaps?userId= — ACTIVE 目录（AC-14 预览）。
+ */
+export async function fetchActiveEntitlements(
+  userId: string,
+): Promise<EntitlementDto[]> {
+  const id = userId.trim();
+  const base = apiBase();
+  const raw = await fetchJson<unknown>(
+    `${base}/entitled-swaps?userId=${encodeURIComponent(id)}`,
+    { timeoutMs: TIMEOUT_MS },
+  );
+  if (!Array.isArray(raw)) {
+    throw new Error("权益目录响应非数组");
+  }
+  return raw.map((row) =>
+    parseEntitlementDto(
+      typeof row === "object" && row != null
+        ? (row as Record<string, unknown>)
+        : {},
+    ),
+  );
+}
+
 /**
  * GET /entitled-swaps/{entitlementId}
  */
@@ -47,16 +87,7 @@ export async function fetchEntitlement(
     `${base}/entitled-swaps/${encodeURIComponent(id)}`,
     { timeoutMs: TIMEOUT_MS },
   );
-  const remaining = raw.remainingSwaps;
-  return {
-    id: String(raw.id ?? id),
-    userId: String(raw.userId ?? ""),
-    status: String(raw.status ?? ""),
-    remainingSwaps:
-      typeof remaining === "number" && Number.isFinite(remaining)
-        ? remaining
-        : null,
-  };
+  return parseEntitlementDto(raw, id);
 }
 
 export async function postEntitledSwap(

@@ -1,5 +1,7 @@
 package com.evolutionary.commerce.interfaces;
 
+import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -22,6 +24,17 @@ import org.springframework.test.web.servlet.MockMvc;
 class DefaultSelectHttpIT {
 
     @Autowired private MockMvc mvc;
+
+    @Test
+    @DisplayName("GET ?userId=U1 → ACTIVE 目录含 E-FINITE / E-1")
+    void listActiveEntitlementsForUser() throws Exception {
+        mvc.perform(get("/entitled-swaps").param("userId", "U1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", hasItem("E-FINITE")))
+                .andExpect(jsonPath("$[*].id", hasItem("E-1")))
+                .andExpect(jsonPath("$[?(@.id=='E-FINITE')].remainingSwaps").value(hasItem(5)))
+                .andExpect(jsonPath("$[?(@.id=='E-1')].status").value(hasItem("ACTIVE")));
+    }
 
     @Test
     @DisplayName("省略 entitlementId → 200 且选中 E-FINITE")
