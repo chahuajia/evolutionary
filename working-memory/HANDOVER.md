@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-20 14:36（v47；波次以 `loop.md` 为准）
+**写于**：2026-09-20 14:42（v48；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v46（仍写 HEAD `f6a6b1d` —— 已过时）
+**取代**：v47（仍写 HEAD `a24c2bc` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `a24c2bc`。前端 153/153。
-wave123 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `5499a8a`。前端 153/153。
+wave124 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -130,6 +130,7 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave121** | loadMallSku · RSC 双概览 · 下单岛经用例 | ✅ `cad4c22` · 前端 **153/153** |
 | **wave122** | loadMerchantProfile · 领券/下单岛经用例 | ✅ `f6a6b1d` · 前端 **153/153** |
 | **wave123** | loadUserCoupon · 结账岛经用例层 | ✅ `a24c2bc` · 前端 **153/153** |
+| **wave124** | 入驻审批岛经 loadOnboardingApplication | ✅ `5499a8a` · 前端 **153/153** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -165,8 +166,8 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **153/153** · HEAD `a24c2bc`。父自选推进。
-门禁轴可 idle；wave123 mall 读路径 usecase 收齐。下刀其它域岛（credit/iot/operator）。拒 ReferralBinding/CreditLedgerDebt。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **153/153** · HEAD `5499a8a`。父自选推进。
+门禁轴可 idle；wave124 入驻审批岛经 usecase。下刀 loadPackageOverride / actor org。拒 ReferralBinding/CreditLedgerDebt。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
