@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-20 18:35（v73；波次以 `loop.md` 为准）
+**写于**：2026-09-20 18:36（v74；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v72（仍写 HEAD `f3588f3` —— 已过时）
+**取代**：v73（仍写 HEAD `86619d7` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `86619d7`。前端 166/166 · lint 绿。
-wave150 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `e8d3bd4`。前端 166/166 · lint 绿。
+wave151 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -156,6 +156,7 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave147** | triage nextStepLabel+badgeTone | ✅ `7ba050e` · 前端 **162/162** |
 | **wave148** | 结账失败不乐观捏造 USED | ✅ `fba8946` · 前端 **162/162** |
 | **wave149** | DetectCommLostView 去岛内猜 COMM_LOST | ✅ `f3588f3` · 前端 **166/166** |
+| **wave150** | 工单 alertTypeLabel + AlertType 共用 | ✅ `86619d7` · 前端 **166/166** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -191,8 +192,8 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **166/166** · lint 绿 · HEAD `f3588f3`。父自选推进。
-门禁/同构岛/status===/猜枚举 idle。下刀厚 BE GET / 工单 alertTypeLabel。拒 ReferralBinding/CreditLedgerDebt。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **166/166** · lint 绿 · HEAD `86619d7`。父自选推进。
+门禁/同构岛/status===/猜枚举 idle。下刀厚 BE GET / usecase 补洞。拒 ReferralBinding/CreditLedgerDebt。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
