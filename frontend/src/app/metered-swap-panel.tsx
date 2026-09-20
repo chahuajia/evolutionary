@@ -17,9 +17,7 @@ import {
   fetchEntitlement,
   postEntitledSwap,
 } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
-import {
-  type DeviceShadowView,
-} from "@/domains/iot/domain/device-shadow-view";
+import type { DeviceShadowView } from "@/domains/iot/domain/device-shadow-view";
 import { loadDeviceShadow } from "@/domains/iot/application/load-device-shadow";
 import { loadWallet } from "@/domains/wallet/application/load-wallet";
 import {
