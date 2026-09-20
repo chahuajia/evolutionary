@@ -90,6 +90,16 @@ public class CreditController {
         return ResponseEntity.ok(views);
     }
 
+    /** 只读：供还款面板对齐 repayAllowed（按 id，不经列表猜测）。 */
+    @GetMapping("/statements/{statementId}")
+    public ResponseEntity<BillingStatementView> statement(@PathVariable String statementId) {
+        return statements
+                .findById(statementId.trim())
+                .map(CreditController::toStatement)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/purchases")
     public ResponseEntity<?> purchase(@RequestBody PurchaseRequest body) {
         if (body == null || body.userId() == null || body.userId().isBlank()) {

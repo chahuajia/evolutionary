@@ -60,6 +60,22 @@ export async function fetchCreditStatements(
   return raw.map((row) => parseStatement(row as Record<string, unknown>));
 }
 
+/** GET /credit/statements/{statementId} — 单账单真态（repayAllowed） */
+export async function fetchCreditStatement(
+  statementId: string,
+): Promise<BillingStatement> {
+  const id = statementId.trim();
+  if (!id) {
+    throw new Error("statementId required");
+  }
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/credit/statements/${encodeURIComponent(id)}`,
+    { cache: "no-store", timeoutMs: TIMEOUT_MS },
+  );
+  return parseStatement(raw);
+}
+
 export type CreditRepayRequest = {
   userId: string;
   statementId: string;

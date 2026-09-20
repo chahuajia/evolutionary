@@ -2,7 +2,7 @@
 
 /**
  * 还款客户端岛 — 默认 U1 / STMT-2026-02 / 3000¢；成功后 router.refresh()。
- * 账单门：仅 DUE/OVERDUE 可还；钱包门：canCoverCents 对齐 Account。
+ * GET /credit/statements/{id} 对齐 repayAllowed；钱包门 canCoverCents。
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
@@ -13,7 +13,7 @@ import {
 } from "@/domains/credit/domain/billing-statement-view";
 import {
   DEFAULT_CREDIT_USER,
-  fetchCreditStatements,
+  fetchCreditStatement,
   postCreditRepay,
   postMarkCreditOverdue,
 } from "@/domains/credit/infrastructure/credit-gateway";
@@ -54,15 +54,9 @@ export function CreditRepayPanel({
     let cancelled = false;
     const id = statementId.trim() || DEFAULT_STATEMENT_ID;
     setLoadError(null);
-    fetchCreditStatements(DEFAULT_CREDIT_USER)
-      .then((rows) => {
+    fetchCreditStatement(id)
+      .then((hit) => {
         if (cancelled) return;
-        const hit = rows.find((r) => r.id === id);
-        if (!hit) {
-          setStatementView(null);
-          setLoadError(`未找到账单 ${id}`);
-          return;
-        }
         setStatementView(
           toBillingStatementView({
             id: hit.id,

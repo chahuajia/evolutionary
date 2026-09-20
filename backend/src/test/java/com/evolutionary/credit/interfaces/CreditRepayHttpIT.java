@@ -30,6 +30,14 @@ class CreditRepayHttpIT {
     @DisplayName(
             "mark-overdue → 409 CREDIT_OVERDUE_BLOCKED → repay PAID → entitled-swaps 200 COMPLETED")
     void overdueBlockedThenRepayUnblocksSwap() throws Exception {
+        mvc.perform(get("/credit/statements/STMT-2026-02"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("STMT-2026-02"))
+                .andExpect(jsonPath("$.userId").value("U1"))
+                .andExpect(jsonPath("$.status").value("DUE"));
+
+        mvc.perform(get("/credit/statements/NO-SUCH")).andExpect(status().isNotFound());
+
         mvc.perform(
                         post("/credit/profiles/U1/mark-overdue")
                                 .contentType(MediaType.APPLICATION_JSON)
@@ -37,6 +45,10 @@ class CreditRepayHttpIT {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value("U1"))
                 .andExpect(jsonPath("$.status").value("overdue"));
+
+        mvc.perform(get("/credit/statements/STMT-2026-02"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("OVERDUE"));
 
         mvc.perform(
                         post("/entitled-swaps")
