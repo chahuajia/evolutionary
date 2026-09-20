@@ -71,6 +71,7 @@ export function CreditMonthlyBillingPanel() {
           <input
             value={periodStart}
             onChange={(e) => setPeriodStart(e.target.value)}
+            placeholder="YYYY-MM-DD"
           />
         </label>
         <label>
@@ -78,6 +79,7 @@ export function CreditMonthlyBillingPanel() {
           <input
             value={periodEnd}
             onChange={(e) => setPeriodEnd(e.target.value)}
+            placeholder="YYYY-MM-DD"
           />
         </label>
         <button type="submit" disabled={busy}>
@@ -85,7 +87,7 @@ export function CreditMonthlyBillingPanel() {
         </button>
       </form>
       {error ? (
-        <p className={styles.error} role="alert">
+        <p className={styles.note} role="alert">
           {error}
         </p>
       ) : null}
