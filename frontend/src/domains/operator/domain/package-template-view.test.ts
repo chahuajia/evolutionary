@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canActivateOverrideOnTemplate,
   canCreateNextVersion,
   canPublishTemplate,
   canReplaceBaseProduct,
@@ -9,10 +10,11 @@ import {
   type PackageTemplateStatus,
 } from "./package-template-view";
 
-// ── 展示不变量（对齐后端 `PackageTemplate` 的三个守卫）──────────
+// ── 展示不变量（对齐后端 `PackageTemplate` 的守卫）──────────
 // `publish`              仅 DRAFT
 // `replaceBaseProduct`   仅 DRAFT（否则 TEMPLATE_IMMUTABLE「已发布模板不可原地修改」）
 // `createNextVersionDraft` 仅 PUBLISHED
+// `ActivatePackageOverride` 仅 PUBLISHED
 
 describe("parsePackageTemplateStatus", () => {
   it("accepts contract values", () => {
@@ -51,6 +53,14 @@ describe("canCreateNextVersion", () => {
   });
 });
 
+describe("canActivateOverrideOnTemplate", () => {
+  it("only PUBLISHED can host an override activate", () => {
+    expect(canActivateOverrideOnTemplate("PUBLISHED")).toBe(true);
+    expect(canActivateOverrideOnTemplate("DRAFT")).toBe(false);
+    expect(canActivateOverrideOnTemplate("DEPRECATED")).toBe(false);
+  });
+});
+
 describe("templateBlockMessage", () => {
   it("is null for DRAFT (everything is still possible)", () => {
     expect(templateBlockMessage("DRAFT")).toBeNull();
@@ -84,14 +94,16 @@ describe("toPackageTemplateView", () => {
     expect(view.publishAllowed).toBe(false);
     expect(view.replaceAllowed).toBe(false);
     expect(view.nextVersionAllowed).toBe(true);
+    expect(view.overrideActivateAllowed).toBe(true);
     expect(view.blockMessage).toContain("不可原地修改");
   });
 
-  it("DRAFT: publish/replace yes, next-version no", () => {
+  it("DRAFT: publish/replace yes, next-version/override-activate no", () => {
     const view = toPackageTemplateView({ ...base, status: "DRAFT" });
     expect(view.publishAllowed).toBe(true);
     expect(view.replaceAllowed).toBe(true);
     expect(view.nextVersionAllowed).toBe(false);
+    expect(view.overrideActivateAllowed).toBe(false);
     expect(view.blockMessage).toBeNull();
   });
 });

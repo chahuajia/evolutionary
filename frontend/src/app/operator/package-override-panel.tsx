@@ -11,12 +11,18 @@ import {
   type PackageOverrideView,
 } from "@/domains/operator/domain/package-override-view";
 import {
+  parsePackageTemplateStatus,
+  toPackageTemplateView,
+  type PackageTemplateView,
+} from "@/domains/operator/domain/package-template-view";
+import {
   DEFAULT_OVERRIDE_ACTOR_ORG_ID,
   DEFAULT_OVERRIDE_ACTOR_USER_ID,
   DEFAULT_OVERRIDE_ID,
   DEFAULT_OVERRIDE_PRICE_CENTS,
   DEFAULT_OVERRIDE_TEMPLATE_ID,
   fetchPackageOverride,
+  fetchPackageTemplate,
   getEffectiveProduct,
   postActivatePackageOverride,
   type EffectiveProductResult,
@@ -37,6 +43,12 @@ export function PackageOverridePanel() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<PackageOverrideView | null>(null);
   const [overrideMissing, setOverrideMissing] = useState(false);
+  const [templateView, setTemplateView] = useState<PackageTemplateView | null>(
+    null,
+  );
+  const [templateLoadError, setTemplateLoadError] = useState<string | null>(
+    null,
+  );
   const [priceLabel, setPriceLabel] = useState<number | null>(null);
   const [effective, setEffective] = useState<EffectiveProductResult | null>(
     null,
@@ -45,6 +57,34 @@ export function PackageOverridePanel() {
     actorOrgId,
     DEFAULT_OVERRIDE_ACTOR_ORG_ID,
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID;
+    setTemplateLoadError(null);
+    fetchPackageTemplate(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setTemplateView(
+          toPackageTemplateView({
+            id: dto.templateId,
+            ownerOrgId: dto.ownerOrgId,
+            version: dto.version,
+            status: parsePackageTemplateStatus(dto.status),
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setTemplateView(null);
+        setTemplateLoadError(
+          err instanceof Error ? err.message : String(err),
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [templateId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,6 +121,14 @@ export function PackageOverridePanel() {
     e.preventDefault();
     if (!actorGate.canAct) {
       setError(actorGate.blockMessage ?? "操作方组织不可激活覆盖");
+      return;
+    }
+    if (!templateView?.overrideActivateAllowed) {
+      setError(
+        templateView == null
+          ? (templateLoadError ?? "正在加载模板…")
+          : "仅已发布模板可激活覆盖",
+      );
       return;
     }
     if (view && !view.activateAllowed) {
@@ -138,22 +186,29 @@ export function PackageOverridePanel() {
   }
 
   const activateBlocked =
-    !actorGate.canAct || (view != null && !view.activateAllowed);
+    !actorGate.canAct ||
+    templateView == null ||
+    !templateView.overrideActivateAllowed ||
+    (view != null && !view.activateAllowed);
   const blockMessage = !actorGate.canAct
     ? actorGate.blockMessage
-    : view != null && !view.activateAllowed
-      ? view.blockMessage
-      : null;
+    : templateView == null
+      ? (templateLoadError ?? "正在加载模板…")
+      : !templateView.overrideActivateAllowed
+        ? "仅已发布模板可激活覆盖"
+        : view != null && !view.activateAllowed
+          ? view.blockMessage
+          : null;
 
   return (
     <section className={styles.panel}>
       <h2>套餐覆盖与有效价（HTTP · AC-26）</h2>
       <p className={styles.note}>
-        GET 覆盖对齐 activateAllowed（缺省则可新建）；GET 组织对齐
-        canActAsManager
+        GET 模板须 PUBLISHED；GET 覆盖对齐 activateAllowed（缺省则可新建）
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
+        {templateView ? ` · ${templateView.id}=${templateView.status}` : ""}
         {view
           ? ` · ${view.overrideId}=${view.status}`
           : overrideMissing

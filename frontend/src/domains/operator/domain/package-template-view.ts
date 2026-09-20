@@ -49,6 +49,8 @@ export type PackageTemplateView = {
   readonly replaceAllowed: boolean;
   /** 仅 PUBLISHED 可派生下一版本（对齐 `createNextVersionDraft` 守卫）。 */
   readonly nextVersionAllowed: boolean;
+  /** 仅 PUBLISHED 可激活覆盖（对齐 `ActivatePackageOverride` / TEMPLATE_NOT_PUBLISHED）。 */
+  readonly overrideActivateAllowed: boolean;
   /** 不可动时的原因；可动为 null。 */
   readonly blockMessage: string | null;
 };
@@ -70,6 +72,13 @@ export function canReplaceBaseProduct(status: PackageTemplateStatus): boolean {
 
 /** 展示不变量：仅 PUBLISHED 可派生下一版本。对齐 `createNextVersionDraft`。 */
 export function canCreateNextVersion(status: PackageTemplateStatus): boolean {
+  return status === "PUBLISHED";
+}
+
+/** 展示不变量：仅 PUBLISHED 可激活覆盖。对齐 `ActivatePackageOverride`。 */
+export function canActivateOverrideOnTemplate(
+  status: PackageTemplateStatus,
+): boolean {
   return status === "PUBLISHED";
 }
 
@@ -106,6 +115,7 @@ export function toPackageTemplateView(dto: {
     publishAllowed: canPublishTemplate(dto.status),
     replaceAllowed: canReplaceBaseProduct(dto.status),
     nextVersionAllowed: canCreateNextVersion(dto.status),
+    overrideActivateAllowed: canActivateOverrideOnTemplate(dto.status),
     blockMessage: templateBlockMessage(dto.status),
   };
 }
