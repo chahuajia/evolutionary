@@ -84,7 +84,7 @@ export function CommLostPanel() {
       <p className={styles.note}>
         GET shadow 对齐 DetectCommLost：仅 stale 时检测有意义
         {shadowView
-          ? ` · ${shadowView.batteryId}=${shadowView.fresh ? "新鲜" : "过期"}`
+          ? ` · ${shadowView.batteryId}=${shadowView.freshnessLabel}`
           : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>

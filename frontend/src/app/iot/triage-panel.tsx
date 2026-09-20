@@ -103,7 +103,7 @@ function TriageResultView({ view }: { view: TriageOutdatedSocView }) {
             shadow.stale ? styles.badgeStale : styles.badgeFresh
           }`}
         >
-          {shadow.fresh ? "fresh" : "stale"}
+          {shadow.freshnessLabel}
         </span>
         {shadow.meteredSwapAllowed ? " · 可计量换电" : " · 禁计量换电"}
         {shadow.statusLabel ? ` · ${shadow.statusLabel}` : ""}

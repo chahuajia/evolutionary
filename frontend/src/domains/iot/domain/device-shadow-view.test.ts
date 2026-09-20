@@ -48,6 +48,7 @@ describe("toDeviceShadowView", () => {
       lastSeenAt: "2026-01-01T00:00:00Z",
     });
     expect(view.fresh).toBe(false);
+    expect(view.freshnessLabel).toBe("过期");
     expect(view.meteredSwapAllowed).toBe(false);
     expect(view.commLostDetectUseful).toBe(true);
     expect(view.commLostDetectBlockMessage).toBeNull();

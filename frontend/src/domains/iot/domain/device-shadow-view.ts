@@ -68,6 +68,8 @@ export type DeviceShadowView = {
   readonly lockStateLabel: string | null;
   /** 影子新鲜（!stale）。 */
   readonly fresh: boolean;
+  /** 新鲜/过期中文（勿岛内再拼 fresh/stale）。 */
+  readonly freshnessLabel: string;
   /** 仅新鲜影子可按电量计费换电。 */
   readonly meteredSwapAllowed: boolean;
   /** 仅 stale 时值得跑 COMM_LOST 检测。 */
@@ -80,6 +82,10 @@ export type DeviceShadowView = {
 /** 展示不变量：新鲜 = 非 stale。 */
 export function isShadowFresh(stale: boolean): boolean {
   return !stale;
+}
+
+export function shadowFreshnessLabel(stale: boolean): string {
+  return stale ? "过期" : "新鲜";
 }
 
 /**
@@ -137,6 +143,7 @@ export function toDeviceShadowView(dto: {
     lockState,
     lockStateLabel: lockState ? LOCK_STATE_LABEL[lockState] : null,
     fresh: isShadowFresh(dto.stale),
+    freshnessLabel: shadowFreshnessLabel(dto.stale),
     meteredSwapAllowed: canMeterWithShadow(dto.stale),
     commLostDetectUseful: canDetectCommLost(dto.stale),
     blockMessage: shadowBlockMessage(dto.stale),

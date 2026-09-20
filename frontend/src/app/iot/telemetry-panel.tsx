@@ -108,14 +108,14 @@ function ShadowResultView({ view }: { view: DeviceShadowView }) {
       <dt>voltageMilli</dt>
       <dd>{view.voltageMilli}</dd>
 
-      <dt>stale</dt>
+      <dt>影子</dt>
       <dd>
         <span
           className={`${styles.badge} ${
             view.stale ? styles.badgeStale : styles.badgeFresh
           }`}
         >
-          {view.fresh ? "fresh" : "stale"}
+          {view.freshnessLabel}
         </span>
       </dd>
 

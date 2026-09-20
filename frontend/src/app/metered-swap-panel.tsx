@@ -249,7 +249,7 @@ export function MeteredSwapPanel() {
           : ""}
         {meteredRateCents != null ? ` · 费率 ${meteredRateCents}¢/SOC` : ""}
         {shadowView
-          ? ` · ${shadowView.batteryId}=${shadowView.fresh ? "fresh" : "stale"}`
+          ? ` · ${shadowView.batteryId}=${shadowView.freshnessLabel}`
           : ""}
         {estimatedChargeCents != null
           ? ` · 预估 ${formatCents(estimatedChargeCents)}`
