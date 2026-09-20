@@ -6,17 +6,11 @@
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import {
-  parseEntitlementStatus,
-  toEntitlementView,
-  type EntitlementView,
-} from "@/domains/commerce/domain/entitlement-view";
+import type { EntitlementView } from "@/domains/commerce/domain/entitlement-view";
 import { isExhaustedEntitlement } from "@/domains/commerce/domain/select-entitlement";
 import { toUsageEventView } from "@/domains/commerce/domain/usage-event-view";
-import {
-  fetchEntitlement,
-  postEntitledSwap,
-} from "@/domains/commerce/infrastructure/entitled-swap-gateway";
+import { loadEntitlement } from "@/domains/commerce/application/load-entitlement";
+import { postEntitledSwap } from "@/domains/commerce/infrastructure/entitled-swap-gateway";
 import styles from "./page.module.css";
 
 const SEED_ENTITLEMENT_ID = "E-1";
@@ -36,16 +30,11 @@ export function EntitledSwapPanel() {
     let cancelled = false;
     const id = entitlementId.trim() || SEED_ENTITLEMENT_ID;
     setLoadError(null);
-    fetchEntitlement(id)
-      .then((dto) => {
+    loadEntitlement(id)
+      .then(({ view: next, remainingSwaps: remaining }) => {
         if (cancelled) return;
-        setRemainingSwaps(dto.remainingSwaps);
-        setView(
-          toEntitlementView({
-            id: dto.id,
-            status: parseEntitlementStatus(dto.status),
-          }),
-        );
+        setRemainingSwaps(remaining);
+        setView(next);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -107,16 +96,11 @@ export function EntitledSwapPanel() {
           (ue.blockMessage ? ` · ${ue.blockMessage}` : "") +
           ` · 电池 ${r.batteryId}`,
       );
-      const dto = await fetchEntitlement(
+      const loaded = await loadEntitlement(
         entitlementId.trim() || SEED_ENTITLEMENT_ID,
       );
-      setRemainingSwaps(dto.remainingSwaps);
-      setView(
-        toEntitlementView({
-          id: dto.id,
-          status: parseEntitlementStatus(dto.status),
-        }),
-      );
+      setRemainingSwaps(loaded.remainingSwaps);
+      setView(loaded.view);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
