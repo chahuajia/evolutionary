@@ -4,7 +4,7 @@
 **读者**：新开对话的 Agent（不是给用户的作业）
 **取代**：v38（仍写 HEAD `a763772` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `9545943`。前端 153/153。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `2a0e2fb`。前端 153/153。
 wave115 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
@@ -157,7 +157,7 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **153/153** · HEAD `9545943`。父自选推进。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **153/153** · HEAD `2a0e2fb`。父自选推进。
 面板列表猜门基本清完；下一刀可 idle 或改扫其他轴（拒 ReferralBinding/CreditLedgerDebt）。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 

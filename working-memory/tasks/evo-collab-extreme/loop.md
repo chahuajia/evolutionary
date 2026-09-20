@@ -4,7 +4,7 @@
 **模式**：主树父写（小切片）· **禁止**为 <5min 切片建 worktree/派 Task  
 **状态**：**▶ 运行中**（常设规则：父自选推进）  
 **波次**：wave115 ✅  
-**HEAD**：`9545943`  
+**HEAD**：`2a0e2fb`  
 **idle**：— · **lanes**：0  
 **测**：前端 **153/153** · SwapControllerTest 9/9 · SettlementHttpIT 5/5 · 未 push
 
