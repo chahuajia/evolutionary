@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-20 18:25（v69；波次以 `loop.md` 为准）
+**写于**：2026-09-20 18:28（v70；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v68（仍写 HEAD `183769d` —— 已过时）
+**取代**：v69（仍写 HEAD `31f6f10` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `31f6f10`。前端 159/159 · lint 绿。
-wave146 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `7ba050e`。前端 162/162 · lint 绿。
+wave147 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -152,6 +152,8 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave143** | COMM_LOST 门改消费 view 字段 | ✅ `4e6148c` · 前端 **157/157** |
 | **wave144** | walletCoverGate 统一余额不足文案 | ✅ `c92fcb2` · 前端 **159/159** |
 | **wave145** | statusLabel+badgeTone 去岛内 status=== | ✅ `183769d` · 前端 **159/159** |
+| **wave146** | mall/settlement/credit statusLabel 清裸 status | ✅ `31f6f10` · 前端 **159/159** |
+| **wave147** | triage nextStepLabel+badgeTone | ✅ `7ba050e` · 前端 **162/162** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -187,8 +189,8 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **159/159** · lint 绿 · HEAD `183769d`。父自选推进。
-门禁/同构岛 idle。下刀再扫 status=== / 双判（含调试双显）。拒 ReferralBinding/CreditLedgerDebt。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **162/162** · lint 绿 · HEAD `7ba050e`。父自选推进。
+门禁/同构岛/status===展示 idle。下刀厚 BE GET / 结账乐观捏造。拒 ReferralBinding/CreditLedgerDebt。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
