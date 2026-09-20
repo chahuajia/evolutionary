@@ -18,11 +18,11 @@ type CreditWorkspaceProps = {
 };
 
 export function CreditWorkspace({
-  purchaseAllowed = true,
+  purchaseAllowed = false,
   purchaseBlock = "ok",
   statusLabel,
   availableYuan,
-  repayAllowed = true,
+  repayAllowed = false,
 }: CreditWorkspaceProps) {
   return (
     <WorkflowTabs

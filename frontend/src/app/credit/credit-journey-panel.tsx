@@ -59,7 +59,7 @@ function summarizePurchase(r: CreditPurchaseResult): string {
 }
 
 export function CreditJourneyPanel({
-  purchaseAllowed = true,
+  purchaseAllowed = false,
   purchaseBlock = "ok",
   statusLabel,
   availableYuan,

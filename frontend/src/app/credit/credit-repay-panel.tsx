@@ -35,7 +35,7 @@ type CreditRepayPanelProps = {
 };
 
 export function CreditRepayPanel({
-  repayAllowed = true,
+  repayAllowed = false,
   statusLabel,
 }: CreditRepayPanelProps) {
   const router = useRouter();

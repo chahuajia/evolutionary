@@ -127,11 +127,11 @@ export default async function CreditPage() {
 
       <div className={styles.workspace}>
         <CreditWorkspace
-          purchaseAllowed={profile?.purchaseAllowed ?? true}
+          purchaseAllowed={profile?.purchaseAllowed ?? false}
           purchaseBlock={profile?.purchaseBlock ?? "ok"}
           statusLabel={profile?.statusLabel}
           availableYuan={profile?.availableYuan}
-          repayAllowed={profile?.repayAllowed ?? true}
+          repayAllowed={profile?.repayAllowed ?? false}
         />
       </div>
     </>
