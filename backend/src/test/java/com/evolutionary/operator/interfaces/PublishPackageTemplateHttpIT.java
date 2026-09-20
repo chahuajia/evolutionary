@@ -68,4 +68,33 @@ class PublishPackageTemplateHttpIT {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value("CAPABILITY_DENIED"));
     }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    @DisplayName("POST T-DRAFT-1/base-product → 200 DRAFT（replaceAllowed）")
+    void mutateDraftBaseProductOk() throws Exception {
+        mvc.perform(
+                        post("/operator/templates/T-DRAFT-1/base-product")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"actorOrgId\":\"ORG-L1\",\"displayName\":\"草稿改价\",\"priceCents\":1999,\"durationDays\":30}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("T-DRAFT-1"))
+                .andExpect(jsonPath("$.status").value("DRAFT"))
+                .andExpect(jsonPath("$.version").value(1));
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    @DisplayName("POST T-PUB-1/base-product → 422 TEMPLATE_IMMUTABLE")
+    void mutatePublishedRejected() throws Exception {
+        mvc.perform(
+                        post("/operator/templates/T-PUB-1/base-product")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(
+                                        "{\"actorOrgId\":\"ORG-L1\",\"displayName\":\"不可改\",\"priceCents\":1,\"durationDays\":1}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error").value("TEMPLATE_IMMUTABLE"))
+                .andExpect(jsonPath("$.suggestion").exists());
+    }
 }

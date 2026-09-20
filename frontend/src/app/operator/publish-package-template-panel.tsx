@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * 发布套餐模板客户端岛 — POST /operator/templates/{id}/publish（AC-24）。
+ * 发布套餐模板客户端岛 — POST publish（AC-24）+ POST base-product（仅 DRAFT · replaceAllowed）。
  */
 
 import { FormEvent, useEffect, useState } from "react";
@@ -15,10 +15,15 @@ import {
   DEFAULT_PUBLISH_ACTOR_ORG_ID,
   DEFAULT_PUBLISH_ACTOR_USER_ID,
   fetchPackageTemplate,
+  postMutatePackageTemplateBaseProduct,
   postPublishPackageTemplate,
 } from "@/domains/operator/infrastructure/operator-gateway";
 import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
+
+const DEFAULT_DISPLAY_NAME = "草稿改价";
+const DEFAULT_PRICE_CENTS = 1999;
+const DEFAULT_DURATION_DAYS = 30;
 
 export function PublishPackageTemplatePanel() {
   const [templateId, setTemplateId] = useState(DEFAULT_PACKAGE_TEMPLATE_ID);
@@ -26,6 +31,9 @@ export function PublishPackageTemplatePanel() {
   const [actorUserId, setActorUserId] = useState(
     DEFAULT_PUBLISH_ACTOR_USER_ID,
   );
+  const [displayName, setDisplayName] = useState(DEFAULT_DISPLAY_NAME);
+  const [priceCents, setPriceCents] = useState(DEFAULT_PRICE_CENTS);
+  const [durationDays, setDurationDays] = useState(DEFAULT_DURATION_DAYS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<PackageTemplateView | null>(null);
@@ -61,7 +69,7 @@ export function PublishPackageTemplatePanel() {
     };
   }, [templateId]);
 
-  async function onSubmit(e: FormEvent) {
+  async function onPublish(e: FormEvent) {
     e.preventDefault();
     if (!actorGate.canAct) {
       setError(actorGate.blockMessage ?? "操作方组织不可发布");
@@ -73,7 +81,6 @@ export function PublishPackageTemplatePanel() {
     }
     setBusy(true);
     setError(null);
-    setView(null);
     try {
       const r = await postPublishPackageTemplate({
         templateId: templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID,
@@ -95,27 +102,76 @@ export function PublishPackageTemplatePanel() {
     }
   }
 
+  async function onReplace(e: FormEvent) {
+    e.preventDefault();
+    if (!actorGate.canAct) {
+      setError(actorGate.blockMessage ?? "操作方组织不可改基产品");
+      return;
+    }
+    if (view && !view.replaceAllowed) {
+      setError(view.blockMessage ?? "当前状态不可原地改基产品");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await postMutatePackageTemplateBaseProduct({
+        templateId: templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID,
+        actorOrgId: actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID,
+        displayName: displayName.trim() || DEFAULT_DISPLAY_NAME,
+        priceCents: Number.isFinite(priceCents)
+          ? priceCents
+          : DEFAULT_PRICE_CENTS,
+        durationDays: Number.isFinite(durationDays)
+          ? durationDays
+          : DEFAULT_DURATION_DAYS,
+      });
+      setView(
+        toPackageTemplateView({
+          id: r.templateId,
+          ownerOrgId: r.ownerOrgId,
+          version: r.version,
+          status: parsePackageTemplateStatus(r.status),
+        }),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const publishBlocked =
     !actorGate.canAct || view == null || !view.publishAllowed;
-  const blockMessage = !actorGate.canAct
+  const replaceBlocked =
+    !actorGate.canAct || view == null || !view.replaceAllowed;
+  const publishBlockMessage = !actorGate.canAct
     ? actorGate.blockMessage
     : view == null
       ? (loadError ?? "正在加载模板…")
       : !view.publishAllowed
         ? view.blockMessage
         : null;
+  const replaceBlockMessage = !actorGate.canAct
+    ? actorGate.blockMessage
+    : view == null
+      ? (loadError ?? "正在加载模板…")
+      : !view.replaceAllowed
+        ? view.blockMessage
+        : null;
 
   return (
     <section className={styles.panel}>
-      <h2>发布套餐模板（HTTP · AC-24）</h2>
+      <h2>发布 / 改基产品（HTTP · AC-24/25）</h2>
       <p className={styles.note}>
-        GET 组织对齐 canActAsManager；GET 模板对齐 publishAllowed
+        GET 组织对齐 canActAsManager；GET 模板对齐 publishAllowed /
+        replaceAllowed
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
         {view ? ` · ${view.id}=${view.status}` : ""}
       </p>
-      <form className={styles.form} onSubmit={onSubmit}>
+      <form className={styles.form} onSubmit={onPublish}>
         <label>
           templateId
           <input
@@ -144,9 +200,42 @@ export function PublishPackageTemplatePanel() {
           {busy ? "发布中…" : "发布模板"}
         </button>
       </form>
-      {publishBlocked && blockMessage ? (
+      {publishBlocked && publishBlockMessage ? (
         <p className={styles.note} role="status">
-          {blockMessage}
+          {publishBlockMessage}
+        </p>
+      ) : null}
+      <form className={styles.form} onSubmit={onReplace}>
+        <label>
+          displayName
+          <input
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+          />
+        </label>
+        <label>
+          priceCents
+          <input
+            type="number"
+            value={priceCents}
+            onChange={(e) => setPriceCents(Number(e.target.value))}
+          />
+        </label>
+        <label>
+          durationDays
+          <input
+            type="number"
+            value={durationDays}
+            onChange={(e) => setDurationDays(Number(e.target.value))}
+          />
+        </label>
+        <button type="submit" disabled={busy || replaceBlocked}>
+          {busy ? "改价中…" : "原地改基产品（仅草稿）"}
+        </button>
+      </form>
+      {replaceBlocked && replaceBlockMessage ? (
+        <p className={styles.note} role="status">
+          {replaceBlockMessage}
         </p>
       ) : null}
       {error ? (
@@ -158,7 +247,8 @@ export function PublishPackageTemplatePanel() {
         <p>
           模板 {view.id} · {view.ownerOrgId || "—"} · v{view.version} ·{" "}
           {view.status}
-          {view.publishAllowed ? "" : " · 已不可再发布"}
+          {view.publishAllowed ? " · 可发布" : " · 已不可再发布"}
+          {view.replaceAllowed ? " · 可改基产品" : ""}
           {view.nextVersionAllowed ? " · 可派生下一版本" : ""}
         </p>
       ) : null}

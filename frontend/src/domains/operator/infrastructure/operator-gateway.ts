@@ -300,6 +300,64 @@ function parsePublishPackageTemplate(
   return { templateId, ownerOrgId, version, status, publishedAt };
 }
 
+/** POST /operator/templates/{id}/base-product（AC-25 · 仅 DRAFT） */
+export type MutateBaseProductRequest = {
+  templateId: string;
+  actorOrgId: string;
+  displayName: string;
+  priceCents: number;
+  durationDays: number;
+};
+
+export type MutateBaseProductResult = {
+  templateId: string;
+  ownerOrgId: string;
+  version: number;
+  status: string;
+};
+
+/**
+ * POST /operator/templates/{templateId}/base-product
+ * 已发布 → TEMPLATE_IMMUTABLE；合法变更走 next-version。
+ */
+export async function postMutatePackageTemplateBaseProduct(
+  req: MutateBaseProductRequest,
+): Promise<MutateBaseProductResult> {
+  const templateId = req.templateId.trim() || DEFAULT_PACKAGE_TEMPLATE_ID;
+  const actorOrgId = req.actorOrgId.trim() || DEFAULT_PUBLISH_ACTOR_ORG_ID;
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/operator/templates/${encodeURIComponent(templateId)}/base-product`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        actorOrgId,
+        displayName: req.displayName,
+        priceCents: req.priceCents,
+        durationDays: req.durationDays,
+      }),
+      timeoutMs: TIMEOUT_MS,
+    },
+  );
+  const versionRaw = raw.version;
+  const version =
+    typeof versionRaw === "number"
+      ? versionRaw
+      : Number.parseInt(String(versionRaw ?? ""), 10);
+  const status = String(raw.status ?? "");
+  const id = String(raw.templateId ?? raw.id ?? templateId);
+  if (!id || !status || !Number.isFinite(version)) {
+    throw new Error("改基产品响应缺少 templateId/status/version");
+  }
+  return {
+    templateId: id,
+    ownerOrgId: String(raw.ownerOrgId ?? ""),
+    version,
+    status,
+  };
+}
+
 /** POST /operator/templates/{id}/next-version 成功读模型（AC-25） */
 export type NextVersionDraftResult = {
   templateId: string;

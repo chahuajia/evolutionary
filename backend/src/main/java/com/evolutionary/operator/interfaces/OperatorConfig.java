@@ -4,6 +4,7 @@ import com.evolutionary.operator.application.ActivatePackageOverride;
 import com.evolutionary.operator.application.ApproveOperatorDownline;
 import com.evolutionary.operator.application.AuditLogRepository;
 import com.evolutionary.operator.application.CreateNextVersionDraft;
+import com.evolutionary.operator.application.MutatePackageTemplateBaseProduct;
 import com.evolutionary.operator.application.OnboardingApplicationRepository;
 import com.evolutionary.operator.application.OrganizationRepository;
 import com.evolutionary.operator.application.PackageOverrideRepository;
@@ -107,6 +108,12 @@ public class OperatorConfig {
             OrganizationRepository organizations) {
         return new CreateNextVersionDraft(
                 templates, auditLogs, organizations, Clock.systemUTC());
+    }
+
+    @Bean
+    MutatePackageTemplateBaseProduct mutatePackageTemplateBaseProduct(
+            PackageTemplateRepository templates) {
+        return new MutatePackageTemplateBaseProduct(templates);
     }
 
     @Bean

@@ -3,6 +3,7 @@ package com.evolutionary.operator.interfaces;
 import com.evolutionary.operator.application.ActivatePackageOverride;
 import com.evolutionary.operator.application.ApproveOperatorDownline;
 import com.evolutionary.operator.application.CreateNextVersionDraft;
+import com.evolutionary.operator.application.MutatePackageTemplateBaseProduct;
 import com.evolutionary.operator.application.OnboardingApplicationRepository;
 import com.evolutionary.operator.application.OrganizationRepository;
 import com.evolutionary.operator.application.PackageOverrideRepository;
@@ -40,6 +41,7 @@ public class OperatorController {
     private final PackageOverrideRepository overrides;
     private final PublishPackageTemplate publishPackageTemplate;
     private final CreateNextVersionDraft createNextVersionDraft;
+    private final MutatePackageTemplateBaseProduct mutatePackageTemplateBaseProduct;
     private final ActivatePackageOverride activatePackageOverride;
     private final RevokePackageOverride revokePackageOverride;
     private final ResolveEffectiveProduct resolveEffectiveProduct;
@@ -52,6 +54,7 @@ public class OperatorController {
             PackageOverrideRepository overrides,
             PublishPackageTemplate publishPackageTemplate,
             CreateNextVersionDraft createNextVersionDraft,
+            MutatePackageTemplateBaseProduct mutatePackageTemplateBaseProduct,
             ActivatePackageOverride activatePackageOverride,
             RevokePackageOverride revokePackageOverride,
             ResolveEffectiveProduct resolveEffectiveProduct,
@@ -62,6 +65,7 @@ public class OperatorController {
         this.overrides = overrides;
         this.publishPackageTemplate = publishPackageTemplate;
         this.createNextVersionDraft = createNextVersionDraft;
+        this.mutatePackageTemplateBaseProduct = mutatePackageTemplateBaseProduct;
         this.activatePackageOverride = activatePackageOverride;
         this.revokePackageOverride = revokePackageOverride;
         this.resolveEffectiveProduct = resolveEffectiveProduct;
@@ -142,6 +146,37 @@ public class OperatorController {
                         templateId.trim());
         if (outcome instanceof OperatorOutcome.Ok<PackageTemplate> ok) {
             return ResponseEntity.ok(toPublishView(ok.value()));
+        }
+        OperatorOutcome.Err<PackageTemplate> err =
+                (OperatorOutcome.Err<PackageTemplate>) outcome;
+        OperatorApiErrorTranslator.Translated translated =
+                OperatorApiErrorTranslator.translate(err);
+        return ResponseEntity.status(translated.status()).body(translated.body());
+    }
+
+    /**
+     * 原地改草稿 baseProduct（AC-25 拒绝路径的合法面：仅 DRAFT）。
+     *
+     * <p>已发布 → TEMPLATE_IMMUTABLE；合法变更请走 next-version。
+     */
+    @PostMapping("/templates/{templateId}/base-product")
+    public ResponseEntity<?> mutateBaseProduct(
+            @PathVariable String templateId, @RequestBody MutateBaseProductRequest body) {
+        if (body == null
+                || body.actorOrgId() == null
+                || body.actorOrgId().isBlank()
+                || body.displayName() == null
+                || body.displayName().isBlank()) {
+            throw new IllegalArgumentException("actorOrgId and displayName required");
+        }
+        TemplateBaseProduct nextBase =
+                TemplateBaseProduct.of(
+                        body.displayName().trim(), body.priceCents(), body.durationDays());
+        OperatorOutcome<PackageTemplate> outcome =
+                mutatePackageTemplateBaseProduct.execute(
+                        body.actorOrgId().trim(), templateId.trim(), nextBase);
+        if (outcome instanceof OperatorOutcome.Ok<PackageTemplate> ok) {
+            return ResponseEntity.ok(toTemplateView(ok.value()));
         }
         OperatorOutcome.Err<PackageTemplate> err =
                 (OperatorOutcome.Err<PackageTemplate>) outcome;
@@ -361,6 +396,9 @@ public class OperatorController {
             String id, String orgId, String capability, String status) {}
 
     public record PublishRequest(String actorUserId, String actorOrgId) {}
+
+    public record MutateBaseProductRequest(
+            String actorOrgId, String displayName, long priceCents, int durationDays) {}
 
     public record PublishView(
             String id, String ownerOrgId, String status, int version, Instant publishedAt) {}
