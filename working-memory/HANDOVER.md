@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-20 17:13（v63；波次以 `loop.md` 为准）
+**写于**：2026-09-20 17:16（v64；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v62（仍写 HEAD `c1a3817` —— 已过时）
+**取代**：v63（仍写 HEAD `8727dc1` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `8727dc1`。前端 153/153。
-wave139 已落（岛内 infrastructure 清零）。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `ecdd45b`。前端 153/153 · lint 绿。
+wave140 已落（同构岛 POST 轴 idle）。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -145,6 +145,7 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave136** | purchase/refund/entitledSwap 经用例 | ✅ `ee9e946` · 前端 **153/153** |
 | **wave137** | override/nextVersion/publish/onboarding 经用例 | ✅ `c59c022` · 前端 **153/153** |
 | **wave138** | policy/repay/downline/revoke 经用例返 View | ✅ `c1a3817` · 前端 **153/153** |
+| **wave139** | 站详情/换电经用例 · 岛内 infrastructure 清零 | ✅ `8727dc1` · 前端 **153/153** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -180,8 +181,8 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **153/153** · HEAD `c1a3817`。父自选推进。
-门禁轴可 idle；wave138 政策/还款/下线/撤销经 usecase。下刀 swap-panel station-gateway。拒 ReferralBinding/CreditLedgerDebt。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **153/153** · HEAD `8727dc1`。父自选推进。
+门禁轴可 idle；wave139 岛内 infrastructure 清零。下刀扫 RSC page 是否仍直连 gateway。拒 ReferralBinding/CreditLedgerDebt。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
