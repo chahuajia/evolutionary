@@ -6,21 +6,17 @@
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import {
-  parseCampaignStatus,
-  toCampaignView,
-  type CampaignView,
-} from "@/domains/mall/domain/campaign-view";
+import type { CampaignView } from "@/domains/mall/domain/campaign-view";
 import {
   parseUserCouponStatus,
   toUserCouponView,
   type UserCouponView,
 } from "@/domains/mall/domain/user-coupon-view";
+import { loadCampaign } from "@/domains/mall/application/load-campaign";
 import {
   DEFAULT_MALL_CAMPAIGN,
   DEFAULT_MALL_TEMPLATE,
   DEFAULT_MALL_USER,
-  fetchCampaign,
   fetchCouponTemplate,
   postClaimCoupon,
 } from "@/domains/mall/infrastructure/mall-gateway";
@@ -64,21 +60,10 @@ export function CouponClaimPanel() {
     let cancelled = false;
     const id = campaignId.trim() || DEFAULT_MALL_CAMPAIGN;
     setLoadError(null);
-    fetchCampaign(id)
-      .then((dto) => {
+    loadCampaign(id, faceCents)
+      .then((view) => {
         if (cancelled) return;
-        setCampaign(
-          toCampaignView(
-            {
-              id: dto.id,
-              ownerOrgId: dto.ownerOrgId,
-              name: dto.name,
-              budgetRemainingCents: dto.budgetRemainingCents,
-              status: parseCampaignStatus(dto.status),
-            },
-            faceCents,
-          ),
-        );
+        setCampaign(view);
       })
       .catch((err) => {
         if (cancelled) return;

@@ -10,19 +10,12 @@ import {
   toMallOrderView,
   type MallOrderView,
 } from "@/domains/mall/domain/mall-order-view";
-import {
-  type MallSkuView,
-} from "@/domains/mall/domain/mall-sku-view";
-import {
-  parseMerchantProfileStatus,
-  toMerchantProfileView,
-  type MerchantProfileView,
-} from "@/domains/mall/domain/merchant-profile-view";
+import type { MallSkuView } from "@/domains/mall/domain/mall-sku-view";
+import type { MerchantProfileView } from "@/domains/mall/domain/merchant-profile-view";
 import {
   DEFAULT_MALL_MERCHANT,
   DEFAULT_MALL_SKU,
   DEFAULT_MALL_USER,
-  fetchMerchantProfile,
   postPurchaseMallOrder,
 } from "@/domains/mall/infrastructure/mall-gateway";
 import {
@@ -32,6 +25,7 @@ import {
 } from "@/domains/wallet/domain/wallet-view";
 import { loadWallet } from "@/domains/wallet/application/load-wallet";
 import { loadMallSku } from "@/domains/mall/application/load-mall-sku";
+import { loadMerchantProfile } from "@/domains/mall/application/load-merchant-profile";
 import styles from "./page.module.css";
 
 export function MallPurchasePanel() {
@@ -75,16 +69,10 @@ export function MallPurchasePanel() {
     let cancelled = false;
     const id = merchantOrgId.trim() || DEFAULT_MALL_MERCHANT;
     setMerchantLoadError(null);
-    fetchMerchantProfile(id)
-      .then((dto) => {
+    loadMerchantProfile(id)
+      .then((view) => {
         if (cancelled) return;
-        setMerchantView(
-          toMerchantProfileView({
-            orgId: dto.orgId,
-            shopName: dto.shopName,
-            status: parseMerchantProfileStatus(dto.status),
-          }),
-        );
+        setMerchantView(view);
       })
       .catch((err) => {
         if (cancelled) return;
