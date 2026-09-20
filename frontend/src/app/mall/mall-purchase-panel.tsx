@@ -11,8 +11,6 @@ import {
   type MallOrderView,
 } from "@/domains/mall/domain/mall-order-view";
 import {
-  parseMallSkuStatus,
-  toMallSkuView,
   type MallSkuView,
 } from "@/domains/mall/domain/mall-sku-view";
 import {
@@ -24,7 +22,6 @@ import {
   DEFAULT_MALL_MERCHANT,
   DEFAULT_MALL_SKU,
   DEFAULT_MALL_USER,
-  fetchMallSku,
   fetchMerchantProfile,
   postPurchaseMallOrder,
 } from "@/domains/mall/infrastructure/mall-gateway";
@@ -34,6 +31,7 @@ import {
   type WalletView,
 } from "@/domains/wallet/domain/wallet-view";
 import { loadWallet } from "@/domains/wallet/application/load-wallet";
+import { loadMallSku } from "@/domains/mall/application/load-mall-sku";
 import styles from "./page.module.css";
 
 export function MallPurchasePanel() {
@@ -58,22 +56,10 @@ export function MallPurchasePanel() {
     let cancelled = false;
     const id = skuId.trim() || DEFAULT_MALL_SKU;
     setSkuLoadError(null);
-    fetchMallSku(id)
-      .then((dto) => {
+    loadMallSku(id, qty)
+      .then((view) => {
         if (cancelled) return;
-        setSkuView(
-          toMallSkuView(
-            {
-              id: dto.id,
-              merchantOrgId: dto.merchantOrgId,
-              name: dto.name,
-              priceCents: dto.priceCents,
-              stock: dto.stock,
-              status: parseMallSkuStatus(dto.status),
-            },
-            qty,
-          ),
-        );
+        setSkuView(view);
       })
       .catch((err) => {
         if (cancelled) return;
