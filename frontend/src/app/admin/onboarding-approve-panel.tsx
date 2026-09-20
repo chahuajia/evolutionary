@@ -2,12 +2,14 @@
 
 /**
  * 批准商家入驻客户端岛 — POST /admin/onboarding/{id}/approve（AC-40 · 26a）。
+ * GET /operator/onboarding/{id} 对齐 approveAllowed（仅 SUBMITTED）。
  */
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
+  parseOnboardingStatus,
   toOnboardingApplicationView,
-  type OnboardingStatus,
+  type OnboardingApplicationView,
 } from "@/domains/operator/domain/onboarding-application-view";
 import {
   parseMerchantProfileStatus,
@@ -17,17 +19,10 @@ import {
 import {
   DEFAULT_ONBOARDING_APPLICATION_ID,
   DEFAULT_SHOP_NAME,
+  fetchOnboardingApplication,
   postApproveOnboarding,
 } from "@/domains/operator/infrastructure/operator-gateway";
 import styles from "./page.module.css";
-
-/** 种子 APP-M1 为 SUBMITTED；批准成功后本地记 APPROVED 禁再批。 */
-const SEED_APP = {
-  id: DEFAULT_ONBOARDING_APPLICATION_ID,
-  orgId: "ORG-NEW",
-  capability: "MERCHANT",
-  status: "SUBMITTED" as OnboardingStatus,
-};
 
 export function OnboardingApprovePanel() {
   const [applicationId, setApplicationId] = useState(
@@ -36,42 +31,57 @@ export function OnboardingApprovePanel() {
   const [shopName, setShopName] = useState(DEFAULT_SHOP_NAME);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [localStatus, setLocalStatus] = useState<OnboardingStatus>(
-    SEED_APP.status,
+  const [appView, setAppView] = useState<OnboardingApplicationView | null>(
+    null,
   );
+  const [appLoadError, setAppLoadError] = useState<string | null>(null);
   const [merchant, setMerchant] = useState<MerchantProfileView | null>(null);
 
-  const appView = useMemo(() => {
-    const isSeed =
-      (applicationId.trim() || DEFAULT_ONBOARDING_APPLICATION_ID) ===
-      DEFAULT_ONBOARDING_APPLICATION_ID;
-    if (!isSeed) {
-      return {
-        approveAllowed: true,
-        blockMessage: null as string | null,
-        statusLabel: "非种子申请 · 由后端判态",
-      };
-    }
-    const view = toOnboardingApplicationView({
-      ...SEED_APP,
-      status: localStatus,
-    });
-    return view;
-  }, [applicationId, localStatus]);
+  useEffect(() => {
+    let cancelled = false;
+    const id = applicationId.trim() || DEFAULT_ONBOARDING_APPLICATION_ID;
+    setAppLoadError(null);
+    fetchOnboardingApplication(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setAppView(
+          toOnboardingApplicationView({
+            id: dto.id,
+            orgId: dto.orgId,
+            capability: dto.capability,
+            status: parseOnboardingStatus(dto.status),
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setAppView(null);
+        setAppLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [applicationId]);
+
+  const approveAllowed = appView != null && appView.approveAllowed;
+  const blockMessage =
+    appView == null
+      ? (appLoadError ?? "正在加载入驻申请…")
+      : appView.blockMessage;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!appView.approveAllowed) {
-      setError(appView.blockMessage ?? "当前状态不可批准");
+    if (!approveAllowed) {
+      setError(blockMessage ?? "当前状态不可批准");
       return;
     }
     setBusy(true);
     setError(null);
     setMerchant(null);
     try {
+      const id = applicationId.trim() || DEFAULT_ONBOARDING_APPLICATION_ID;
       const r = await postApproveOnboarding({
-        applicationId:
-          applicationId.trim() || DEFAULT_ONBOARDING_APPLICATION_ID,
+        applicationId: id,
         shopName: shopName.trim() || DEFAULT_SHOP_NAME,
       });
       setMerchant(
@@ -81,12 +91,15 @@ export function OnboardingApprovePanel() {
           status: parseMerchantProfileStatus(r.status),
         }),
       );
-      if (
-        (applicationId.trim() || DEFAULT_ONBOARDING_APPLICATION_ID) ===
-        DEFAULT_ONBOARDING_APPLICATION_ID
-      ) {
-        setLocalStatus("APPROVED");
-      }
+      const dto = await fetchOnboardingApplication(id);
+      setAppView(
+        toOnboardingApplicationView({
+          id: dto.id,
+          orgId: dto.orgId,
+          capability: dto.capability,
+          status: parseOnboardingStatus(dto.status),
+        }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -98,18 +111,16 @@ export function OnboardingApprovePanel() {
     <section className={styles.panel}>
       <h2>平台批准商家入驻（HTTP · AC-40）</h2>
       <p className={styles.note} role="status">
-        {appView.statusLabel}
-        {appView.approveAllowed ? " · 可批准" : ""}
+        GET 申请对齐仅 SUBMITTED 可批
+        {appView ? ` · ${appView.id}=${appView.statusLabel}` : ""}
+        {appView?.approveAllowed ? " · 可批准" : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
           applicationId
           <input
             value={applicationId}
-            onChange={(e) => {
-              setApplicationId(e.target.value);
-              setLocalStatus(SEED_APP.status);
-            }}
+            onChange={(e) => setApplicationId(e.target.value)}
           />
         </label>
         <label>
@@ -119,13 +130,13 @@ export function OnboardingApprovePanel() {
             onChange={(e) => setShopName(e.target.value)}
           />
         </label>
-        <button type="submit" disabled={busy || !appView.approveAllowed}>
+        <button type="submit" disabled={busy || !approveAllowed}>
           {busy ? "批准中…" : "批准入驻"}
         </button>
       </form>
-      {!appView.approveAllowed && appView.blockMessage ? (
+      {!approveAllowed && blockMessage ? (
         <p className={styles.note} role="status">
-          {appView.blockMessage}
+          {blockMessage}
         </p>
       ) : null}
       {error ? (

@@ -1,5 +1,6 @@
 package com.evolutionary.operator.interfaces;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,6 +29,24 @@ class ApproveOperatorDownlineHttpIT {
     @Autowired private MockMvc mvc;
 
     @Test
+    @DisplayName("GET /operator/onboarding/APP-DL1 → SUBMITTED；未知 404")
+    void getOnboardingApplication() throws Exception {
+        mvc.perform(get("/operator/onboarding/APP-DL1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("APP-DL1"))
+                .andExpect(jsonPath("$.orgId").value("ORG-DL1"))
+                .andExpect(jsonPath("$.capability").value("OPERATOR"))
+                .andExpect(jsonPath("$.status").value("SUBMITTED"));
+
+        mvc.perform(get("/operator/onboarding/APP-M1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.capability").value("MERCHANT"))
+                .andExpect(jsonPath("$.status").value("SUBMITTED"));
+
+        mvc.perform(get("/operator/onboarding/NO-SUCH")).andExpect(status().isNotFound());
+    }
+
+    @Test
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     @DisplayName("POST /operator/onboarding/APP-DL1/approve-downline → 200 ORG-DL1 OPERATOR")
     void approveAppDl1Ok() throws Exception {
@@ -40,6 +59,10 @@ class ApproveOperatorDownlineHttpIT {
                 .andExpect(jsonPath("$.parentOrgId").value("ORG-L1"))
                 .andExpect(jsonPath("$.operatorCapability").value(true))
                 .andExpect(jsonPath("$.status").value("ACTIVE"));
+
+        mvc.perform(get("/operator/onboarding/APP-DL1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APPROVED"));
     }
 
     @Test

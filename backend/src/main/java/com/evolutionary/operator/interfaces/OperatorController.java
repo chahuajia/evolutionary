@@ -3,12 +3,14 @@ package com.evolutionary.operator.interfaces;
 import com.evolutionary.operator.application.ActivatePackageOverride;
 import com.evolutionary.operator.application.ApproveOperatorDownline;
 import com.evolutionary.operator.application.CreateNextVersionDraft;
+import com.evolutionary.operator.application.OnboardingApplicationRepository;
 import com.evolutionary.operator.application.OrganizationRepository;
 import com.evolutionary.operator.application.PackageTemplateRepository;
 import com.evolutionary.operator.application.PublishPackageTemplate;
 import com.evolutionary.operator.application.ResolveEffectiveProduct;
 import com.evolutionary.operator.application.RevokePackageOverride;
 import com.evolutionary.operator.domain.EffectiveProduct;
+import com.evolutionary.operator.domain.OnboardingApplication;
 import com.evolutionary.operator.domain.OperatorOutcome;
 import com.evolutionary.operator.domain.OrgCapability;
 import com.evolutionary.operator.domain.Organization;
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OperatorController {
 
     private final OrganizationRepository organizations;
+    private final OnboardingApplicationRepository applications;
     private final PackageTemplateRepository templates;
     private final PublishPackageTemplate publishPackageTemplate;
     private final CreateNextVersionDraft createNextVersionDraft;
@@ -42,6 +45,7 @@ public class OperatorController {
 
     public OperatorController(
             OrganizationRepository organizations,
+            OnboardingApplicationRepository applications,
             PackageTemplateRepository templates,
             PublishPackageTemplate publishPackageTemplate,
             CreateNextVersionDraft createNextVersionDraft,
@@ -50,6 +54,7 @@ public class OperatorController {
             ResolveEffectiveProduct resolveEffectiveProduct,
             ApproveOperatorDownline approveOperatorDownline) {
         this.organizations = organizations;
+        this.applications = applications;
         this.templates = templates;
         this.publishPackageTemplate = publishPackageTemplate;
         this.createNextVersionDraft = createNextVersionDraft;
@@ -65,6 +70,17 @@ public class OperatorController {
         return organizations
                 .findById(orgId.trim())
                 .map(OperatorController::toOrganizationView)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /** 只读：供批下线/商家入驻面板对齐 approveAllowed（仅 SUBMITTED）。 */
+    @GetMapping("/onboarding/{applicationId}")
+    public ResponseEntity<OnboardingApplicationView> onboarding(
+            @PathVariable String applicationId) {
+        return applications
+                .findById(applicationId.trim())
+                .map(OperatorController::toOnboardingView)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -302,6 +318,14 @@ public class OperatorController {
                 org.hasCapability(OrgCapability.OPERATOR));
     }
 
+    private static OnboardingApplicationView toOnboardingView(OnboardingApplication app) {
+        return new OnboardingApplicationView(
+                app.id(),
+                app.orgId(),
+                app.capability().name(),
+                app.status().name());
+    }
+
     public record DownlineApproveRequest(String actorUserId, String actorOrgId) {}
 
     public record DownlineView(
@@ -317,6 +341,9 @@ public class OperatorController {
             String parentId,
             String status,
             boolean operatorCapability) {}
+
+    public record OnboardingApplicationView(
+            String id, String orgId, String capability, String status) {}
 
     public record PublishRequest(String actorUserId, String actorOrgId) {}
 

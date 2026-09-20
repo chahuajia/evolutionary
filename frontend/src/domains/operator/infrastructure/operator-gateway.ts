@@ -211,6 +211,33 @@ export async function fetchOrganization(
   };
 }
 
+export type OnboardingApplicationDto = {
+  id: string;
+  orgId: string;
+  capability: string;
+  status: string;
+};
+
+/**
+ * GET /operator/onboarding/{applicationId}
+ */
+export async function fetchOnboardingApplication(
+  applicationId: string,
+): Promise<OnboardingApplicationDto> {
+  const id = applicationId.trim();
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/operator/onboarding/${encodeURIComponent(id)}`,
+    { timeoutMs: TIMEOUT_MS },
+  );
+  return {
+    id: String(raw.id ?? id),
+    orgId: String(raw.orgId ?? ""),
+    capability: String(raw.capability ?? ""),
+    status: String(raw.status ?? ""),
+  };
+}
+
 /** POST /operator/templates/{templateId}/publish 成功读模型（AC-24） */
 export type PublishPackageTemplateResult = {
   templateId: string;

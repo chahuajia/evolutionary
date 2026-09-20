@@ -3,9 +3,10 @@
 /**
  * 批准运营商下线客户端岛 — POST /operator/onboarding/{id}/approve-downline（29a/29b）。
  * 批的是运营商下线，不是商城商家（商家走 /admin）。
+ * GET 申请对齐 approveAllowed（仅 SUBMITTED）。
  */
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   approveOperatorDownline,
   DEFAULT_DOWNLINE_ACTOR_ORG_ID,
@@ -13,22 +14,17 @@ import {
   DEFAULT_DOWNLINE_APPLICATION_ID,
 } from "@/domains/operator/application/approve-operator-downline";
 import {
+  parseOnboardingStatus,
   toOnboardingApplicationView,
-  type OnboardingStatus,
+  type OnboardingApplicationView,
 } from "@/domains/operator/domain/onboarding-application-view";
 import {
   toOrganizationView,
   type OrganizationView,
 } from "@/domains/operator/domain/organization-view";
+import { fetchOnboardingApplication } from "@/domains/operator/infrastructure/operator-gateway";
 import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
-
-const SEED_DL = {
-  id: DEFAULT_DOWNLINE_APPLICATION_ID,
-  orgId: "ORG-DL1",
-  capability: "OPERATOR",
-  status: "SUBMITTED" as OnboardingStatus,
-};
 
 export function ApproveDownlinePanel() {
   const [applicationId, setApplicationId] = useState(
@@ -40,38 +36,52 @@ export function ApproveDownlinePanel() {
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [localStatus, setLocalStatus] = useState<OnboardingStatus>(
-    SEED_DL.status,
+  const [appView, setAppView] = useState<OnboardingApplicationView | null>(
+    null,
   );
+  const [appLoadError, setAppLoadError] = useState<string | null>(null);
   const [orgView, setOrgView] = useState<OrganizationView | null>(null);
   const actorGate = useActorOrganization(
     actorOrgId,
     DEFAULT_DOWNLINE_ACTOR_ORG_ID,
   );
 
-  const appView = useMemo(() => {
-    const isSeed =
-      (applicationId.trim() || DEFAULT_DOWNLINE_APPLICATION_ID) ===
-      DEFAULT_DOWNLINE_APPLICATION_ID;
-    if (!isSeed) {
-      return {
-        approveAllowed: true,
-        blockMessage: null as string | null,
-        statusLabel: "非种子申请 · 由后端判态",
-      };
-    }
-    return toOnboardingApplicationView({
-      ...SEED_DL,
-      status: localStatus,
-    });
-  }, [applicationId, localStatus]);
+  useEffect(() => {
+    let cancelled = false;
+    const id = applicationId.trim() || DEFAULT_DOWNLINE_APPLICATION_ID;
+    setAppLoadError(null);
+    fetchOnboardingApplication(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setAppView(
+          toOnboardingApplicationView({
+            id: dto.id,
+            orgId: dto.orgId,
+            capability: dto.capability,
+            status: parseOnboardingStatus(dto.status),
+          }),
+        );
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setAppView(null);
+        setAppLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [applicationId]);
 
-  const approveAllowed = appView.approveAllowed && actorGate.canAct;
-  const blockMessage = !appView.approveAllowed
-    ? appView.blockMessage
-    : !actorGate.canAct
-      ? actorGate.blockMessage
-      : null;
+  const approveAllowed =
+    appView != null && appView.approveAllowed && actorGate.canAct;
+  const blockMessage =
+    appView == null
+      ? (appLoadError ?? "正在加载入驻申请…")
+      : !appView.approveAllowed
+        ? appView.blockMessage
+        : !actorGate.canAct
+          ? actorGate.blockMessage
+          : null;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -83,9 +93,9 @@ export function ApproveDownlinePanel() {
     setError(null);
     setOrgView(null);
     try {
+      const id = applicationId.trim() || DEFAULT_DOWNLINE_APPLICATION_ID;
       const r = await approveOperatorDownline({
-        applicationId:
-          applicationId.trim() || DEFAULT_DOWNLINE_APPLICATION_ID,
+        applicationId: id,
         actorOrgId: actorOrgId.trim() || DEFAULT_DOWNLINE_ACTOR_ORG_ID,
         actorUserId: actorUserId.trim() || DEFAULT_DOWNLINE_ACTOR_USER_ID,
       });
@@ -98,12 +108,15 @@ export function ApproveDownlinePanel() {
           operatorCapability: r.operatorCapability,
         }),
       );
-      if (
-        (applicationId.trim() || DEFAULT_DOWNLINE_APPLICATION_ID) ===
-        DEFAULT_DOWNLINE_APPLICATION_ID
-      ) {
-        setLocalStatus("APPROVED");
-      }
+      const dto = await fetchOnboardingApplication(id);
+      setAppView(
+        toOnboardingApplicationView({
+          id: dto.id,
+          orgId: dto.orgId,
+          capability: dto.capability,
+          status: parseOnboardingStatus(dto.status),
+        }),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -115,9 +128,11 @@ export function ApproveDownlinePanel() {
     <section className={styles.panel}>
       <h2>批运营商下线（HTTP · 29a）</h2>
       <p className={styles.note}>
-        批的是运营商下线入驻（OPERATOR），不是批商城商家；商家入驻由总后台
-        /admin 审批。{appView.statusLabel}
-        {appView.approveAllowed ? " · 可批准" : ""}
+        GET 申请对齐仅 SUBMITTED 可批；商家入驻走 /admin
+        {appView
+          ? ` · ${appView.id}=${appView.statusLabel}`
+          : ""}
+        {appView?.approveAllowed ? " · 可批准" : ""}
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
@@ -127,10 +142,7 @@ export function ApproveDownlinePanel() {
           applicationId
           <input
             value={applicationId}
-            onChange={(e) => {
-              setApplicationId(e.target.value);
-              setLocalStatus(SEED_DL.status);
-            }}
+            onChange={(e) => setApplicationId(e.target.value)}
           />
         </label>
         <label>
