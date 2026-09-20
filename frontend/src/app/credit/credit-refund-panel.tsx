@@ -122,7 +122,7 @@ export function CreditRefundPanel() {
     <section className={styles.panel}>
       <h2>订单退款</h2>
       <p className={styles.note}>
-        GET 订单对齐仅 PAID 可退
+        GET 订单对齐仅已支付可退
         {"statusLabel" in refundGate && refundGate.statusLabel
           ? ` · 当前=${refundGate.statusLabel}`
           : ""}

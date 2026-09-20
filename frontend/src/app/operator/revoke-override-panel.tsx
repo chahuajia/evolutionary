@@ -63,7 +63,7 @@ export function RevokeOverridePanel() {
     }
     if (!view || !view.revokeAllowed) {
       setError(
-        view?.blockMessage ?? loadError ?? "当前覆盖不可撤销（须 ACTIVE）",
+        view?.blockMessage ?? loadError ?? "当前覆盖不可撤销（须已激活）",
       );
       return;
     }
@@ -100,7 +100,7 @@ export function RevokeOverridePanel() {
     <section className={styles.panel}>
       <h2>撤销套餐覆盖（HTTP · AC-31）</h2>
       <p className={styles.note}>
-        GET 覆盖对齐仅 ACTIVE 可撤销；GET 组织对齐 canActAsManager
+        GET 覆盖对齐仅已激活可撤销；GET 组织对齐 canActAsManager
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}

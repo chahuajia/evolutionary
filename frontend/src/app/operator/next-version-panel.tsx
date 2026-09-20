@@ -133,7 +133,7 @@ export function NextVersionPanel() {
     <section className={styles.panel}>
       <h2>派生下一版本（HTTP · AC-25）</h2>
       <p className={styles.note}>
-        仅 PUBLISHED 可派生（GET 模板 · nextVersionAllowed）；GET 组织对齐
+        仅已发布可派生（GET 模板 · nextVersionAllowed）；GET 组织对齐
         canActAsManager
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`

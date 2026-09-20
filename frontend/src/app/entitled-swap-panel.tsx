@@ -89,7 +89,7 @@ export function EntitledSwapPanel() {
     <section className={styles.panel}>
       <h2>权益换电（HTTP）</h2>
       <p className={styles.note}>
-        GET 权益对齐仅 ACTIVE 且未用尽可履约
+        GET 权益对齐仅有效且未用尽可履约
         {gate.statusLabel ? ` · ${entitlementId}=${gate.statusLabel}` : ""}
         {view?.remainingSwaps != null ? ` · 余 ${view.remainingSwaps} 次` : ""}
       </p>

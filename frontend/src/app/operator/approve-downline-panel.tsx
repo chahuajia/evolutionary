@@ -99,7 +99,7 @@ export function ApproveDownlinePanel() {
     <section className={styles.panel}>
       <h2>批运营商下线（HTTP · 29a）</h2>
       <p className={styles.note}>
-        GET 申请对齐仅 SUBMITTED 可批；商家入驻走 /admin
+        GET 申请对齐仅已提交可批；商家入驻走 /admin
         {appView
           ? ` · ${appView.id}=${appView.statusLabel}`
           : ""}

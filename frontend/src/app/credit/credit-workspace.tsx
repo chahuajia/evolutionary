@@ -69,7 +69,7 @@ export function CreditWorkspace({
         {
           id: "billing",
           label: "月度出账",
-          description: "OPEN Debt → Statement DUE。",
+          description: "未出账债务 → 账单待还。",
           content: <CreditMonthlyBillingPanel />,
         },
         {

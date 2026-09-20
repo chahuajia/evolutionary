@@ -208,7 +208,7 @@ export function CreditJourneyPanel({
       <h2>业务串联</h2>
       <p className={styles.note}>
         演示：信用购 → 权益换电 / 分润意向 → 退款冲销 → 可选结算批。GET 订单对齐
-        仅 PAID 可退 · 默认 {DEFAULT_CREDIT_USER} / {DEFAULT_PRODUCT_ID}
+        仅已支付可退 · 默认 {DEFAULT_CREDIT_USER} / {DEFAULT_PRODUCT_ID}
         {"statusLabel" in refundGate && refundGate.statusLabel
           ? ` · 当前订单=${refundGate.statusLabel}`
           : ""}

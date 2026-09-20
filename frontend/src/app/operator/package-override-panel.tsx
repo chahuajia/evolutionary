@@ -175,7 +175,7 @@ export function PackageOverridePanel() {
     <section className={styles.panel}>
       <h2>套餐覆盖与有效价（HTTP · AC-26）</h2>
       <p className={styles.note}>
-        GET 模板须 PUBLISHED；GET 覆盖对齐 activateAllowed（缺省则可新建）
+        GET 模板须已发布；GET 覆盖对齐 activateAllowed（缺省则可新建）
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}

@@ -83,7 +83,7 @@ export function OnboardingApprovePanel() {
     <section className={styles.panel}>
       <h2>平台批准商家入驻（HTTP · AC-40）</h2>
       <p className={styles.note} role="status">
-        GET 申请对齐仅 SUBMITTED 可批
+        GET 申请对齐仅已提交可批
         {appView ? ` · ${appView.id}=${appView.statusLabel}` : ""}
         {appView?.approveAllowed ? " · 可批准" : ""}
       </p>
