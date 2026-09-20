@@ -6,11 +6,7 @@
  */
 
 import { FormEvent, useEffect, useState } from "react";
-import {
-  parsePackageOverrideStatus,
-  toPackageOverrideView,
-  type PackageOverrideView,
-} from "@/domains/operator/domain/package-override-view";
+import type { PackageOverrideView } from "@/domains/operator/domain/package-override-view";
 import { loadPackageOverride } from "@/domains/operator/application/load-package-override";
 import {
   DEFAULT_OVERRIDE_ACTOR_ORG_ID,
@@ -79,17 +75,10 @@ export function RevokeOverridePanel() {
         overrideId: id,
         actorOrgId: actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID,
         actorUserId: actorUserId.trim() || DEFAULT_OVERRIDE_ACTOR_USER_ID,
+        templateVersion: view.templateVersion,
       });
-      setView(
-        toPackageOverrideView({
-          overrideId: r.overrideId,
-          orgId: r.orgId ?? "",
-          templateId: r.templateId ?? "",
-          templateVersion: view.templateVersion,
-          status: parsePackageOverrideStatus(r.status),
-        }),
-      );
-      setPriceLabel(r.priceCents ?? null);
+      setView(r.view);
+      setPriceLabel(r.priceCents);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

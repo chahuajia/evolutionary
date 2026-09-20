@@ -9,11 +9,11 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { BillingStatementView } from "@/domains/credit/domain/billing-statement-view";
 import { loadCreditStatement } from "@/domains/credit/application/load-credit-statement";
+import { runCreditRepay } from "@/domains/credit/application/run-credit-repay";
 import {
   DEFAULT_CREDIT_USER,
-  postCreditRepay,
-  postMarkCreditOverdue,
-} from "@/domains/credit/infrastructure/credit-gateway";
+  runMarkCreditOverdue,
+} from "@/domains/credit/application/run-mark-credit-overdue";
 import {
   canCoverCents,
   formatCentsAsYuan,
@@ -137,7 +137,7 @@ export function CreditRepayPanel({
     setError(null);
     setStatus(null);
     try {
-      const profile = await postMarkCreditOverdue({
+      const profile = await runMarkCreditOverdue({
         userId: DEFAULT_CREDIT_USER,
         statementId: statementId.trim() || DEFAULT_STATEMENT_ID,
       });
@@ -160,7 +160,7 @@ export function CreditRepayPanel({
     setError(null);
     setStatus(null);
     try {
-      await postCreditRepay({
+      await runCreditRepay({
         userId: DEFAULT_CREDIT_USER,
         statementId,
         amountCents,

@@ -8,24 +8,19 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   DEFAULT_CREDIT_USER,
-  postApplyCreditPolicy,
-} from "@/domains/credit/infrastructure/credit-gateway";
-import {
-  CREDIT_STATUS_LABEL,
-  type CreditProfile,
-} from "@/domains/credit/domain/credit-contracts";
-import { formatCentsAsYuan } from "@/shared/money/format-cents";
+  runApplyCreditPolicy,
+} from "@/domains/credit/application/run-apply-credit-policy";
+import type { CreditProfileView } from "@/domains/credit/domain/credit-profile-view";
 import styles from "./page.module.css";
 
 const DEFAULT_POLICY_VERSION = 2;
 
-function summarizeProfile(p: CreditProfile): string {
-  const statusLabel = CREDIT_STATUS_LABEL[p.status] ?? p.status;
+function summarizeProfile(p: CreditProfileView): string {
   return [
     `用户 ${p.userId}`,
-    `额度 ¥${formatCentsAsYuan(p.creditLimit)}`,
-    `已用 ¥${formatCentsAsYuan(p.usedCredit)}`,
-    `${statusLabel}（${p.status}）`,
+    `额度 ¥${p.limitYuan}`,
+    `已用 ¥${p.usedYuan}`,
+    `${p.statusLabel}（${p.status}）`,
     `档 ${p.scoreTier}`,
     `政策 v${p.policyVersion}`,
   ].join(" · ");
@@ -45,7 +40,7 @@ export function CreditApplyPolicyPanel() {
     setError(null);
     setResult(null);
     try {
-      const profile = await postApplyCreditPolicy({
+      const profile = await runApplyCreditPolicy({
         userId: userId.trim() || DEFAULT_CREDIT_USER,
         policyVersion,
       });
@@ -78,7 +73,7 @@ export function CreditApplyPolicyPanel() {
           />
         </label>
         <button type="submit" disabled={busy}>
-          {busy ? "应用中…" : "应用信用政策"}
+          {busy ? "提交中…" : "应用政策"}
         </button>
       </form>
       {error ? (

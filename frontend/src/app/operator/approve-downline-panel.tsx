@@ -15,10 +15,7 @@ import {
 } from "@/domains/operator/application/approve-operator-downline";
 import { loadOnboardingApplication } from "@/domains/operator/application/load-onboarding-application";
 import type { OnboardingApplicationView } from "@/domains/operator/domain/onboarding-application-view";
-import {
-  toOrganizationView,
-  type OrganizationView,
-} from "@/domains/operator/domain/organization-view";
+import type { OrganizationView } from "@/domains/operator/domain/organization-view";
 import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
 
@@ -83,18 +80,11 @@ export function ApproveDownlinePanel() {
     setOrgView(null);
     try {
       const id = applicationId.trim() || DEFAULT_DOWNLINE_APPLICATION_ID;
-      const r = await approveOperatorDownline({
-        applicationId: id,
-        actorOrgId: actorOrgId.trim() || DEFAULT_DOWNLINE_ACTOR_ORG_ID,
-        actorUserId: actorUserId.trim() || DEFAULT_DOWNLINE_ACTOR_USER_ID,
-      });
       setOrgView(
-        toOrganizationView({
-          id: r.orgId,
-          name: r.name,
-          parentId: r.parentOrgId,
-          status: r.status || "ACTIVE",
-          operatorCapability: r.operatorCapability,
+        await approveOperatorDownline({
+          applicationId: id,
+          actorOrgId: actorOrgId.trim() || DEFAULT_DOWNLINE_ACTOR_ORG_ID,
+          actorUserId: actorUserId.trim() || DEFAULT_DOWNLINE_ACTOR_USER_ID,
         }),
       );
       setAppView(await loadOnboardingApplication(id));
