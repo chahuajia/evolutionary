@@ -5,11 +5,8 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  toOrganizationView,
-  type OrganizationView,
-} from "@/domains/operator/domain/organization-view";
-import { fetchOrganization } from "@/domains/operator/infrastructure/operator-gateway";
+import { loadOrganization } from "@/domains/operator/application/load-organization";
+import type { OrganizationView } from "@/domains/operator/domain/organization-view";
 
 export type ActorOrganizationGate = {
   readonly actor: OrganizationView | null;
@@ -29,18 +26,10 @@ export function useActorOrganization(
     let cancelled = false;
     const id = actorOrgId.trim() || fallbackId;
     setLoadError(null);
-    fetchOrganization(id)
-      .then((dto) => {
+    loadOrganization(id)
+      .then((view) => {
         if (cancelled) return;
-        setActor(
-          toOrganizationView({
-            id: dto.id,
-            name: dto.name,
-            parentId: dto.parentId,
-            status: dto.status,
-            operatorCapability: dto.operatorCapability,
-          }),
-        );
+        setActor(view);
       })
       .catch((err) => {
         if (cancelled) return;

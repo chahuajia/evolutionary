@@ -15,17 +15,19 @@ import {
   toPackageTemplateView,
   type PackageTemplateView,
 } from "@/domains/operator/domain/package-template-view";
+import { loadPackageOverride } from "@/domains/operator/application/load-package-override";
+import {
+  loadEffectiveProduct,
+  type EffectiveProductResult,
+} from "@/domains/operator/application/load-effective-product";
 import {
   DEFAULT_OVERRIDE_ACTOR_ORG_ID,
   DEFAULT_OVERRIDE_ACTOR_USER_ID,
   DEFAULT_OVERRIDE_ID,
   DEFAULT_OVERRIDE_PRICE_CENTS,
   DEFAULT_OVERRIDE_TEMPLATE_ID,
-  fetchPackageOverride,
   fetchPackageTemplate,
-  getEffectiveProduct,
   postActivatePackageOverride,
-  type EffectiveProductResult,
 } from "@/domains/operator/infrastructure/operator-gateway";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import { useActorOrganization } from "./use-actor-organization";
@@ -90,20 +92,12 @@ export function PackageOverridePanel() {
     let cancelled = false;
     const id = overrideId.trim() || DEFAULT_OVERRIDE_ID;
     setOverrideMissing(false);
-    fetchPackageOverride(id)
-      .then((dto) => {
+    loadPackageOverride(id)
+      .then(({ view: next, priceCents: cents }) => {
         if (cancelled) return;
         setOverrideMissing(false);
-        setView(
-          toPackageOverrideView({
-            overrideId: dto.overrideId,
-            orgId: dto.orgId,
-            templateId: dto.templateId,
-            templateVersion: dto.templateVersion,
-            status: parsePackageOverrideStatus(dto.status),
-          }),
-        );
-        setPriceLabel(dto.priceCents);
+        setView(next);
+        setPriceLabel(cents);
       })
       .catch(() => {
         if (cancelled) return;
@@ -173,10 +167,10 @@ export function PackageOverridePanel() {
     setError(null);
     setEffective(null);
     try {
-      const r = await getEffectiveProduct({
-        orgId: actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID,
-        templateId: templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID,
-      });
+      const r = await loadEffectiveProduct(
+        actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID,
+        templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID,
+      );
       setEffective(r);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
