@@ -73,6 +73,8 @@ export type DeviceShadowView = {
   /** 仅 stale 时值得跑 COMM_LOST 检测。 */
   readonly commLostDetectUseful: boolean;
   readonly blockMessage: string | null;
+  /** 不可检测时的说明（新鲜影子）。 */
+  readonly commLostDetectBlockMessage: string | null;
 };
 
 /** 展示不变量：新鲜 = 非 stale。 */
@@ -99,6 +101,12 @@ export function canDetectCommLost(stale: boolean): boolean {
 export function shadowBlockMessage(stale: boolean): string | null {
   if (!stale) return null;
   return "影子过期，禁止按电量计费 —— 先补遥测或跑通信丢失诊断";
+}
+
+/** 展示不变量：仅 stale 时检测有意义；新鲜影子给动作说明。 */
+export function commLostDetectBlockMessage(stale: boolean): string | null {
+  if (canDetectCommLost(stale)) return null;
+  return "影子仍新鲜，检测不会抬 COMM_LOST";
 }
 
 export function toDeviceShadowView(dto: {
@@ -132,5 +140,6 @@ export function toDeviceShadowView(dto: {
     meteredSwapAllowed: canMeterWithShadow(dto.stale),
     commLostDetectUseful: canDetectCommLost(dto.stale),
     blockMessage: shadowBlockMessage(dto.stale),
+    commLostDetectBlockMessage: commLostDetectBlockMessage(dto.stale),
   };
 }

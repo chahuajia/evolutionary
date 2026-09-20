@@ -2,14 +2,11 @@
 
 /**
  * IoT COMM_LOST 诊断客户端岛 — 默认 BAT-IOT-1；展示 stale / COMM_LOST / ticket。
- * GET shadow 对齐 canDetectCommLost：仅 stale 时检测有意义。
+ * GET shadow 对齐 commLostDetectUseful：仅 stale 时检测有意义。
  */
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import {
-  canDetectCommLost,
-  type DeviceShadowView,
-} from "@/domains/iot/domain/device-shadow-view";
+import type { DeviceShadowView } from "@/domains/iot/domain/device-shadow-view";
 import {
   DEFAULT_IOT_BATTERY,
   loadDeviceShadow,
@@ -55,15 +52,9 @@ export function CommLostPanel() {
         blockMessage: shadowLoadError ?? "正在加载设备影子…",
       };
     }
-    if (!canDetectCommLost(shadowView.stale)) {
-      return {
-        detectAllowed: false,
-        blockMessage: "影子仍新鲜，检测不会抬 COMM_LOST",
-      };
-    }
     return {
-      detectAllowed: true,
-      blockMessage: null as string | null,
+      detectAllowed: shadowView.commLostDetectUseful,
+      blockMessage: shadowView.commLostDetectBlockMessage,
     };
   }, [shadowView, shadowLoadError]);
 
@@ -129,7 +120,6 @@ export function CommLostPanel() {
 function DetectResultView({ result }: { result: DetectCommLostView }) {
   const alertLabel =
     result.alertType ?? (result.raised ? "COMM_LOST" : null);
-  const detectUseful = canDetectCommLost(result.stale);
 
   return (
     <dl className={styles.dl}>
@@ -143,7 +133,7 @@ function DetectResultView({ result }: { result: DetectCommLostView }) {
         >
           {result.stale ? "stale" : "fresh"}
         </span>
-        {detectUseful ? " · 值得检测" : " · 检测无意义"}
+        {result.detectUseful ? " · 值得检测" : " · 检测无意义"}
       </dd>
 
       <dt>raised</dt>

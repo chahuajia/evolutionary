@@ -50,6 +50,7 @@ describe("toDeviceShadowView", () => {
     expect(view.fresh).toBe(false);
     expect(view.meteredSwapAllowed).toBe(false);
     expect(view.commLostDetectUseful).toBe(true);
+    expect(view.commLostDetectBlockMessage).toBeNull();
     expect(view.blockMessage).toContain("禁止按电量计费");
     expect(view.status).toBeNull();
   });
@@ -66,6 +67,8 @@ describe("toDeviceShadowView", () => {
     });
     expect(view.meteredSwapAllowed).toBe(true);
     expect(view.blockMessage).toBeNull();
+    expect(view.commLostDetectUseful).toBe(false);
+    expect(view.commLostDetectBlockMessage).toContain("新鲜");
     expect(view.statusLabel).toBe("空闲");
     expect(view.lockStateLabel).toBe("未锁");
     expect(isShadowInMaintenance("MAINTENANCE")).toBe(true);
