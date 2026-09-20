@@ -51,12 +51,24 @@ class RevokePackageOverrideHttpIT {
                 .andExpect(jsonPath("$.status").value("ACTIVE"))
                 .andExpect(jsonPath("$.priceCents").value(2800));
 
+        mvc.perform(get("/operator/overrides/OV-1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value("OV-1"))
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.templateVersion").value(1));
+
+        mvc.perform(get("/operator/overrides/NO-SUCH")).andExpect(status().isNotFound());
+
         mvc.perform(
                         post("/operator/overrides/OV-1/revoke")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(L2_REVOKE_BODY))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("OV-1"))
+                .andExpect(jsonPath("$.status").value("REVOKED"));
+
+        mvc.perform(get("/operator/overrides/OV-1"))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("REVOKED"));
 
         mvc.perform(get("/operator/orgs/ORG-L2/templates/T-PUB-1/effective-product"))

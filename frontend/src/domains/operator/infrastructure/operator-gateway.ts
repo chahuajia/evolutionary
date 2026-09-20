@@ -486,6 +486,54 @@ export type RevokePackageOverrideResult = {
   displayName: string | null;
 };
 
+export type PackageOverrideDto = {
+  overrideId: string;
+  orgId: string;
+  templateId: string;
+  templateVersion: number;
+  status: string;
+  priceCents: number | null;
+  displayName: string | null;
+};
+
+/**
+ * GET /operator/overrides/{overrideId}
+ */
+export async function fetchPackageOverride(
+  overrideId: string = DEFAULT_OVERRIDE_ID,
+): Promise<PackageOverrideDto> {
+  const id = overrideId.trim() || DEFAULT_OVERRIDE_ID;
+  const base = apiBase();
+  const raw = await fetchJson<Record<string, unknown>>(
+    `${base}/operator/overrides/${encodeURIComponent(id)}`,
+    { timeoutMs: TIMEOUT_MS },
+  );
+  const versionRaw = raw.templateVersion ?? raw.version;
+  const templateVersion =
+    typeof versionRaw === "number"
+      ? versionRaw
+      : Number.parseInt(String(versionRaw ?? ""), 10);
+  const priceRaw = raw.priceCents ?? raw.price;
+  const priceCents =
+    typeof priceRaw === "number"
+      ? priceRaw
+      : priceRaw != null
+        ? Number.parseInt(String(priceRaw), 10)
+        : null;
+  const displayRaw = raw.displayName;
+  return {
+    overrideId: String(raw.overrideId ?? raw.id ?? id),
+    orgId: String(raw.orgId ?? ""),
+    templateId: String(raw.templateId ?? ""),
+    templateVersion: Number.isFinite(templateVersion) ? templateVersion : 0,
+    status: String(raw.status ?? ""),
+    priceCents:
+      priceCents != null && Number.isFinite(priceCents) ? priceCents : null,
+    displayName:
+      displayRaw == null || displayRaw === "" ? null : String(displayRaw),
+  };
+}
+
 export type RevokePackageOverrideRequest = {
   overrideId: string;
   actorUserId: string;

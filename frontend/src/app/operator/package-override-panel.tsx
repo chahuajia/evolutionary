@@ -4,7 +4,7 @@
  * 套餐覆盖客户端岛 — POST overrides + GET effective-product（AC-26）。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   parsePackageOverrideStatus,
   toPackageOverrideView,
@@ -16,6 +16,7 @@ import {
   DEFAULT_OVERRIDE_ID,
   DEFAULT_OVERRIDE_PRICE_CENTS,
   DEFAULT_OVERRIDE_TEMPLATE_ID,
+  fetchPackageOverride,
   getEffectiveProduct,
   postActivatePackageOverride,
   type EffectiveProductResult,
@@ -35,6 +36,7 @@ export function PackageOverridePanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<PackageOverrideView | null>(null);
+  const [overrideMissing, setOverrideMissing] = useState(false);
   const [priceLabel, setPriceLabel] = useState<number | null>(null);
   const [effective, setEffective] = useState<EffectiveProductResult | null>(
     null,
@@ -43,6 +45,37 @@ export function PackageOverridePanel() {
     actorOrgId,
     DEFAULT_OVERRIDE_ACTOR_ORG_ID,
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = overrideId.trim() || DEFAULT_OVERRIDE_ID;
+    setOverrideMissing(false);
+    fetchPackageOverride(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setOverrideMissing(false);
+        setView(
+          toPackageOverrideView({
+            overrideId: dto.overrideId,
+            orgId: dto.orgId,
+            templateId: dto.templateId,
+            templateVersion: dto.templateVersion,
+            status: parsePackageOverrideStatus(dto.status),
+          }),
+        );
+        setPriceLabel(dto.priceCents);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // 404：尚无覆盖，可新建激活
+        setView(null);
+        setPriceLabel(null);
+        setOverrideMissing(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [overrideId]);
 
   async function onActivate(e: FormEvent) {
     e.preventDefault();
@@ -56,8 +89,6 @@ export function PackageOverridePanel() {
     }
     setBusy(true);
     setError(null);
-    setView(null);
-    setPriceLabel(null);
     try {
       const r = await postActivatePackageOverride({
         templateId: templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID,
@@ -70,6 +101,7 @@ export function PackageOverridePanel() {
             : DEFAULT_OVERRIDE_PRICE_CENTS,
         },
       });
+      setOverrideMissing(false);
       setView(
         toPackageOverrideView({
           overrideId: r.overrideId,
@@ -117,20 +149,23 @@ export function PackageOverridePanel() {
     <section className={styles.panel}>
       <h2>套餐覆盖与有效价（HTTP · AC-26）</h2>
       <p className={styles.note}>
-        L2 对已发布模板激活 patches；GET 组织对齐 canActAsManager
+        GET 覆盖对齐 activateAllowed（缺省则可新建）；GET 组织对齐
+        canActAsManager
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
+        {view
+          ? ` · ${view.overrideId}=${view.status}`
+          : overrideMissing
+            ? " · 覆盖尚不存在"
+            : ""}
       </p>
       <form className={styles.form} onSubmit={onActivate}>
         <label>
           templateId
           <input
             value={templateId}
-            onChange={(e) => {
-              setTemplateId(e.target.value);
-              setView(null);
-            }}
+            onChange={(e) => setTemplateId(e.target.value)}
           />
         </label>
         <label>
@@ -151,10 +186,7 @@ export function PackageOverridePanel() {
           overrideId
           <input
             value={overrideId}
-            onChange={(e) => {
-              setOverrideId(e.target.value);
-              setView(null);
-            }}
+            onChange={(e) => setOverrideId(e.target.value)}
           />
         </label>
         <label>

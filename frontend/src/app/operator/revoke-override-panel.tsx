@@ -2,10 +2,10 @@
 
 /**
  * 撤销套餐覆盖客户端岛 — POST /operator/overrides/{id}/revoke（AC-31 · 30a）。
- * 撤销后目录有效价回落至模板原价。
+ * GET 覆盖对齐 revokeAllowed（仅 ACTIVE）；撤销后目录有效价回落模板原价。
  */
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   parsePackageOverrideStatus,
   toPackageOverrideView,
@@ -17,6 +17,7 @@ import {
   DEFAULT_OVERRIDE_ID,
   revokePackageOverride,
 } from "@/domains/operator/application/revoke-package-override";
+import { fetchPackageOverride } from "@/domains/operator/infrastructure/operator-gateway";
 import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
@@ -30,11 +31,41 @@ export function RevokeOverridePanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<PackageOverrideView | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [priceLabel, setPriceLabel] = useState<number | null>(null);
   const actorGate = useActorOrganization(
     actorOrgId,
     DEFAULT_OVERRIDE_ACTOR_ORG_ID,
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = overrideId.trim() || DEFAULT_OVERRIDE_ID;
+    setLoadError(null);
+    setPriceLabel(null);
+    fetchPackageOverride(id)
+      .then((dto) => {
+        if (cancelled) return;
+        setView(
+          toPackageOverrideView({
+            overrideId: dto.overrideId,
+            orgId: dto.orgId,
+            templateId: dto.templateId,
+            templateVersion: dto.templateVersion,
+            status: parsePackageOverrideStatus(dto.status),
+          }),
+        );
+        setPriceLabel(dto.priceCents);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setView(null);
+        setLoadError(err instanceof Error ? err.message : String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [overrideId]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -42,17 +73,18 @@ export function RevokeOverridePanel() {
       setError(actorGate.blockMessage ?? "操作方组织不可撤销覆盖");
       return;
     }
-    if (view && !view.revokeAllowed) {
-      setError(view.blockMessage ?? "当前状态不可撤销");
+    if (!view || !view.revokeAllowed) {
+      setError(
+        view?.blockMessage ?? loadError ?? "当前覆盖不可撤销（须 ACTIVE）",
+      );
       return;
     }
     setBusy(true);
     setError(null);
-    setView(null);
-    setPriceLabel(null);
     try {
+      const id = overrideId.trim() || DEFAULT_OVERRIDE_ID;
       const r = await revokePackageOverride({
-        overrideId: overrideId.trim() || DEFAULT_OVERRIDE_ID,
+        overrideId: id,
         actorOrgId: actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID,
         actorUserId: actorUserId.trim() || DEFAULT_OVERRIDE_ACTOR_USER_ID,
       });
@@ -61,7 +93,7 @@ export function RevokeOverridePanel() {
           overrideId: r.overrideId,
           orgId: r.orgId ?? "",
           templateId: r.templateId ?? "",
-          templateVersion: 0,
+          templateVersion: view.templateVersion,
           status: parsePackageOverrideStatus(r.status),
         }),
       );
@@ -74,31 +106,31 @@ export function RevokeOverridePanel() {
   }
 
   const revokeBlocked =
-    !actorGate.canAct || (view != null && !view.revokeAllowed);
+    !actorGate.canAct || view == null || !view.revokeAllowed;
   const blockMessage = !actorGate.canAct
     ? actorGate.blockMessage
-    : view != null && !view.revokeAllowed
-      ? view.blockMessage
-      : null;
+    : view == null
+      ? (loadError ?? "正在加载覆盖…")
+      : !view.revokeAllowed
+        ? view.blockMessage
+        : null;
 
   return (
     <section className={styles.panel}>
       <h2>撤销套餐覆盖（HTTP · AC-31）</h2>
       <p className={styles.note}>
-        L2 撤销已激活覆盖；GET 组织对齐 canActAsManager
+        GET 覆盖对齐仅 ACTIVE 可撤销；GET 组织对齐 canActAsManager
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
+        {view ? ` · ${view.overrideId}=${view.status}` : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
           overrideId
           <input
             value={overrideId}
-            onChange={(e) => {
-              setOverrideId(e.target.value);
-              setView(null);
-            }}
+            onChange={(e) => setOverrideId(e.target.value)}
           />
         </label>
         <label>
@@ -129,7 +161,7 @@ export function RevokeOverridePanel() {
           {error}
         </p>
       ) : null}
-      {view ? (
+      {view && view.status === "REVOKED" ? (
         <p>
           已撤销 {view.overrideId}
           {view.orgId ? ` · ${view.orgId}` : ""}

@@ -5,6 +5,7 @@ import com.evolutionary.operator.application.ApproveOperatorDownline;
 import com.evolutionary.operator.application.CreateNextVersionDraft;
 import com.evolutionary.operator.application.OnboardingApplicationRepository;
 import com.evolutionary.operator.application.OrganizationRepository;
+import com.evolutionary.operator.application.PackageOverrideRepository;
 import com.evolutionary.operator.application.PackageTemplateRepository;
 import com.evolutionary.operator.application.PublishPackageTemplate;
 import com.evolutionary.operator.application.ResolveEffectiveProduct;
@@ -36,6 +37,7 @@ public class OperatorController {
     private final OrganizationRepository organizations;
     private final OnboardingApplicationRepository applications;
     private final PackageTemplateRepository templates;
+    private final PackageOverrideRepository overrides;
     private final PublishPackageTemplate publishPackageTemplate;
     private final CreateNextVersionDraft createNextVersionDraft;
     private final ActivatePackageOverride activatePackageOverride;
@@ -47,6 +49,7 @@ public class OperatorController {
             OrganizationRepository organizations,
             OnboardingApplicationRepository applications,
             PackageTemplateRepository templates,
+            PackageOverrideRepository overrides,
             PublishPackageTemplate publishPackageTemplate,
             CreateNextVersionDraft createNextVersionDraft,
             ActivatePackageOverride activatePackageOverride,
@@ -56,6 +59,7 @@ public class OperatorController {
         this.organizations = organizations;
         this.applications = applications;
         this.templates = templates;
+        this.overrides = overrides;
         this.publishPackageTemplate = publishPackageTemplate;
         this.createNextVersionDraft = createNextVersionDraft;
         this.activatePackageOverride = activatePackageOverride;
@@ -245,6 +249,16 @@ public class OperatorController {
         return ResponseEntity.status(translated.status()).body(translated.body());
     }
 
+    /** 只读：供撤销/激活面板对齐 revokeAllowed / activateAllowed。 */
+    @GetMapping("/overrides/{overrideId}")
+    public ResponseEntity<OverrideView> override(@PathVariable String overrideId) {
+        return overrides
+                .findById(overrideId.trim())
+                .map(OperatorController::toOverrideView)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     /** 切片24a / AC-26：组织视角有效商品读模型。 */
     @GetMapping("/orgs/{orgId}/templates/{templateId}/effective-product")
     public ResponseEntity<EffectiveProductView> effectiveProduct(
@@ -285,6 +299,7 @@ public class OperatorController {
                 override.id(),
                 override.orgId(),
                 override.templateId(),
+                override.templateVersion(),
                 override.status().name(),
                 override.patches().priceCents().orElse(null),
                 override.patches().displayName().orElse(null));
@@ -370,6 +385,7 @@ public class OperatorController {
             String id,
             String orgId,
             String templateId,
+            int templateVersion,
             String status,
             Long priceCents,
             String displayName) {}
