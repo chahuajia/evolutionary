@@ -179,9 +179,9 @@ export function PackageOverridePanel() {
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
-        {templateView ? ` · ${templateView.id}=${templateView.status}` : ""}
+        {templateView ? ` · ${templateView.id}=${templateView.statusLabel}` : ""}
         {view
-          ? ` · ${view.overrideId}=${view.status}`
+          ? ` · ${view.overrideId}=${view.statusLabel}`
           : overrideMissing
             ? " · 覆盖尚不存在"
             : ""}
@@ -251,7 +251,7 @@ export function PackageOverridePanel() {
       {view ? (
         <p>
           覆盖 {view.overrideId} · {view.orgId || "—"} · {view.templateId} v
-          {view.templateVersion} · {view.status}
+          {view.templateVersion} · {view.statusLabel}
           {view.revokeAllowed ? " · 可撤销" : ""}
           {priceLabel != null ? ` · ¥${formatCentsAsYuan(priceLabel)}` : ""}
         </p>

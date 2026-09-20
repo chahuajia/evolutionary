@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  billingStatementBadgeTone,
   canMarkStatementOverdue,
   canRepayStatement,
   parseBillingStatementStatus,
@@ -48,6 +49,8 @@ describe("toBillingStatementView", () => {
     expect(view.repayAllowed).toBe(true);
     expect(view.markOverdueAllowed).toBe(true);
     expect(view.statusLabel).toBe("待还");
+    expect(view.badgeTone).toBe("due");
+    expect(billingStatementBadgeTone("PAID")).toBe("paid");
     expect(view.blockMessage).toBeNull();
   });
 
@@ -63,6 +66,7 @@ describe("toBillingStatementView", () => {
       paidAt: "2026-03-01T00:00:00Z",
     });
     expect(view.repayAllowed).toBe(false);
+    expect(view.badgeTone).toBe("paid");
     expect(view.blockMessage).toContain("已还清");
   });
 });

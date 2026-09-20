@@ -37,11 +37,28 @@ export const BILLING_STATEMENT_STATUS_LABEL: Record<
   OVERDUE: "逾期",
 };
 
+/** 徽章色调：页面只映射 tone→CSS，勿再 status===。 */
+export type BillingStatementBadgeTone =
+  | "due"
+  | "paid"
+  | "overdue"
+  | "neutral";
+
+export function billingStatementBadgeTone(
+  status: BillingStatementStatus,
+): BillingStatementBadgeTone {
+  if (status === "DUE") return "due";
+  if (status === "PAID") return "paid";
+  if (status === "OVERDUE") return "overdue";
+  return "neutral";
+}
+
 export type BillingStatementView = {
   readonly id: string;
   readonly userId: string;
   readonly status: BillingStatementStatus;
   readonly statusLabel: string;
+  readonly badgeTone: BillingStatementBadgeTone;
   readonly totalDueCents: number;
   readonly totalDueYuan: string;
   readonly periodStart: string;
@@ -91,6 +108,7 @@ export function toBillingStatementView(dto: {
     userId: dto.userId,
     status,
     statusLabel: BILLING_STATEMENT_STATUS_LABEL[status],
+    badgeTone: billingStatementBadgeTone(status),
     totalDueCents: dto.totalDue,
     totalDueYuan: formatCentsAsYuan(dto.totalDue),
     periodStart: dto.periodStart,

@@ -104,7 +104,7 @@ export function RevokeOverridePanel() {
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
-        {view ? ` · ${view.overrideId}=${view.status}` : ""}
+        {view ? ` · ${view.overrideId}=${view.statusLabel}` : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
@@ -142,11 +142,11 @@ export function RevokeOverridePanel() {
           {error}
         </p>
       ) : null}
-      {view && view.status === "REVOKED" ? (
+      {view?.revoked ? (
         <p>
           已撤销 {view.overrideId}
           {view.orgId ? ` · ${view.orgId}` : ""}
-          {view.templateId ? ` · ${view.templateId}` : ""} · {view.status}
+          {view.templateId ? ` · ${view.templateId}` : ""} · {view.statusLabel}
           {priceLabel != null
             ? ` · patches ¥${formatCentsAsYuan(priceLabel)}`
             : ""}

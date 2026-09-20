@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   canActivateOverride,
   canRevokeOverride,
+  isOverrideRevoked,
   overrideBlockMessage,
   parsePackageOverrideStatus,
   toPackageOverrideView,
@@ -64,6 +65,8 @@ describe("toPackageOverrideView", () => {
     });
     expect(view.activateAllowed).toBe(false);
     expect(view.revokeAllowed).toBe(true);
+    expect(view.revoked).toBe(false);
+    expect(view.statusLabel).toBe("已激活");
     expect(view.blockMessage).toContain("撤销");
   });
 
@@ -77,5 +80,8 @@ describe("toPackageOverrideView", () => {
     });
     expect(view.activateAllowed).toBe(false);
     expect(view.revokeAllowed).toBe(false);
+    expect(view.revoked).toBe(true);
+    expect(isOverrideRevoked("REVOKED")).toBe(true);
+    expect(view.statusLabel).toBe("已撤销");
   });
 });

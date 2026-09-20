@@ -31,11 +31,23 @@ export type PackageOverrideView = {
   readonly templateId: string;
   readonly templateVersion: number;
   readonly status: PackageOverrideStatus;
+  readonly statusLabel: string;
+  /** 终态：已撤销（展示结果区用，勿再 status===）。 */
+  readonly revoked: boolean;
   /** 仅 DRAFT 可激活（对齐 `PackageOverride.activate`）。 */
   readonly activateAllowed: boolean;
   /** 仅 ACTIVE 可撤销（对齐 `PackageOverride.revoke`）。 */
   readonly revokeAllowed: boolean;
   readonly blockMessage: string | null;
+};
+
+export const PACKAGE_OVERRIDE_STATUS_LABEL: Record<
+  PackageOverrideStatus,
+  string
+> = {
+  DRAFT: "草稿",
+  ACTIVE: "已激活",
+  REVOKED: "已撤销",
 };
 
 /** 展示不变量：仅草稿可激活。 */
@@ -46,6 +58,10 @@ export function canActivateOverride(status: PackageOverrideStatus): boolean {
 /** 展示不变量：仅激活态可撤销。 */
 export function canRevokeOverride(status: PackageOverrideStatus): boolean {
   return status === "ACTIVE";
+}
+
+export function isOverrideRevoked(status: PackageOverrideStatus): boolean {
+  return status === "REVOKED";
 }
 
 /**
@@ -74,6 +90,8 @@ export function toPackageOverrideView(dto: {
     templateId: dto.templateId,
     templateVersion: dto.templateVersion,
     status: dto.status,
+    statusLabel: PACKAGE_OVERRIDE_STATUS_LABEL[dto.status],
+    revoked: isOverrideRevoked(dto.status),
     activateAllowed: canActivateOverride(dto.status),
     revokeAllowed: canRevokeOverride(dto.status),
     blockMessage: overrideBlockMessage(dto.status),

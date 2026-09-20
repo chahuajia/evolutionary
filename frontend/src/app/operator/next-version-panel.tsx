@@ -138,7 +138,7 @@ export function NextVersionPanel() {
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
-        {sourceView ? ` · 源 ${sourceView.id}=${sourceView.status}` : ""}
+        {sourceView ? ` · 源 ${sourceView.id}=${sourceView.statusLabel}` : ""}
       </p>
       <form className={styles.form} onSubmit={onSubmit}>
         <label>
@@ -223,7 +223,7 @@ export function NextVersionPanel() {
       {draftView ? (
         <p>
           新草稿 {draftView.id} · {draftView.ownerOrgId || "—"} · v
-          {draftView.version} · {draftView.status}
+          {draftView.version} · {draftView.statusLabel}
           {draftView.publishAllowed ? " · 可发布" : ""}
         </p>
       ) : null}

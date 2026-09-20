@@ -148,7 +148,7 @@ export function PublishPackageTemplatePanel() {
         {actorGate.statusLabel
           ? ` · ${actorOrgId}=${actorGate.statusLabel}`
           : ""}
-        {view ? ` · ${view.id}=${view.status}` : ""}
+        {view ? ` · ${view.id}=${view.statusLabel}` : ""}
       </p>
       <form className={styles.form} onSubmit={onPublish}>
         <label>
@@ -225,7 +225,7 @@ export function PublishPackageTemplatePanel() {
       {view ? (
         <p>
           模板 {view.id} · {view.ownerOrgId || "—"} · v{view.version} ·{" "}
-          {view.status}
+          {view.statusLabel}
           {view.publishAllowed ? " · 可发布" : " · 已不可再发布"}
           {view.replaceAllowed ? " · 可改基产品" : ""}
           {view.nextVersionAllowed ? " · 可派生下一版本" : ""}

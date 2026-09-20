@@ -95,6 +95,7 @@ describe("toPackageTemplateView", () => {
     expect(view.replaceAllowed).toBe(false);
     expect(view.nextVersionAllowed).toBe(true);
     expect(view.overrideActivateAllowed).toBe(true);
+    expect(view.statusLabel).toBe("已发布");
     expect(view.blockMessage).toContain("不可原地修改");
   });
 
@@ -104,6 +105,7 @@ describe("toPackageTemplateView", () => {
     expect(view.replaceAllowed).toBe(true);
     expect(view.nextVersionAllowed).toBe(false);
     expect(view.overrideActivateAllowed).toBe(false);
+    expect(view.statusLabel).toBe("草稿");
     expect(view.blockMessage).toBeNull();
   });
 });

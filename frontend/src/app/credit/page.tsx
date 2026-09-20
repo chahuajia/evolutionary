@@ -9,15 +9,16 @@ import {
 } from "@/domains/credit/application/load-credit-profile";
 import { loadCreditStatements } from "@/domains/credit/application/load-credit-statements";
 import type { CreditProfileView } from "@/domains/credit/domain/credit-profile-view";
+import type { BillingStatementBadgeTone } from "@/domains/credit/domain/billing-statement-view";
 import type { BillingStatementView } from "@/domains/credit/domain/billing-statement-view";
 import { CreditRefreshButton } from "./credit-refresh";
 import { CreditWorkspace } from "./credit-workspace";
 import styles from "./page.module.css";
 
-function statusBadgeClass(status: string): string {
-  if (status === "DUE") return `${styles.badge} ${styles.badgeDue}`;
-  if (status === "PAID") return `${styles.badge} ${styles.badgePaid}`;
-  if (status === "OVERDUE") return `${styles.badge} ${styles.badgeOverdue}`;
+function statusBadgeClass(tone: BillingStatementBadgeTone): string {
+  if (tone === "due") return `${styles.badge} ${styles.badgeDue}`;
+  if (tone === "paid") return `${styles.badge} ${styles.badgePaid}`;
+  if (tone === "overdue") return `${styles.badge} ${styles.badgeOverdue}`;
   return styles.badge;
 }
 
@@ -93,7 +94,7 @@ export default async function CreditPage() {
               <li key={s.id} className={styles.item}>
                 <div className={styles.itemHead}>
                   <span>{s.id}</span>
-                  <span className={statusBadgeClass(s.status)}>
+                  <span className={statusBadgeClass(s.badgeTone)}>
                     {s.statusLabel}
                   </span>
                 </div>

@@ -38,11 +38,21 @@ export function parsePackageTemplateStatus(
   );
 }
 
+export const PACKAGE_TEMPLATE_STATUS_LABEL: Record<
+  PackageTemplateStatus,
+  string
+> = {
+  DRAFT: "草稿",
+  PUBLISHED: "已发布",
+  DEPRECATED: "已废弃",
+};
+
 export type PackageTemplateView = {
   readonly id: string;
   readonly ownerOrgId: string;
   readonly version: number;
   readonly status: PackageTemplateStatus;
+  readonly statusLabel: string;
   /** 仅 DRAFT 可发布（对齐 `PackageTemplate.publish` 守卫）。 */
   readonly publishAllowed: boolean;
   /** 仅 DRAFT 可原地改基产品（对齐 `replaceBaseProduct`：否则 TEMPLATE_IMMUTABLE）。 */
@@ -112,6 +122,7 @@ export function toPackageTemplateView(dto: {
     ownerOrgId: dto.ownerOrgId,
     version: dto.version,
     status: dto.status,
+    statusLabel: PACKAGE_TEMPLATE_STATUS_LABEL[dto.status],
     publishAllowed: canPublishTemplate(dto.status),
     replaceAllowed: canReplaceBaseProduct(dto.status),
     nextVersionAllowed: canCreateNextVersion(dto.status),
