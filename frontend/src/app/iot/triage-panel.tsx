@@ -6,28 +6,17 @@
 
 import { FormEvent, useState } from "react";
 import {
-  toDeviceShadowView,
-  type DeviceShadowView,
-} from "@/domains/iot/domain/device-shadow-view";
-import {
   DEFAULT_IOT_BATTERY,
-  postTriageOutdatedSoc,
-  type TriageNextStep,
-} from "@/domains/iot/infrastructure/iot-gateway";
+  runTriageOutdatedSoc,
+  type TriageOutdatedSocView,
+} from "@/domains/iot/application/run-triage-outdated-soc";
 import styles from "./page.module.css";
-
-type TriageView = {
-  batteryId: string;
-  nextStep: TriageNextStep;
-  orderedChecks: string[];
-  shadow: DeviceShadowView;
-};
 
 export function TriagePanel() {
   const [batteryId, setBatteryId] = useState(DEFAULT_IOT_BATTERY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<TriageView | null>(null);
+  const [view, setView] = useState<TriageOutdatedSocView | null>(null);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -35,15 +24,9 @@ export function TriagePanel() {
     setError(null);
     setView(null);
     try {
-      const r = await postTriageOutdatedSoc(
-        batteryId.trim() || DEFAULT_IOT_BATTERY,
+      setView(
+        await runTriageOutdatedSoc(batteryId.trim() || DEFAULT_IOT_BATTERY),
       );
-      setView({
-        batteryId: r.batteryId,
-        nextStep: r.nextStep,
-        orderedChecks: r.orderedChecks,
-        shadow: toDeviceShadowView(r.shadow),
-      });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -78,7 +61,7 @@ export function TriagePanel() {
   );
 }
 
-function TriageResultView({ view }: { view: TriageView }) {
+function TriageResultView({ view }: { view: TriageOutdatedSocView }) {
   const { shadow } = view;
   const nextStepClass =
     view.nextStep === "SHADOW_STALE"

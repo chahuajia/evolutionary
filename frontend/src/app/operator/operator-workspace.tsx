@@ -6,7 +6,7 @@ import {
   DEFAULT_OVERRIDE_ID,
   DEFAULT_OVERRIDE_TEMPLATE_ID,
   DEFAULT_PACKAGE_TEMPLATE_ID,
-} from "@/domains/operator/infrastructure/operator-gateway";
+} from "@/domains/operator/application/load-effective-product";
 import { ApproveDownlinePanel } from "./approve-downline-panel";
 import { NextVersionPanel } from "./next-version-panel";
 import { PackageOverridePanel } from "./package-override-panel";

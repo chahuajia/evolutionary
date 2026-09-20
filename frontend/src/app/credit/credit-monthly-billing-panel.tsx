@@ -8,9 +8,8 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   DEFAULT_CREDIT_USER,
-  postMonthlyBilling,
-} from "@/domains/credit/infrastructure/credit-gateway";
-import { toBillingStatementView } from "@/domains/credit/domain/billing-statement-view";
+  runMonthlyBilling,
+} from "@/domains/credit/application/run-monthly-billing";
 import styles from "./page.module.css";
 
 const DEFAULT_PERIOD_START = "2026-08-01";
@@ -31,20 +30,10 @@ export function CreditMonthlyBillingPanel() {
     setError(null);
     setResult(null);
     try {
-      const statement = await postMonthlyBilling({
+      const view = await runMonthlyBilling({
         userId: userId.trim() || DEFAULT_CREDIT_USER,
         periodStart,
         periodEnd,
-      });
-      const view = toBillingStatementView({
-        id: statement.id,
-        userId: statement.userId,
-        status: statement.status,
-        totalDue: statement.totalDue,
-        periodStart: statement.periodStart,
-        periodEnd: statement.periodEnd,
-        dueDate: statement.dueDate,
-        paidAt: statement.paidAt,
       });
       setResult(
         [
@@ -82,7 +71,6 @@ export function CreditMonthlyBillingPanel() {
           <input
             value={periodStart}
             onChange={(e) => setPeriodStart(e.target.value)}
-            placeholder="YYYY-MM-DD"
           />
         </label>
         <label>
@@ -90,7 +78,6 @@ export function CreditMonthlyBillingPanel() {
           <input
             value={periodEnd}
             onChange={(e) => setPeriodEnd(e.target.value)}
-            placeholder="YYYY-MM-DD"
           />
         </label>
         <button type="submit" disabled={busy}>
@@ -98,7 +85,7 @@ export function CreditMonthlyBillingPanel() {
         </button>
       </form>
       {error ? (
-        <p className={styles.note} role="alert">
+        <p className={styles.error} role="alert">
           {error}
         </p>
       ) : null}

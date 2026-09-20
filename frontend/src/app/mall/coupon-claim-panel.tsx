@@ -13,11 +13,11 @@ import {
   type UserCouponView,
 } from "@/domains/mall/domain/user-coupon-view";
 import { loadCampaign } from "@/domains/mall/application/load-campaign";
+import { loadCouponTemplate } from "@/domains/mall/application/load-coupon-template";
 import {
   DEFAULT_MALL_CAMPAIGN,
   DEFAULT_MALL_TEMPLATE,
   DEFAULT_MALL_USER,
-  fetchCouponTemplate,
   postClaimCoupon,
 } from "@/domains/mall/infrastructure/mall-gateway";
 import styles from "./page.module.css";
@@ -37,10 +37,10 @@ export function CouponClaimPanel() {
     let cancelled = false;
     const tid = templateId.trim() || DEFAULT_MALL_TEMPLATE;
     setLoadError(null);
-    fetchCouponTemplate(tid)
-      .then((dto) => {
+    loadCouponTemplate(tid)
+      .then((tpl) => {
         if (cancelled) return;
-        setFaceCents(dto.faceBudgetCents);
+        setFaceCents(tpl.faceBudgetCents);
       })
       .catch((err) => {
         if (cancelled) return;
