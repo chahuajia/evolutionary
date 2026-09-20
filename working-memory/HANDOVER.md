@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-20 16:07（v54；波次以 `loop.md` 为准）
+**写于**：2026-09-20 16:12（v55；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v53（仍写 HEAD `e405254` —— 已过时）
+**取代**：v54（仍写 HEAD `469a0a2` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `469a0a2`。前端 153/153。
-wave130 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `27d1837`。前端 153/153。
+wave131 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -137,6 +137,7 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave128** | loadCreditStatement · loadDeviceShadow · 岛经用例 | ✅ `54002ab` · 前端 **153/153** |
 | **wave129** | loadEntitlement · 权益换电岛经用例 | ✅ `e405254` · 前端 **153/153** |
 | **wave130** | loadActiveEntitlements · loadCommerceOrder | ✅ `469a0a2` · 前端 **153/153** |
+| **wave131** | loadAccrualsByOrderId · 冲销岛经用例 | ✅ `27d1837` · 前端 **153/153** |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -172,8 +173,8 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **153/153** · HEAD `469a0a2`。父自选推进。
-门禁轴可 idle；wave130 默认选卡/订单读经 usecase。下刀 settlement / credit apply。拒 ReferralBinding/CreditLedgerDebt。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **153/153** · HEAD `27d1837`。父自选推进。
+门禁轴可 idle；wave131 loadAccrualsByOrderId。下刀 iot triage / credit monthly。拒 ReferralBinding/CreditLedgerDebt。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---

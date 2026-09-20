@@ -1,10 +1,10 @@
 ﻿# evo-collab-extreme（双轴极端 · 无人值守完成）
 
-**更新**：2026-09-20 16:07  
+**更新**：2026-09-20 16:12  
 **模式**：主树父写（小切片）· **禁止**为 <5min 切片建 worktree/派 Task  
 **状态**：**▶ 运行中**（常设规则：父自选推进）  
-**波次**：wave130 ✅  
-**HEAD**：`469a0a2`  
+**波次**：wave131 ✅  
+**HEAD**：`27d1837`  
 **idle**：— · **lanes**：0  
 **测**：前端 **153/153** · 未 push
 
@@ -12,10 +12,10 @@
 
 | 波 | 内容 | HEAD | 测 |
 | :-- | :--- | :--- | :--- |
-| 129 | loadEntitlement · 权益换电岛经用例 | `e405254` | 153/153 |
-| **130** | **loadActiveEntitlements · loadCommerceOrder** | `469a0a2` | **153/153** |
+| 130 | loadActiveEntitlements · loadCommerceOrder | `469a0a2` | 153/153 |
+| **131** | **loadAccrualsByOrderId · 冲销岛经用例** | `27d1837` | **153/153** |
 
-**选片依据**：130←默认选卡岛自组目录；credit refund/journey 自组订单视图。
+**选片依据**：131←settlement 岛仍直调 fetchAccrualsByOrderId（e738a26 + 补用例实现）。
 
 ## 下一刀
 
@@ -23,7 +23,7 @@
 | :--- | :--- |
 | 门禁轴 idle | 列表猜 / fail-open 已清 |
 | ReferralBinding / CreditLedgerDebt | 仍无读口 · 拒 |
-| 同构扩面 | settlement 岛记意向；credit apply/purchase |
+| 同构扩面 | iot triage；credit monthly billing |
 
 ## 常设规则
 
