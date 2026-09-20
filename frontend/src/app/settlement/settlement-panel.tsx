@@ -14,8 +14,8 @@ import {
   toSettlementBatchView,
   type SettlementBatchView,
 } from "@/domains/settlement/domain/settlement-batch-view";
+import { loadAccrualsByOrderId } from "@/domains/settlement/application/load-accruals";
 import {
-  fetchAccrualsByOrderId,
   postAccrueSettlement,
   postReverseAccruals,
   postRunSettlementBatch,
@@ -61,10 +61,10 @@ export function SettlementPanel({ accruals = [] }: SettlementPanelProps) {
       return;
     }
     setOrderLoadError(null);
-    fetchAccrualsByOrderId(id)
-      .then((rows) => {
+    loadAccrualsByOrderId(id)
+      .then((views) => {
         if (cancelled) return;
-        setOrderAccruals(rows.map(toAccrualView));
+        setOrderAccruals(views);
       })
       .catch((err) => {
         if (cancelled) return;
