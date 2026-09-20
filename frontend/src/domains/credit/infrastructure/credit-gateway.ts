@@ -9,7 +9,7 @@ import {
   type BillingStatement,
   type CreditProfile,
   type ScoreTier,
-} from "@/lib/credit/types";
+} from "@/domains/credit/domain/credit-contracts";
 import { apiBase } from "@/shared/http/api-base";
 import { fetchJson } from "@/shared/http/fetch-json";
 

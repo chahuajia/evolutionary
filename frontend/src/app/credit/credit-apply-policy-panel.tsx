@@ -12,9 +12,9 @@ import {
 } from "@/domains/credit/infrastructure/credit-gateway";
 import {
   CREDIT_STATUS_LABEL,
-  formatYuan,
   type CreditProfile,
-} from "@/lib/credit/types";
+} from "@/domains/credit/domain/credit-contracts";
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import styles from "./page.module.css";
 
 const DEFAULT_POLICY_VERSION = 2;
@@ -23,8 +23,8 @@ function summarizeProfile(p: CreditProfile): string {
   const statusLabel = CREDIT_STATUS_LABEL[p.status] ?? p.status;
   return [
     `用户 ${p.userId}`,
-    `额度 ¥${formatYuan(p.creditLimit)}`,
-    `已用 ¥${formatYuan(p.usedCredit)}`,
+    `额度 ¥${formatCentsAsYuan(p.creditLimit)}`,
+    `已用 ¥${formatCentsAsYuan(p.usedCredit)}`,
     `${statusLabel}（${p.status}）`,
     `档 ${p.scoreTier}`,
     `政策 v${p.policyVersion}`,

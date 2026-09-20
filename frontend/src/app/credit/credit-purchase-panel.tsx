@@ -15,7 +15,7 @@ import {
   creditPurchaseBlockMessage,
   type CreditPurchaseBlock,
 } from "@/domains/credit/domain/credit-profile-view";
-import { formatYuan } from "@/lib/credit/types";
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import styles from "./page.module.css";
 
 const DEFAULT_PRODUCT_ID = "P-CREDIT-1";
@@ -34,7 +34,7 @@ function summarizePurchase(r: CreditPurchaseResult): string {
   ];
   if (r.productId) parts.push(`商品 ${r.productId}`);
   if (r.paidAmountCents != null) {
-    parts.push(`金额 ¥${formatYuan(r.paidAmountCents)}`);
+    parts.push(`金额 ¥${formatCentsAsYuan(r.paidAmountCents)}`);
   }
   if (r.debtId) parts.push(`债务 ${r.debtId}`);
   return parts.join(" · ");

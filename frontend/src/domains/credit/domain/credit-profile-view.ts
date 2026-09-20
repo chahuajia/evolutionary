@@ -8,7 +8,7 @@ import {
   type CreditProfile,
   type CreditStatus,
   type ScoreTier,
-} from "@/lib/credit/types";
+} from "@/domains/credit/domain/credit-contracts";
 
 export type CreditPurchaseBlock = "ok" | "status" | "limit";
 

@@ -7,9 +7,9 @@ import {
   DEFAULT_CREDIT_USER,
   loadCreditProfile,
 } from "@/domains/credit/application/load-credit-profile";
-import { toBillingStatementView } from "@/domains/credit/domain/billing-statement-view";
+import { loadCreditStatements } from "@/domains/credit/application/load-credit-statements";
 import type { CreditProfileView } from "@/domains/credit/domain/credit-profile-view";
-import { fetchCreditStatements } from "@/domains/credit/infrastructure/credit-gateway";
+import type { BillingStatementView } from "@/domains/credit/domain/billing-statement-view";
 import { CreditRefreshButton } from "./credit-refresh";
 import { CreditWorkspace } from "./credit-workspace";
 import styles from "./page.module.css";
@@ -23,27 +23,16 @@ function statusBadgeClass(status: string): string {
 
 export default async function CreditPage() {
   let profile: CreditProfileView | null = null;
-  let statements: ReturnType<typeof toBillingStatementView>[] = [];
+  let statements: BillingStatementView[] = [];
   let error: string | null = null;
 
   try {
     const [p, s] = await Promise.all([
       loadCreditProfile(DEFAULT_CREDIT_USER),
-      fetchCreditStatements(DEFAULT_CREDIT_USER),
+      loadCreditStatements(DEFAULT_CREDIT_USER),
     ]);
     profile = p;
-    statements = s.map((row) =>
-      toBillingStatementView({
-        id: row.id,
-        userId: row.userId,
-        status: row.status,
-        totalDue: row.totalDue,
-        periodStart: row.periodStart,
-        periodEnd: row.periodEnd,
-        dueDate: row.dueDate,
-        paidAt: row.paidAt,
-      }),
-    );
+    statements = s;
   } catch (e) {
     error =
       e instanceof Error
