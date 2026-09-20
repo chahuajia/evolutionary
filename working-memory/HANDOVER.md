@@ -1,11 +1,11 @@
 # 交接：给下一个 Agent
 
-**写于**：2026-09-20 09:52（v25；波次以 `loop.md` 为准）
+**写于**：2026-09-20 10:00（v26；波次以 `loop.md` 为准）
 **读者**：新开对话的 Agent（不是给用户的作业）
-**取代**：v24（01:02 仍写 HEAD `b4b6548` —— 已过时）
+**取代**：v25（09:52 仍写 HEAD `d1949dd` —— 已过时）
 
-**当前总状态**：**▶ 运行中（主树父写）**。HEAD `d1949dd`。前端 152/152。
-wave100 已落。常设规则：父自选推进，不等人。
+**当前总状态**：**▶ 运行中（主树父写）**。HEAD `98d6d8b`。前端 152/152。
+wave101 已落。常设规则：父自选推进，不等人。
 
 > ⚠️ **本文件会腐烂。** 一切以后端代码 + `tasks/evo-collab-extreme/loop.md` 为准。
 > 上次交接就因为 HEAD 停在 `303dc35` 而误导（实际早已前进）。
@@ -107,6 +107,7 @@ cd backend && mvn -o test     # →  218 tests, 0 failures, BUILD SUCCESS
 | **wave98** | GET 模板读口喂发布/派生门 | ✅ `e9ecc48` · 前端 **152/152** |
 | **wave99** | GET 权益读口喂换电/计量岛 | ✅ `b4b6548` · 前端 **152/152** · CreditOverdueHttpIT |
 | **wave100** | GET ACTIVE 目录喂默认选卡 | ✅ `d1949dd` · 前端 **152/152** · DefaultSelect* 5/5 |
+| **wave101** | GET 组织读口喂操作方门 | ✅ `98d6d8b` · 前端 **152/152** · PublishPackageTemplateHttpIT |
 
 wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-maintenance-ticket-jpa`。
 历史 worktree（35a–45b）约 20+ 棵残留 —— **用户未要求 prune，不要擅自 `worktree remove`**。
@@ -142,7 +143,7 @@ wave42 两路的分支仍在：`wave42/46a-alert-store-jpa`、`wave42/46b-mainte
 
 ## 下一刀
 
-见 `tasks/evo-collab-extreme/loop.md`。前端 **152/152** · HEAD `d1949dd`。父自选推进。
+见 `tasks/evo-collab-extreme/loop.md`。前端 **152/152** · HEAD `98d6d8b`。父自选推进。
 禁止再派 Task/worktree 给 <5min 切片。红基线上仍只许「修基线」。
 
 ---
