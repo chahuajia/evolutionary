@@ -12,25 +12,17 @@ import {
   toUserCouponView,
   type UserCouponView,
 } from "@/domains/mall/domain/user-coupon-view";
-import {
-  parseMallSkuStatus,
-  toMallSkuView,
-  type MallSkuView,
-} from "@/domains/mall/domain/mall-sku-view";
-import {
-  parseMerchantProfileStatus,
-  toMerchantProfileView,
-  type MerchantProfileView,
-} from "@/domains/mall/domain/merchant-profile-view";
+import type { MallSkuView } from "@/domains/mall/domain/mall-sku-view";
+import type { MerchantProfileView } from "@/domains/mall/domain/merchant-profile-view";
+import { loadMallSku } from "@/domains/mall/application/load-mall-sku";
+import { loadMerchantProfile } from "@/domains/mall/application/load-merchant-profile";
+import { loadUserCoupon } from "@/domains/mall/application/load-user-coupon";
 import {
   DEFAULT_MALL_CAMPAIGN,
   DEFAULT_MALL_MERCHANT,
   DEFAULT_MALL_SKU,
   DEFAULT_MALL_TEMPLATE,
   DEFAULT_MALL_USER,
-  fetchMallSku,
-  fetchMerchantProfile,
-  fetchUserCoupon,
   postCheckoutWithCoupons,
   postClaimCoupon,
 } from "@/domains/mall/infrastructure/mall-gateway";
@@ -67,22 +59,10 @@ export function CouponCheckoutPanel() {
   useEffect(() => {
     let cancelled = false;
     setSkuLoadError(null);
-    fetchMallSku(DEFAULT_MALL_SKU)
-      .then((dto) => {
+    loadMallSku(DEFAULT_MALL_SKU, QTY)
+      .then((view) => {
         if (cancelled) return;
-        setSkuView(
-          toMallSkuView(
-            {
-              id: dto.id,
-              merchantOrgId: dto.merchantOrgId,
-              name: dto.name,
-              priceCents: dto.priceCents,
-              stock: dto.stock,
-              status: parseMallSkuStatus(dto.status),
-            },
-            QTY,
-          ),
-        );
+        setSkuView(view);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -97,16 +77,10 @@ export function CouponCheckoutPanel() {
   useEffect(() => {
     let cancelled = false;
     setMerchantLoadError(null);
-    fetchMerchantProfile(DEFAULT_MALL_MERCHANT)
-      .then((dto) => {
+    loadMerchantProfile(DEFAULT_MALL_MERCHANT)
+      .then((view) => {
         if (cancelled) return;
-        setMerchantView(
-          toMerchantProfileView({
-            orgId: dto.orgId,
-            shopName: dto.shopName,
-            status: parseMerchantProfileStatus(dto.status),
-          }),
-        );
+        setMerchantView(view);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -146,17 +120,10 @@ export function CouponCheckoutPanel() {
       return;
     }
     setCouponLoadError(null);
-    fetchUserCoupon(id)
-      .then((dto) => {
+    loadUserCoupon(id)
+      .then((view) => {
         if (cancelled) return;
-        setCouponView(
-          toUserCouponView({
-            id: dto.id,
-            userId: dto.userId,
-            templateId: dto.templateId,
-            status: parseUserCouponStatus(dto.status),
-          }),
-        );
+        setCouponView(view);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -283,15 +250,7 @@ export function CouponCheckoutPanel() {
       setResult(toCheckoutView(r));
       if (ids[0]) {
         try {
-          const dto = await fetchUserCoupon(ids[0]);
-          setCouponView(
-            toUserCouponView({
-              id: dto.id,
-              userId: dto.userId,
-              templateId: dto.templateId,
-              status: parseUserCouponStatus(dto.status),
-            }),
-          );
+          setCouponView(await loadUserCoupon(ids[0]));
         } catch {
           if (couponView && ids[0] === couponView.id) {
             setCouponView(
@@ -304,20 +263,7 @@ export function CouponCheckoutPanel() {
         }
       }
       setWalletView(await loadWallet(uid));
-      const dto = await fetchMallSku(DEFAULT_MALL_SKU);
-      setSkuView(
-        toMallSkuView(
-          {
-            id: dto.id,
-            merchantOrgId: dto.merchantOrgId,
-            name: dto.name,
-            priceCents: dto.priceCents,
-            stock: dto.stock,
-            status: parseMallSkuStatus(dto.status),
-          },
-          QTY,
-        ),
-      );
+      setSkuView(await loadMallSku(DEFAULT_MALL_SKU, QTY));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
