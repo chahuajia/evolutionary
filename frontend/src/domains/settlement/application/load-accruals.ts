@@ -11,7 +11,10 @@ import {
   toAccrualView,
   type AccrualView,
 } from "@/domains/settlement/domain/accrual-view";
-import { fetchAccruals } from "@/domains/settlement/infrastructure/settlement-gateway";
+import {
+  fetchAccruals,
+  fetchAccrualsByOrderId,
+} from "@/domains/settlement/infrastructure/settlement-gateway";
 
 /** 工作台默认看的组织 —— 与后端种子规则对齐（ORG-L2）。 */
 export const DEFAULT_SETTLEMENT_ORG = "ORG-L2";
@@ -22,5 +25,13 @@ export async function loadAccruals(
   const dtos = await fetchAccruals(orgId);
   // 视图模型在这里统一构造 —— 含展示不变量（settleAllowed / reverseAllowed /
   // blockMessage）。面板只消费，不自己判断。
+  return dtos.map(toAccrualView);
+}
+
+/** GET ?orderId= — 冲销门按订单真态。 */
+export async function loadAccrualsByOrderId(
+  orderId: string,
+): Promise<AccrualView[]> {
+  const dtos = await fetchAccrualsByOrderId(orderId);
   return dtos.map(toAccrualView);
 }
