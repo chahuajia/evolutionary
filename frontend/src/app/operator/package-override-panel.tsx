@@ -21,7 +21,6 @@ import {
   DEFAULT_OVERRIDE_TEMPLATE_ID,
   runActivatePackageOverride,
 } from "@/domains/operator/application/run-activate-package-override";
-import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
 
@@ -43,7 +42,6 @@ export function PackageOverridePanel() {
   const [templateLoadError, setTemplateLoadError] = useState<string | null>(
     null,
   );
-  const [priceLabel, setPriceLabel] = useState<number | null>(null);
   const [effective, setEffective] = useState<EffectiveProductView | null>(
     null,
   );
@@ -78,17 +76,15 @@ export function PackageOverridePanel() {
     const id = overrideId.trim() || DEFAULT_OVERRIDE_ID;
     setOverrideMissing(false);
     loadPackageOverride(id)
-      .then(({ view: next, priceCents: cents }) => {
+      .then((next) => {
         if (cancelled) return;
         setOverrideMissing(false);
         setView(next);
-        setPriceLabel(cents);
       })
       .catch(() => {
         if (cancelled) return;
         // 404：尚无覆盖，可新建激活
         setView(null);
-        setPriceLabel(null);
         setOverrideMissing(true);
       });
     return () => {
@@ -129,8 +125,7 @@ export function PackageOverridePanel() {
         },
       });
       setOverrideMissing(false);
-      setView(r.view);
-      setPriceLabel(r.priceCents);
+      setView(r);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -253,7 +248,7 @@ export function PackageOverridePanel() {
           覆盖 {view.overrideId} · {view.orgId || "—"} · {view.templateId} v
           {view.templateVersion} · {view.statusLabel}
           {view.revokeAllowed ? " · 可撤销" : ""}
-          {priceLabel != null ? ` · ¥${formatCentsAsYuan(priceLabel)}` : ""}
+          {view.priceYuan != null ? ` · ¥${view.priceYuan}` : ""}
         </p>
       ) : null}
       {effective ? (

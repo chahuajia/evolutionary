@@ -6,6 +6,8 @@
  * - `revoke` 仅 ACTIVE
  */
 
+import { formatCentsAsYuan } from "@/shared/money/format-cents";
+
 export type PackageOverrideStatus = "DRAFT" | "ACTIVE" | "REVOKED";
 
 const PACKAGE_OVERRIDE_STATUSES = ["DRAFT", "ACTIVE", "REVOKED"] as const;
@@ -32,6 +34,9 @@ export type PackageOverrideView = {
   readonly templateVersion: number;
   readonly status: PackageOverrideStatus;
   readonly statusLabel: string;
+  readonly priceCents: number | null;
+  /** 有价时的元展示；无价为 null。 */
+  readonly priceYuan: string | null;
   /** 终态：已撤销（展示结果区用，勿再 status===）。 */
   readonly revoked: boolean;
   /** 仅 DRAFT 可激活（对齐 `PackageOverride.activate`）。 */
@@ -83,7 +88,12 @@ export function toPackageOverrideView(dto: {
   templateId: string;
   templateVersion: number;
   status: PackageOverrideStatus;
+  priceCents?: number | null;
 }): PackageOverrideView {
+  const priceCents =
+    dto.priceCents != null && Number.isFinite(dto.priceCents)
+      ? dto.priceCents
+      : null;
   return {
     overrideId: dto.overrideId,
     orgId: dto.orgId,
@@ -91,6 +101,8 @@ export function toPackageOverrideView(dto: {
     templateVersion: dto.templateVersion,
     status: dto.status,
     statusLabel: PACKAGE_OVERRIDE_STATUS_LABEL[dto.status],
+    priceCents,
+    priceYuan: priceCents != null ? formatCentsAsYuan(priceCents) : null,
     revoked: isOverrideRevoked(dto.status),
     activateAllowed: canActivateOverride(dto.status),
     revokeAllowed: canRevokeOverride(dto.status),

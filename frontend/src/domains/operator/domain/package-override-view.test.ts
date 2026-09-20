@@ -62,12 +62,14 @@ describe("toPackageOverrideView", () => {
       templateId: "T-PUB-1",
       templateVersion: 1,
       status: "ACTIVE",
+      priceCents: 1999,
     });
     expect(view.activateAllowed).toBe(false);
     expect(view.revokeAllowed).toBe(true);
     expect(view.revoked).toBe(false);
     expect(view.statusLabel).toBe("已激活");
     expect(view.blockMessage).toContain("撤销");
+    expect(view.priceYuan).toBe("19.99");
   });
 
   it("REVOKED: both closed", () => {
@@ -83,5 +85,6 @@ describe("toPackageOverrideView", () => {
     expect(view.revoked).toBe(true);
     expect(isOverrideRevoked("REVOKED")).toBe(true);
     expect(view.statusLabel).toBe("已撤销");
+    expect(view.priceYuan).toBeNull();
   });
 });

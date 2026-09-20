@@ -24,14 +24,11 @@ export type ActivatePackageOverrideInput = {
   readonly patches: { readonly price?: number; readonly displayName?: string };
 };
 
-export type ActivatePackageOverrideView = {
-  readonly view: PackageOverrideView;
-  readonly priceCents: number | null;
-};
+export type { PackageOverrideView };
 
 export async function runActivatePackageOverride(
   req: ActivatePackageOverrideInput,
-): Promise<ActivatePackageOverrideView> {
+): Promise<PackageOverrideView> {
   const r = await postActivatePackageOverride({
     templateId: req.templateId.trim() || DEFAULT_OVERRIDE_TEMPLATE_ID,
     actorOrgId: req.actorOrgId.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID,
@@ -45,16 +42,14 @@ export async function runActivatePackageOverride(
       displayName: req.patches.displayName,
     },
   });
-  return {
-    view: toPackageOverrideView({
-      overrideId: r.overrideId,
-      orgId: r.orgId,
-      templateId: r.templateId,
-      templateVersion: r.templateVersion,
-      status: parsePackageOverrideStatus(r.status),
-    }),
+  return toPackageOverrideView({
+    overrideId: r.overrideId,
+    orgId: r.orgId,
+    templateId: r.templateId,
+    templateVersion: r.templateVersion,
+    status: parsePackageOverrideStatus(r.status),
     priceCents: r.priceCents,
-  };
+  });
 }
 
 export {

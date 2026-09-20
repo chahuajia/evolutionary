@@ -12,25 +12,20 @@ import {
   fetchPackageOverride,
 } from "@/domains/operator/infrastructure/operator-gateway";
 
-export type PackageOverrideLoad = {
-  readonly view: PackageOverrideView;
-  readonly priceCents: number | null;
-};
+export type { PackageOverrideView };
 
 export async function loadPackageOverride(
   overrideId: string = DEFAULT_OVERRIDE_ID,
-): Promise<PackageOverrideLoad> {
+): Promise<PackageOverrideView> {
   const dto = await fetchPackageOverride(overrideId);
-  return {
+  return toPackageOverrideView({
+    overrideId: dto.overrideId,
+    orgId: dto.orgId,
+    templateId: dto.templateId,
+    templateVersion: dto.templateVersion,
+    status: parsePackageOverrideStatus(dto.status),
     priceCents: dto.priceCents,
-    view: toPackageOverrideView({
-      overrideId: dto.overrideId,
-      orgId: dto.orgId,
-      templateId: dto.templateId,
-      templateVersion: dto.templateVersion,
-      status: parsePackageOverrideStatus(dto.status),
-    }),
-  };
+  });
 }
 
 export { DEFAULT_OVERRIDE_ID };

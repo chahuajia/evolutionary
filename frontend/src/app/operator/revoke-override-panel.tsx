@@ -14,7 +14,6 @@ import {
   DEFAULT_OVERRIDE_ID,
   revokePackageOverride,
 } from "@/domains/operator/application/revoke-package-override";
-import { formatCentsAsYuan } from "@/shared/money/format-cents";
 import { useActorOrganization } from "./use-actor-organization";
 import styles from "./page.module.css";
 
@@ -28,7 +27,6 @@ export function RevokeOverridePanel() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<PackageOverrideView | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [priceLabel, setPriceLabel] = useState<number | null>(null);
   const actorGate = useActorOrganization(
     actorOrgId,
     DEFAULT_OVERRIDE_ACTOR_ORG_ID,
@@ -38,12 +36,10 @@ export function RevokeOverridePanel() {
     let cancelled = false;
     const id = overrideId.trim() || DEFAULT_OVERRIDE_ID;
     setLoadError(null);
-    setPriceLabel(null);
     loadPackageOverride(id)
-      .then(({ view: next, priceCents }) => {
+      .then((next) => {
         if (cancelled) return;
         setView(next);
-        setPriceLabel(priceCents);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -77,8 +73,7 @@ export function RevokeOverridePanel() {
         actorUserId: actorUserId.trim() || DEFAULT_OVERRIDE_ACTOR_USER_ID,
         templateVersion: view.templateVersion,
       });
-      setView(r.view);
-      setPriceLabel(r.priceCents);
+      setView(r);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -147,9 +142,7 @@ export function RevokeOverridePanel() {
           已撤销 {view.overrideId}
           {view.orgId ? ` · ${view.orgId}` : ""}
           {view.templateId ? ` · ${view.templateId}` : ""} · {view.statusLabel}
-          {priceLabel != null
-            ? ` · patches ¥${formatCentsAsYuan(priceLabel)}`
-            : ""}
+          {view.priceYuan != null ? ` · patches ¥${view.priceYuan}` : ""}
           {" · 有效价已回落模板原价"}
         </p>
       ) : null}
