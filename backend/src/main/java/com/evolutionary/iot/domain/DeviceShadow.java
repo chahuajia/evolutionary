@@ -43,6 +43,31 @@ public final class DeviceShadow {
         this.updatedAt = updatedAt;
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static DeviceShadow rehydrate(
+            String batteryId,
+            String vendorId,
+            String externalDeviceId,
+            int soc,
+            long voltageMilli,
+            Instant lastSeenAt) {
+        if (batteryId == null || batteryId.isBlank()) {
+            throw new IllegalArgumentException("batteryId 不能为空");
+        }
+        Instant seen = Objects.requireNonNull(lastSeenAt, "lastSeenAt");
+        return new DeviceShadow(
+                batteryId,
+                Objects.requireNonNull(vendorId, "vendorId"),
+                Objects.requireNonNull(externalDeviceId, "externalDeviceId"),
+                soc,
+                voltageMilli,
+                LockState.UNLOCKED,
+                ShadowStatus.IDLE,
+                seen,
+                false,
+                seen);
+    }
+
     public static DeviceShadow seed(
             String batteryId,
             String vendorId,

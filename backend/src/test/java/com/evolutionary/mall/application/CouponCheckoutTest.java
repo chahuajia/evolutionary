@@ -23,8 +23,9 @@ import com.evolutionary.mall.domain.MallErrorCode;
 import com.evolutionary.mall.domain.MallOrder;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.MallSku;
+import com.evolutionary.mall.domain.MerchantProfile;
 import com.evolutionary.mall.domain.UserCoupon;
-import com.evolutionary.mall.domain.UserCouponStatus;
+import com.evolutionary.operator.infrastructure.InMemoryAuditLogRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -45,6 +46,7 @@ class CouponCheckoutTest {
 
     private InMemorySkus skus;
     private InMemoryMallOrders orders;
+    private InMemoryMerchants merchants;
     private InMemoryAccounts accounts;
     private InMemoryLedger ledger;
     private InMemoryTemplates templates;
@@ -58,6 +60,7 @@ class CouponCheckoutTest {
     void setUp() {
         skus = new InMemorySkus();
         orders = new InMemoryMallOrders();
+        merchants = new InMemoryMerchants();
         accounts = new InMemoryAccounts();
         ledger = new InMemoryLedger();
         templates = new InMemoryTemplates();
@@ -68,15 +71,23 @@ class CouponCheckoutTest {
                 new CheckoutMallOrderWithCoupons(
                         skus,
                         orders,
+                        merchants,
                         userCoupons,
                         templates,
                         redemptions,
                         accounts,
                         ledger,
                         CLOCK);
-        claim = new ClaimCouponFromCampaign(campaigns, templates, userCoupons);
+        claim =
+                new ClaimCouponFromCampaign(
+                        campaigns,
+                        templates,
+                        userCoupons,
+                        new InMemoryAuditLogRepository(),
+                        CLOCK);
 
         skus.put(MallSku.createOnSale("S1", "M1", "配件", Money.cny(5_000), 10));
+        merchants.put(MerchantProfile.activate("M1", "演示商家"));
         accounts.put(
                 Account.open(
                         "ACC-U",
@@ -166,7 +177,7 @@ class CouponCheckoutTest {
 
         assertEquals(500, order.discountTotal().cents());
         assertEquals(4_500, order.paidAmount().cents());
-        assertEquals(UserCouponStatus.USED, userCoupons.findById("UC1").orElseThrow().status());
+        assertEquals(UserCoupon.Status.USED, userCoupons.findById("UC1").orElseThrow().status());
         List<CouponRedemption> reds = redemptions.findByOrderId(order.id());
         assertEquals(1, reds.size());
         assertEquals(500, reds.get(0).discountAmount().cents());
@@ -302,6 +313,24 @@ class CouponCheckoutTest {
         @Override
         public Optional<MallOrder> findById(String id) {
             return Optional.ofNullable(store.get(id));
+        }
+    }
+
+    private static final class InMemoryMerchants implements MerchantProfileRepository {
+        private final Map<String, MerchantProfile> byOrgId = new HashMap<>();
+
+        void put(MerchantProfile profile) {
+            byOrgId.put(profile.orgId(), profile);
+        }
+
+        @Override
+        public void save(MerchantProfile profile) {
+            byOrgId.put(profile.orgId(), profile);
+        }
+
+        @Override
+        public Optional<MerchantProfile> findByOrgId(String orgId) {
+            return Optional.ofNullable(byOrgId.get(orgId));
         }
     }
 

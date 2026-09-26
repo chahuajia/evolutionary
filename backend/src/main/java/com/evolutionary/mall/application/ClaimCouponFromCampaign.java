@@ -5,23 +5,36 @@ import com.evolutionary.mall.domain.CouponTemplate;
 import com.evolutionary.mall.domain.MallErrorCode;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.UserCoupon;
+import com.evolutionary.operator.application.AuditLogRepository;
+import com.evolutionary.operator.domain.AuditAction;
+import com.evolutionary.operator.domain.AuditLog;
+import java.time.Clock;
 import java.util.Objects;
 import java.util.UUID;
 
-/** 从活动领券（AC-45）；budgetRemaining 不足则拒绝。 */
+/** 从活动领券（AC-45）；budgetRemaining 不足则拒绝。成功记 {@link AuditAction#COUPON_CLAIM}。 */
 public final class ClaimCouponFromCampaign {
+
+    private static final String SYSTEM_ACTOR = "system";
+    private static final String PLATFORM_ORG = "PLATFORM";
 
     private final CampaignRepository campaigns;
     private final CouponTemplateRepository templates;
     private final UserCouponRepository userCoupons;
+    private final AuditLogRepository auditLogs;
+    private final Clock clock;
 
     public ClaimCouponFromCampaign(
             CampaignRepository campaigns,
             CouponTemplateRepository templates,
-            UserCouponRepository userCoupons) {
+            UserCouponRepository userCoupons,
+            AuditLogRepository auditLogs,
+            Clock clock) {
         this.campaigns = Objects.requireNonNull(campaigns, "campaigns");
         this.templates = Objects.requireNonNull(templates, "templates");
         this.userCoupons = Objects.requireNonNull(userCoupons, "userCoupons");
+        this.auditLogs = Objects.requireNonNull(auditLogs, "auditLogs");
+        this.clock = Objects.requireNonNull(clock, "clock");
     }
 
     public MallOutcome<UserCoupon> execute(String userId, String campaignId, String templateId) {
@@ -57,6 +70,17 @@ public final class ClaimCouponFromCampaign {
         UserCoupon issued = UserCoupon.issue(newId("uc"), userId, templateId);
         campaigns.save(after);
         userCoupons.save(issued);
+
+        auditLogs.append(
+                AuditLog.of(
+                        UUID.randomUUID().toString(),
+                        SYSTEM_ACTOR,
+                        PLATFORM_ORG,
+                        AuditAction.COUPON_CLAIM,
+                        "UserCoupon",
+                        issued.id(),
+                        clock.instant()));
+
         return MallOutcome.ok(issued);
     }
 

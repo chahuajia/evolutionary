@@ -1,3 +1,22 @@
+/**
+ * 全局 tokens + 表单控件基线（各 page.module 继承）。
+ */
+
+:root {
+  --ink: #102a43;
+  --ink-muted: #486581;
+  --surface: #f4f7f9;
+  --surface-raised: #ffffff;
+  --line: #d9e2ec;
+  --accent: #0f766e;
+  --accent-soft: #ccfbf1;
+  --danger: #9b1c1c;
+  --warn: #b45309;
+  --ok: #047857;
+  --radius: 12px;
+  --shadow: 0 1px 0 rgba(16, 42, 67, 0.04), 0 12px 32px rgba(16, 42, 67, 0.06);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -6,6 +25,21 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: #fafafa;
-  color: #111;
+  min-height: 100%;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-body), "Segoe UI", sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+}
+
+code {
+  font-size: 0.86em;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: rgba(16, 42, 67, 0.06);
 }

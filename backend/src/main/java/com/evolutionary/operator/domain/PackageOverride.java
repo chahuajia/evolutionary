@@ -11,6 +11,16 @@ import java.util.Objects;
  */
 public final class PackageOverride {
 
+    /**
+     * 套餐覆盖状态（对齐 IDL PackageOverride.Status）。
+     */
+    public enum Status {
+        DRAFT,
+        ACTIVE,
+        REVOKED
+    }
+
+
     private final String id;
     private final String orgId;
     private final String templateId;
@@ -19,7 +29,7 @@ public final class PackageOverride {
     private final OverridePatches patches;
     private final Instant effectiveFrom;
     private final Instant effectiveUntil;
-    private final OverrideStatus status;
+    private final PackageOverride.Status status;
 
     private PackageOverride(
             String id,
@@ -30,7 +40,7 @@ public final class PackageOverride {
             OverridePatches patches,
             Instant effectiveFrom,
             Instant effectiveUntil,
-            OverrideStatus status) {
+            PackageOverride.Status status) {
         this.id = id;
         this.orgId = orgId;
         this.templateId = templateId;
@@ -85,11 +95,51 @@ public final class PackageOverride {
                         patches,
                         effectiveFrom,
                         null,
-                        OverrideStatus.DRAFT));
+                        PackageOverride.Status.DRAFT));
+    }
+
+    /**
+     * 从持久化回放。
+     *
+     * <p>与 {@link #createDraft} 的区别：不校验"模板已发布 / 是后代组织 /
+     * patches 非空"这些**创建时**的规则 —— 那些是写入路径的门禁，
+     * 回放时它们早已通过。这里只校验形状。
+     */
+    public static PackageOverride rehydrate(
+            String id,
+            String orgId,
+            String templateId,
+            int templateVersion,
+            List<OverridableField> allowedFields,
+            OverridePatches patches,
+            Instant effectiveFrom,
+            Instant effectiveUntil,
+            PackageOverride.Status status) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("override id 不能为空");
+        }
+        if (orgId == null || orgId.isBlank()) {
+            throw new IllegalArgumentException("orgId 不能为空");
+        }
+        Objects.requireNonNull(templateId, "templateId");
+        Objects.requireNonNull(allowedFields, "allowedFields");
+        Objects.requireNonNull(patches, "patches");
+        Objects.requireNonNull(effectiveFrom, "effectiveFrom");
+        Objects.requireNonNull(status, "status");
+        return new PackageOverride(
+                id,
+                orgId,
+                templateId,
+                templateVersion,
+                allowedFields,
+                patches,
+                effectiveFrom,
+                effectiveUntil,
+                status);
     }
 
     public OperatorOutcome<PackageOverride> activate() {
-        if (status != OverrideStatus.DRAFT) {
+        if (status != PackageOverride.Status.DRAFT) {
             return OperatorOutcome.err(OperatorErrorCode.OVERRIDE_INVALID, "仅草稿可激活");
         }
         return OperatorOutcome.ok(
@@ -102,11 +152,11 @@ public final class PackageOverride {
                         patches,
                         effectiveFrom,
                         effectiveUntil,
-                        OverrideStatus.ACTIVE));
+                        PackageOverride.Status.ACTIVE));
     }
 
     public OperatorOutcome<PackageOverride> revoke() {
-        if (status != OverrideStatus.ACTIVE) {
+        if (status != PackageOverride.Status.ACTIVE) {
             return OperatorOutcome.err(OperatorErrorCode.OVERRIDE_INVALID, "仅激活态可撤销");
         }
         return OperatorOutcome.ok(
@@ -119,11 +169,11 @@ public final class PackageOverride {
                         patches,
                         effectiveFrom,
                         effectiveUntil,
-                        OverrideStatus.REVOKED));
+                        PackageOverride.Status.REVOKED));
     }
 
     public boolean isActive() {
-        return status == OverrideStatus.ACTIVE;
+        return status == PackageOverride.Status.ACTIVE;
     }
 
     public String id() {
@@ -158,7 +208,7 @@ public final class PackageOverride {
         return effectiveUntil;
     }
 
-    public OverrideStatus status() {
+    public PackageOverride.Status status() {
         return status;
     }
 }

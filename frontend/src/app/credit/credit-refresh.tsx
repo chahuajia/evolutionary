@@ -6,6 +6,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import styles from "./credit-refresh.module.css";
 
 export function CreditRefreshButton({ className }: { className?: string }) {
   const router = useRouter();
@@ -13,9 +14,10 @@ export function CreditRefreshButton({ className }: { className?: string }) {
   const [hint, setHint] = useState<string | null>(null);
 
   return (
-    <span className={className}>
+    <span className={`${styles.wrap} ${className ?? ""}`}>
       <button
         type="button"
+        className={styles.btn}
         disabled={pending}
         onClick={() => {
           setHint(null);
@@ -25,9 +27,9 @@ export function CreditRefreshButton({ className }: { className?: string }) {
           });
         }}
       >
-        {pending ? "刷新中…" : "刷新"}
+        {pending ? "刷新中…" : "刷新档案"}
       </button>
-      {hint ? <span> · {hint}</span> : null}
+      {hint ? <span className={styles.hint}>{hint}</span> : null}
     </span>
   );
 }

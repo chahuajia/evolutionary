@@ -5,11 +5,19 @@ import java.util.Objects;
 
 public final class Order {
 
+    public enum Status {
+        CREATED,
+        PAID,
+        REFUNDED,
+        CANCELLED
+    }
+
+
     private final String id;
     private final String userId;
     private final String productId;
     private final String orgId;
-    private final OrderStatus status;
+    private final Order.Status status;
     private final Money paidAmount;
     private final Instant createdAt;
     private final Instant paidAt;
@@ -20,7 +28,7 @@ public final class Order {
             String userId,
             String productId,
             String orgId,
-            OrderStatus status,
+            Order.Status status,
             Money paidAmount,
             Instant createdAt,
             Instant paidAt,
@@ -48,7 +56,7 @@ public final class Order {
                 requireId(userId),
                 requireId(productId),
                 requireId(orgId),
-                OrderStatus.CREATED,
+                Order.Status.CREATED,
                 Objects.requireNonNull(paidAmount, "paidAmount"),
                 Objects.requireNonNull(createdAt, "createdAt"),
                 null,
@@ -60,7 +68,7 @@ public final class Order {
             String userId,
             String productId,
             String orgId,
-            OrderStatus status,
+            Order.Status status,
             Money paidAmount,
             Instant createdAt,
             Instant paidAt,
@@ -78,33 +86,33 @@ public final class Order {
     }
 
     public Order pay(Instant at) {
-        if (status != OrderStatus.CREATED) {
-            throw illegalTransition(OrderStatus.PAID);
+        if (status != Order.Status.CREATED) {
+            throw illegalTransition(Order.Status.PAID);
         }
         Objects.requireNonNull(at, "paidAt");
         return new Order(
-                id, userId, productId, orgId, OrderStatus.PAID, paidAmount, createdAt, at, refundedAt);
+                id, userId, productId, orgId, Order.Status.PAID, paidAmount, createdAt, at, refundedAt);
     }
 
     public Order cancel() {
-        if (status != OrderStatus.CREATED) {
-            throw illegalTransition(OrderStatus.CANCELLED);
+        if (status != Order.Status.CREATED) {
+            throw illegalTransition(Order.Status.CANCELLED);
         }
         return new Order(
-                id, userId, productId, orgId, OrderStatus.CANCELLED, paidAmount, createdAt, paidAt, refundedAt);
+                id, userId, productId, orgId, Order.Status.CANCELLED, paidAmount, createdAt, paidAt, refundedAt);
     }
 
     public Order refund(Instant at) {
-        if (status != OrderStatus.PAID) {
-            throw illegalTransition(OrderStatus.REFUNDED);
+        if (status != Order.Status.PAID) {
+            throw illegalTransition(Order.Status.REFUNDED);
         }
         Objects.requireNonNull(at, "refundedAt");
         return new Order(
-                id, userId, productId, orgId, OrderStatus.REFUNDED, paidAmount, createdAt, paidAt, at);
+                id, userId, productId, orgId, Order.Status.REFUNDED, paidAmount, createdAt, paidAt, at);
     }
 
     public boolean isPaid() {
-        return status == OrderStatus.PAID;
+        return status == Order.Status.PAID;
     }
 
     public String id() {
@@ -123,7 +131,7 @@ public final class Order {
         return orgId;
     }
 
-    public OrderStatus status() {
+    public Order.Status status() {
         return status;
     }
 
@@ -151,12 +159,12 @@ public final class Order {
     }
 
     public static final class IllegalTransitionException extends RuntimeException {
-        IllegalTransitionException(OrderStatus next) {
+        IllegalTransitionException(Order.Status next) {
             super("illegal order transition to " + next);
         }
     }
 
-    private IllegalTransitionException illegalTransition(OrderStatus next) {
+    private IllegalTransitionException illegalTransition(Order.Status next) {
         return new IllegalTransitionException(next);
     }
 }

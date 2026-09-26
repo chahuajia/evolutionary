@@ -11,14 +11,11 @@ import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.DomainErrorCode;
 import com.evolutionary.commerce.domain.DomainOutcome;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerInvariant;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Order;
-import com.evolutionary.commerce.domain.OrderStatus;
 import com.evolutionary.commerce.domain.Product;
-import com.evolutionary.commerce.domain.ProductStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -60,7 +57,7 @@ class PurchaseProductTest {
                         "30天不限次换电卡",
                         Money.cny(9_900),
                         30,
-                        ProductStatus.PUBLISHED));
+                        Product.Status.PUBLISHED));
         accounts.put(
                 Account.open(
                         "ACC-U-1",
@@ -87,8 +84,8 @@ class PurchaseProductTest {
         assertInstanceOf(DomainOutcome.Ok.class, outcome);
         PurchaseResult result = ((DomainOutcome.Ok<PurchaseResult>) outcome).value();
 
-        assertEquals(OrderStatus.PAID, result.order().status());
-        assertEquals(EntitlementStatus.ACTIVE, result.entitlement().status());
+        assertEquals(Order.Status.PAID, result.order().status());
+        assertEquals(Entitlement.Status.ACTIVE, result.entitlement().status());
         assertEquals(10_100, accounts.get("ACC-U-1").balanceCents());
         assertEquals(9_900, accounts.get("ACC-O-1").balanceCents());
         LedgerInvariant.assertBalanced(ledger.findAll());
@@ -124,7 +121,7 @@ class PurchaseProductTest {
                         "草稿卡",
                         Money.cny(100),
                         30,
-                        ProductStatus.DRAFT));
+                        Product.Status.DRAFT));
 
         DomainOutcome<PurchaseResult> outcome = purchase.execute("U-1", "P-2");
 
@@ -139,6 +136,11 @@ class PurchaseProductTest {
 
         void put(Product product) {
             byId.put(product.id(), product);
+        }
+
+        @Override
+        public void save(Product product) {
+            put(product);
         }
 
         @Override
@@ -252,7 +254,7 @@ class PurchaseProductTest {
         public List<Entitlement> findActiveByUser(String userId) {
             return saved.stream()
                     .filter(e -> e.userId().equals(userId))
-                    .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                    .filter(e -> e.status() == Entitlement.Status.ACTIVE)
                     .toList();
         }
     }

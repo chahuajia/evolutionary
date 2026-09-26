@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.evolutionary.mall.application.MerchantProfileRepository;
 import com.evolutionary.mall.domain.MerchantProfile;
-import com.evolutionary.mall.domain.MerchantStatus;
+import com.evolutionary.operator.domain.AuditAction;
 import com.evolutionary.operator.domain.AuditLog;
 import com.evolutionary.operator.domain.OnboardingApplication;
 import com.evolutionary.operator.domain.OperatorErrorCode;
@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** AC-40：商家入驻授予 MERCHANT，且不可发布 PackageTemplate。 */
+/** AC-40：商家入驻授予 MERCHANT，且不可发布 PackageTemplate；切片30b 审计。 */
 class MerchantOnboardingTest {
 
     private static final Instant FIXED = Instant.parse("2026-09-17T06:00:00Z");
@@ -51,7 +51,7 @@ class MerchantOnboardingTest {
         templates = new InMemoryTemplateRepo();
         audits = new InMemoryAuditRepo();
         clock = Clock.fixed(FIXED, ZoneOffset.UTC);
-        approve = new ApproveMerchantOnboarding(applications, orgs, merchants, clock);
+        approve = new ApproveMerchantOnboarding(applications, orgs, merchants, audits, clock);
         publish = new PublishPackageTemplate(templates, audits, orgs, clock);
     }
 
@@ -65,7 +65,7 @@ class MerchantOnboardingTest {
                         null,
                         List.of(),
                         List.of("SZ"),
-                        com.evolutionary.operator.domain.OrgStatus.ACTIVE);
+                        com.evolutionary.operator.domain.Organization.Status.ACTIVE);
         orgs.save(merchantOnly);
 
         OnboardingApplication app =
@@ -73,12 +73,20 @@ class MerchantOnboardingTest {
                         "ONB-1", merchantOnly.id(), OrgCapability.MERCHANT, FIXED.minusSeconds(60));
         applications.save(app);
 
-        OperatorOutcome<MerchantProfile> outcome = approve.execute("ONB-1", "黑鸟旗舰店");
+        OperatorOutcome<MerchantProfile> outcome =
+                approve.execute("ONB-1", "黑鸟旗舰店", "U-PLATFORM", "PLATFORM");
         assertInstanceOf(OperatorOutcome.Ok.class, outcome);
         MerchantProfile profile = ((OperatorOutcome.Ok<MerchantProfile>) outcome).value();
-        assertEquals(MerchantStatus.ACTIVE, profile.status());
+        assertEquals(MerchantProfile.Status.ACTIVE, profile.status());
         assertTrue(profile.isActive());
         assertEquals("ORG-M1", profile.orgId());
+
+        List<AuditLog> logs = audits.findByResourceId("ONB-1");
+        assertEquals(1, logs.size());
+        assertEquals(AuditAction.ONBOARDING_APPROVE, logs.get(0).action());
+        assertEquals("OnboardingApplication", logs.get(0).resourceType());
+        assertEquals("U-PLATFORM", logs.get(0).actorUserId());
+        assertEquals("PLATFORM", logs.get(0).orgId());
 
         Organization after = orgs.get("ORG-M1");
         assertTrue(after.hasCapability(OrgCapability.MERCHANT));
@@ -100,6 +108,59 @@ class MerchantOnboardingTest {
                 ((OperatorOutcome.Err<PackageTemplate>) rejected).code());
     }
 
+    @Test
+    @DisplayName("切片30b：批准 APP-M1 → findByResourceId 有 ONBOARDING_APPROVE")
+    void approveAppM1RecordsAudit() {
+        Organization merchantOnly =
+                Organization.create(
+                        "ORG-NEW",
+                        "新商家待入驻",
+                        null,
+                        List.of(),
+                        List.of("SZ"),
+                        com.evolutionary.operator.domain.Organization.Status.ACTIVE);
+        orgs.save(merchantOnly);
+        applications.save(
+                OnboardingApplication.submit(
+                        "APP-M1",
+                        merchantOnly.id(),
+                        OrgCapability.MERCHANT,
+                        FIXED.minusSeconds(60)));
+
+        OperatorOutcome<MerchantProfile> outcome =
+                approve.execute("APP-M1", "黑鸟旗舰店", "U-PLATFORM", "PLATFORM");
+        assertInstanceOf(OperatorOutcome.Ok.class, outcome);
+
+        List<AuditLog> logs = audits.findByResourceId("APP-M1");
+        assertEquals(1, logs.size());
+        assertEquals(AuditAction.ONBOARDING_APPROVE, logs.get(0).action());
+    }
+
+    @Test
+    @DisplayName("切片30b：非 MERCHANT 申请批准失败 → 无 ONBOARDING_APPROVE 审计")
+    void rejectOperatorOnboardingWritesNoAudit() {
+        Organization pending =
+                Organization.create(
+                        "ORG-OP",
+                        "待批运营商",
+                        null,
+                        List.of(),
+                        List.of("SZ"),
+                        com.evolutionary.operator.domain.Organization.Status.ACTIVE);
+        orgs.save(pending);
+        applications.save(
+                OnboardingApplication.submit(
+                        "APP-OP-X", pending.id(), OrgCapability.OPERATOR, FIXED.minusSeconds(60)));
+
+        OperatorOutcome<MerchantProfile> outcome =
+                approve.execute("APP-OP-X", "不应开店", "U-PLATFORM", "PLATFORM");
+        assertInstanceOf(OperatorOutcome.Err.class, outcome);
+        assertEquals(
+                OperatorErrorCode.CAPABILITY_DENIED,
+                ((OperatorOutcome.Err<MerchantProfile>) outcome).code());
+        assertTrue(audits.findByResourceId("APP-OP-X").isEmpty());
+    }
+
     private static final class InMemoryOrgRepo implements OrganizationRepository {
         private final Map<String, Organization> store = new HashMap<>();
 
@@ -111,6 +172,11 @@ class MerchantOnboardingTest {
         @Override
         public Optional<Organization> findById(String id) {
             return Optional.ofNullable(store.get(id));
+        }
+
+        @Override
+        public List<Organization> findAll() {
+            return List.copyOf(store.values());
         }
     }
 

@@ -1,6 +1,7 @@
 ﻿# Working Memory — evolutionary（换电平台）
 
-**更新**：2026-09-17 ｜ HEAD `07bdfab`（`version/v0`；phase-0..7 + AC-60/61）
+**更新**：2026-09-19 ｜ 活跃线 HEAD `303dc35`（`topic/fe-ddd-rsc`）  
+**新对话先读**：[HANDOVER.md](HANDOVER.md)（⏸ 未说「继续」勿派集群）
 
 ## 仓库归属
 

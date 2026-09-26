@@ -8,11 +8,9 @@ import com.evolutionary.commerce.domain.BatteryAsset;
 import com.evolutionary.commerce.domain.DomainErrorCode;
 import com.evolutionary.commerce.domain.DomainOutcome;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Order;
 import com.evolutionary.commerce.domain.Product;
-import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.domain.SwapLimit;
 import com.evolutionary.commerce.domain.UsageEvent;
 import java.time.Clock;
@@ -58,7 +56,7 @@ class FiniteSwapEntitlementTest {
                         "P-2",
                         T0.minusSeconds(60),
                         T0.plusSeconds(86_400),
-                        EntitlementStatus.ACTIVE,
+                        Entitlement.Status.ACTIVE,
                         10));
 
         DomainOutcome<UsageEvent> outcome = swap.execute("U-1", "E-F", "CAB-1");
@@ -78,7 +76,7 @@ class FiniteSwapEntitlementTest {
                         "P-2",
                         T0.minusSeconds(60),
                         T0.plusSeconds(86_400),
-                        EntitlementStatus.ACTIVE,
+                        Entitlement.Status.ACTIVE,
                         0));
 
         DomainOutcome<UsageEvent> outcome = swap.execute("U-1", "E-0", "CAB-1");
@@ -100,7 +98,7 @@ class FiniteSwapEntitlementTest {
                         Money.cny(9900),
                         30,
                         SwapLimit.unlimited(),
-                        ProductStatus.PUBLISHED);
+                        Product.Status.PUBLISHED);
         Order paid =
                 Order.create("O-1", "U-1", "P-1", "ORG-1", Money.cny(9900), T0).pay(T0);
         entitlements.put(Entitlement.createActive("E-U", paid, p1, T0));
@@ -109,7 +107,7 @@ class FiniteSwapEntitlementTest {
 
         assertInstanceOf(DomainOutcome.Ok.class, outcome);
         assertNull(entitlements.get("E-U").remainingSwaps());
-        assertEquals(EntitlementStatus.ACTIVE, entitlements.get("E-U").status());
+        assertEquals(Entitlement.Status.ACTIVE, entitlements.get("E-U").status());
     }
 
     private static final class InMemoryEntitlements implements EntitlementRepository {
@@ -138,7 +136,7 @@ class FiniteSwapEntitlementTest {
         public List<Entitlement> findActiveByUser(String userId) {
             return byId.values().stream()
                     .filter(e -> e.userId().equals(userId))
-                    .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                    .filter(e -> e.status() == Entitlement.Status.ACTIVE)
                     .toList();
         }
     }

@@ -4,13 +4,20 @@ import java.util.Objects;
 
 public final class Product {
 
+    public enum Status {
+        DRAFT,
+        PUBLISHED,
+        DEPRECATED
+    }
+
+
     private final String id;
     private final String orgId;
     private final String name;
     private final Money price;
     private final int durationDays;
     private final SwapLimit swapLimit;
-    private final ProductStatus status;
+    private final Product.Status status;
     /** null = FIXED_PRICE；非 null = METERED 单价（每 SOC 单位）。 */
     private final Money meteredRate;
 
@@ -21,7 +28,7 @@ public final class Product {
             Money price,
             int durationDays,
             SwapLimit swapLimit,
-            ProductStatus status,
+            Product.Status status,
             Money meteredRate) {
         this.id = id;
         this.orgId = orgId;
@@ -40,7 +47,7 @@ public final class Product {
             String name,
             Money price,
             int durationDays,
-            ProductStatus status) {
+            Product.Status status) {
         return create(id, orgId, name, price, durationDays, SwapLimit.unlimited(), status);
     }
 
@@ -51,7 +58,7 @@ public final class Product {
             Money price,
             int durationDays,
             SwapLimit swapLimit,
-            ProductStatus status) {
+            Product.Status status) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("product id must not be blank");
         }
@@ -74,7 +81,7 @@ public final class Product {
 
     /** phase-1 P3：METERED { unit: SOC, rate }。 */
     public static Product createMetered(
-            String id, String orgId, String name, Money ratePerSocUnit, ProductStatus status) {
+            String id, String orgId, String name, Money ratePerSocUnit, Product.Status status) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("product id must not be blank");
         }
@@ -96,8 +103,29 @@ public final class Product {
                 ratePerSocUnit);
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static Product rehydrate(
+            String id,
+            String orgId,
+            String name,
+            Money price,
+            int durationDays,
+            SwapLimit swapLimit,
+            Product.Status status,
+            Money meteredRate) {
+        return new Product(
+                id,
+                orgId,
+                name,
+                Objects.requireNonNull(price, "price"),
+                durationDays,
+                Objects.requireNonNull(swapLimit, "swapLimit"),
+                Objects.requireNonNull(status, "status"),
+                meteredRate);
+    }
+
     public boolean isPublished() {
-        return status == ProductStatus.PUBLISHED;
+        return status == Product.Status.PUBLISHED;
     }
 
     public boolean isMetered() {
@@ -128,7 +156,7 @@ public final class Product {
         return swapLimit;
     }
 
-    public ProductStatus status() {
+    public Product.Status status() {
         return status;
     }
 

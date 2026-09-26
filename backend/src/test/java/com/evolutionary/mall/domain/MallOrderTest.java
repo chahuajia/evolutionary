@@ -1,5 +1,7 @@
 package com.evolutionary.mall.domain;
 
+
+import com.evolutionary.commerce.domain.Order;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,7 +26,7 @@ class MallOrderTest {
         MallOrder paid = created.pay(T0.plusSeconds(1));
 
         assertTrue(paid.isPaid());
-        assertEquals(MallOrderStatus.PAID, paid.status());
+        assertEquals(MallOrder.Status.PAID, paid.status());
         assertEquals(5_000, paid.paidAmount().cents());
         assertEquals(T0.plusSeconds(1), paid.paidAt());
     }

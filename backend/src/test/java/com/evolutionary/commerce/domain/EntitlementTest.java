@@ -23,7 +23,7 @@ class EntitlementTest {
                         "30天卡",
                         Money.cny(9_900),
                         30,
-                        ProductStatus.PUBLISHED);
+                        Product.Status.PUBLISHED);
         Order paid = Order.create("O-1", "U-1", "P-1", "ORG-1", Money.cny(9_900), T0).pay(T0);
 
         Entitlement entitlement = Entitlement.createActive("E-1", paid, product, T0);
@@ -41,7 +41,7 @@ class EntitlementTest {
                         "30天卡",
                         Money.cny(9_900),
                         30,
-                        ProductStatus.PUBLISHED);
+                        Product.Status.PUBLISHED);
         Order created = Order.create("O-1", "U-1", "P-1", "ORG-1", Money.cny(9_900), T0);
 
         assertThrows(
@@ -59,13 +59,13 @@ class EntitlementTest {
                         "30天卡",
                         Money.cny(9_900),
                         30,
-                        ProductStatus.PUBLISHED);
+                        Product.Status.PUBLISHED);
         Order paid = Order.create("O-1", "U-1", "P-1", "ORG-1", Money.cny(9_900), T0).pay(T0);
         Entitlement active = Entitlement.createActive("E-1", paid, product, T0);
 
         Entitlement revoked = active.revoke();
 
-        assertEquals(EntitlementStatus.REVOKED, revoked.status());
+        assertEquals(Entitlement.Status.REVOKED, revoked.status());
         assertFalse(revoked.isActiveAt(T0.plusSeconds(1)));
     }
 }

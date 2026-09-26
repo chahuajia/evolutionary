@@ -6,10 +6,20 @@ import java.util.Objects;
 /** 能力入驻申请（运营商/商家共享框架）。 */
 public final class OnboardingApplication {
 
+    /**
+     * 入驻申请状态。
+     */
+    public enum Status {
+        SUBMITTED,
+        APPROVED,
+        REJECTED
+    }
+
+
     private final String id;
     private final String orgId;
     private final OrgCapability capability;
-    private final OnboardingStatus status;
+    private final OnboardingApplication.Status status;
     private final Instant submittedAt;
     private final Instant reviewedAt;
 
@@ -17,7 +27,7 @@ public final class OnboardingApplication {
             String id,
             String orgId,
             OrgCapability capability,
-            OnboardingStatus status,
+            OnboardingApplication.Status status,
             Instant submittedAt,
             Instant reviewedAt) {
         this.id = id;
@@ -41,20 +51,45 @@ public final class OnboardingApplication {
                 id,
                 orgId,
                 capability,
-                OnboardingStatus.SUBMITTED,
+                OnboardingApplication.Status.SUBMITTED,
                 Objects.requireNonNull(submittedAt, "submittedAt"),
                 null);
     }
 
+    /**
+     * 从持久化回放。
+     *
+     * <p>与 {@link #submit} 的区别：**不做状态机校验**——持久层里已经是 `APPROVED`
+     * 的申请不需要再"批准"一次。校验的是**形状**（id/orgId 非空、能力与状态非 null）。
+     */
+    public static OnboardingApplication rehydrate(
+            String id,
+            String orgId,
+            OrgCapability capability,
+            OnboardingApplication.Status status,
+            Instant submittedAt,
+            Instant reviewedAt) {
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("id 不能为空");
+        }
+        if (orgId == null || orgId.isBlank()) {
+            throw new IllegalArgumentException("orgId 不能为空");
+        }
+        Objects.requireNonNull(capability, "capability");
+        Objects.requireNonNull(status, "status");
+        Objects.requireNonNull(submittedAt, "submittedAt");
+        return new OnboardingApplication(id, orgId, capability, status, submittedAt, reviewedAt);
+    }
+
     public OnboardingApplication approve(Instant reviewedAt) {
-        if (status != OnboardingStatus.SUBMITTED) {
+        if (status != OnboardingApplication.Status.SUBMITTED) {
             throw new IllegalStateException("仅 submitted 可批准");
         }
         return new OnboardingApplication(
                 id,
                 orgId,
                 capability,
-                OnboardingStatus.APPROVED,
+                OnboardingApplication.Status.APPROVED,
                 submittedAt,
                 Objects.requireNonNull(reviewedAt, "reviewedAt"));
     }
@@ -71,7 +106,7 @@ public final class OnboardingApplication {
         return capability;
     }
 
-    public OnboardingStatus status() {
+    public OnboardingApplication.Status status() {
         return status;
     }
 

@@ -1,20 +1,19 @@
-# FE agent status（S36）
+# FE agent status（extreme · wave17 · 切片21b）
 
-**分支**：`topic/credit-http-live`  
-**日期**：2026-09-17
+**日期**：2026-09-18 · evo-collab-extreme wave17  
+**分支**：`wave17/21b-settlement-fe`  
+**21b**：结算批 FE · SettlementPanel · SUCCESS  
 
 ## 完成
 
-- `/credit` 从全 CSR（`useEffect` fetch）改为 **async RSC** 首屏拉数
-- 新增 `domains/credit/infrastructure/credit-gateway.ts`（自 `lib/credit/api` 迁出；api 薄壳再导出）
-- RSC 服务端直连 `BACKEND_ORIGIN`；小客户端岛 `credit-refresh.tsx`（`router.refresh`）
-- 读模型仍用 `cache: 'no-store'`（信用档案/账单）
+### Slice 21b（结算批 FE）
+
+- `domains/settlement/infrastructure/settlement-gateway.ts`：`postRunSettlementBatch` → `POST /settlement/batches`；可选 `postAccrueOnOrderCompleted` → `POST /settlement/accruals`（对齐 21a：`orgId`/`amountCents`）
+- `app/settlement/*`：结算页 + SettlementPanel（批优先 + 可选意向）
+- `app/page.tsx`：首页链到 `/settlement`
+- `npx tsc --noEmit` 通过（顺手去掉 mall-gateway 重复 checkout 定义）
+- 未改 backend；未 push
 
 ## 阻塞
 
-- 无。未改 backend / collaboration。
-
-## 备注
-
-- `domains/credit/application` / `domain` 分层未完整铺开（类型仍在 `lib/credit/types`）；本轮以 gateway + RSC 纠偏为主。
-- 是否需 collaboration 新条：**否**（目标架构已有 WM 草案；RSC 直连约定与既有 `BACKEND_ORIGIN` rewrite 一致）。
+- 依赖 21a BE 暴露 `POST /settlement/batches`（及 `/settlement/accruals`）

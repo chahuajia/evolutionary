@@ -4,6 +4,18 @@ package com.evolutionary.operator.domain;
 public enum AuditAction {
     TEMPLATE_PUBLISH,
     TEMPLATE_DEPRECATE,
+    /** 从已发布模板派生下一版本草稿（AC-25）。 */
+    TEMPLATE_NEXT_VERSION,
     OVERRIDE_ACTIVATE,
-    OVERRIDE_REVOKE
+    OVERRIDE_REVOKE,
+    /** 平台批准商家入驻（切片30b · P0 轨迹）。 */
+    ONBOARDING_APPROVE,
+    /** 信用逾期标记（切片32a）。 */
+    CREDIT_MARK_OVERDUE,
+    /** 信用政策降额应用（切片32a）。 */
+    CREDIT_POLICY_DOWNGRADE,
+    /** 活动领券（切片33a）。 */
+    COUPON_CLAIM,
+    /** 月度出账（切片33b）。 */
+    CREDIT_MONTHLY_BILLING
 }

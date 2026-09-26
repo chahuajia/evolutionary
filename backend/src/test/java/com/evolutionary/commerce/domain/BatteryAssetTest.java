@@ -14,7 +14,7 @@ class BatteryAssetTest {
     void checkout() {
         BatteryAsset rented =
                 BatteryAsset.createIdle("BAT-1", "ORG-1", "v", "m").checkout("U-1");
-        assertEquals(BatteryAssetStatus.RENTED, rented.status());
+        assertEquals(BatteryAsset.Status.RENTED, rented.status());
         assertEquals("U-1", rented.currentHolderId());
     }
 
@@ -23,7 +23,7 @@ class BatteryAssetTest {
     void returnToIdle() {
         BatteryAsset idle =
                 BatteryAsset.createIdle("BAT-1", "ORG-1", "v", "m").checkout("U-1").returnToIdle();
-        assertEquals(BatteryAssetStatus.IDLE, idle.status());
+        assertEquals(BatteryAsset.Status.IDLE, idle.status());
         assertNull(idle.currentHolderId());
     }
 

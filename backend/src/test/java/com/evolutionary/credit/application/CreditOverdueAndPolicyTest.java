@@ -18,12 +18,10 @@ import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.DomainErrorCode;
 import com.evolutionary.commerce.domain.DomainOutcome;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Order;
 import com.evolutionary.commerce.domain.Product;
-import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.domain.UsageEvent;
 import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditErrorCode;
@@ -31,10 +29,10 @@ import com.evolutionary.credit.domain.CreditLedgerDebt;
 import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditPolicy;
 import com.evolutionary.credit.domain.CreditProfile;
-import com.evolutionary.credit.domain.CreditStatus;
-import com.evolutionary.credit.domain.DebtStatus;
 import com.evolutionary.credit.domain.ScoreTier;
-import com.evolutionary.credit.domain.StatementStatus;
+import com.evolutionary.operator.application.AuditLogRepository;
+import com.evolutionary.operator.domain.AuditAction;
+import com.evolutionary.operator.domain.AuditLog;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -65,6 +63,7 @@ class CreditOverdueAndPolicyTest {
     private InMemoryProducts products;
     private InMemoryBatteries batteries;
     private InMemoryUsages usages;
+    private InMemoryAuditLogs auditLogs;
     private RunMonthlyBilling billing;
     private MarkCreditOverdue markOverdue;
     private RepayBillingStatement repay;
@@ -84,14 +83,16 @@ class CreditOverdueAndPolicyTest {
         products = new InMemoryProducts();
         batteries = new InMemoryBatteries();
         usages = new InMemoryUsages();
+        auditLogs = new InMemoryAuditLogs();
 
         Clock billClock = Clock.fixed(BILL_AT, ZoneOffset.UTC);
-        billing = new RunMonthlyBilling(debts, statements, billClock);
+        billing = new RunMonthlyBilling(debts, statements, auditLogs, billClock);
         markOverdue =
                 new MarkCreditOverdue(
                         statements,
                         profiles,
                         entitlements,
+                        auditLogs,
                         Clock.fixed(PAST_DUE, ZoneOffset.UTC));
         repay =
                 new RepayBillingStatement(
@@ -102,7 +103,9 @@ class CreditOverdueAndPolicyTest {
                         ledger,
                         entitlements,
                         Clock.fixed(PAST_DUE, ZoneOffset.UTC));
-        applyPolicy = new ApplyCreditPolicyDowngrade(policies, profiles);
+        applyPolicy =
+                new ApplyCreditPolicyDowngrade(
+                        policies, profiles, auditLogs, Clock.fixed(PAST_DUE, ZoneOffset.UTC));
         purchase =
                 new PurchaseWithCredit(
                         products,
@@ -121,7 +124,7 @@ class CreditOverdueAndPolicyTest {
 
         products.put(
                 Product.create(
-                        "P1", "ORG-1", "月卡", Money.cny(3_000), 90, ProductStatus.PUBLISHED));
+                        "P1", "ORG-1", "月卡", Money.cny(3_000), 90, Product.Status.PUBLISHED));
         profiles.save(CreditProfile.open("U1", Money.cny(10_000), ScoreTier.A, 1));
         accounts.put(
                 Account.open(
@@ -161,9 +164,18 @@ class CreditOverdueAndPolicyTest {
 
         CreditOutcome<CreditProfile> marked = markOverdue.execute("U1", due.id());
         assertInstanceOf(CreditOutcome.Ok.class, marked);
-        assertEquals(CreditStatus.OVERDUE, profiles.get("U1").status());
-        assertEquals(StatementStatus.OVERDUE, statements.get(due.id()).status());
-        assertEquals(EntitlementStatus.FROZEN, entitlements.get("ENT-1").status());
+        assertEquals(CreditProfile.Status.OVERDUE, profiles.get("U1").status());
+        assertEquals(BillingStatement.Status.OVERDUE, statements.get(due.id()).status());
+        assertEquals(Entitlement.Status.FROZEN, entitlements.get("ENT-1").status());
+        List<AuditLog> overdueAudit =
+                auditLogs.findByResourceId(due.id()).stream()
+                        .filter(l -> l.action() == AuditAction.CREDIT_MARK_OVERDUE)
+                        .toList();
+        assertEquals(1, overdueAudit.size());
+        assertEquals(AuditAction.CREDIT_MARK_OVERDUE, overdueAudit.get(0).action());
+        assertEquals("BillingStatement", overdueAudit.get(0).resourceType());
+        assertEquals("system", overdueAudit.get(0).actorUserId());
+        assertEquals("PLATFORM", overdueAudit.get(0).orgId());
 
         DomainOutcome<?> swapOut = swap.execute("U1", "ENT-1", "CAB-1");
         assertInstanceOf(DomainOutcome.Err.class, swapOut);
@@ -185,8 +197,8 @@ class CreditOverdueAndPolicyTest {
         CreditOutcome<BillingStatement> repaid =
                 repay.execute("U1", due.id(), Money.cny(3_000));
         assertInstanceOf(CreditOutcome.Ok.class, repaid);
-        assertEquals(CreditStatus.GOOD, profiles.get("U1").status());
-        assertEquals(EntitlementStatus.ACTIVE, entitlements.get("ENT-1").status());
+        assertEquals(CreditProfile.Status.GOOD, profiles.get("U1").status());
+        assertEquals(Entitlement.Status.ACTIVE, entitlements.get("ENT-1").status());
 
         DomainOutcome<?> swapOut = swap.execute("U1", "ENT-1", "CAB-1");
         assertInstanceOf(DomainOutcome.Ok.class, swapOut);
@@ -221,13 +233,19 @@ class CreditOverdueAndPolicyTest {
         assertEquals(2_000, after.creditLimit().cents());
         assertEquals(3_000, after.usedCredit().cents());
         assertEquals(2, after.policyVersion());
+        List<AuditLog> downgradeAudit = auditLogs.findByResourceId("U1");
+        assertEquals(1, downgradeAudit.size());
+        assertEquals(AuditAction.CREDIT_POLICY_DOWNGRADE, downgradeAudit.get(0).action());
+        assertEquals("CreditProfile", downgradeAudit.get(0).resourceType());
+        assertEquals("system", downgradeAudit.get(0).actorUserId());
+        assertEquals("PLATFORM", downgradeAudit.get(0).orgId());
 
         CreditOutcome<CreditPurchaseResult> buy = purchase.execute("U1", "P1");
         assertInstanceOf(CreditOutcome.Err.class, buy);
         assertEquals(
                 CreditErrorCode.CREDIT_LIMIT_EXCEEDED,
                 ((CreditOutcome.Err<CreditPurchaseResult>) buy).code());
-        assertEquals(DebtStatus.OPEN, debts.get("DEBT-1").status());
+        assertEquals(CreditLedgerDebt.Status.OPEN, debts.get("DEBT-1").status());
     }
 
     private void seedOpenDebtAndActiveEntitlement() {
@@ -261,14 +279,14 @@ class CreditOverdueAndPolicyTest {
         }
 
         @Override
-        public List<CreditLedgerDebt> findByUserIdAndStatus(String userId, DebtStatus status) {
+        public List<CreditLedgerDebt> findByUserIdAndStatus(String userId, CreditLedgerDebt.Status status) {
             return byId.values().stream()
                     .filter(d -> d.userId().equals(userId) && d.status() == status)
                     .toList();
         }
 
         @Override
-        public List<CreditLedgerDebt> findByStatus(DebtStatus status) {
+        public List<CreditLedgerDebt> findByStatus(CreditLedgerDebt.Status status) {
             return byId.values().stream().filter(d -> d.status() == status).toList();
         }
 
@@ -340,12 +358,12 @@ class CreditOverdueAndPolicyTest {
         public List<Entitlement> findActiveByUser(String userId) {
             return byId.values().stream()
                     .filter(e -> e.userId().equals(userId))
-                    .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                    .filter(e -> e.status() == Entitlement.Status.ACTIVE)
                     .toList();
         }
 
         @Override
-        public List<Entitlement> findByUserIdAndStatus(String userId, EntitlementStatus status) {
+        public List<Entitlement> findByUserIdAndStatus(String userId, Entitlement.Status status) {
             return byId.values().stream()
                     .filter(e -> e.userId().equals(userId) && e.status() == status)
                     .toList();
@@ -436,6 +454,11 @@ class CreditOverdueAndPolicyTest {
         }
 
         @Override
+        public void save(Product product) {
+            put(product);
+        }
+
+        @Override
         public Product get(String productId) {
             return byId.get(productId);
         }
@@ -506,6 +529,20 @@ class CreditOverdueAndPolicyTest {
             return events.stream()
                     .filter(e -> e.entitlementId().equals(entitlementId) && e.isStarted())
                     .findFirst();
+        }
+    }
+
+    private static final class InMemoryAuditLogs implements AuditLogRepository {
+        private final List<AuditLog> logs = new ArrayList<>();
+
+        @Override
+        public void append(AuditLog log) {
+            logs.add(log);
+        }
+
+        @Override
+        public List<AuditLog> findByResourceId(String resourceId) {
+            return logs.stream().filter(l -> l.resourceId().equals(resourceId)).toList();
         }
     }
 }

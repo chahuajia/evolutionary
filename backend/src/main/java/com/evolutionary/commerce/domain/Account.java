@@ -65,6 +65,31 @@ public final class Account {
                 pointsExpiresAt);
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static Account rehydrate(
+            String id,
+            AccountOwnerType ownerType,
+            String ownerId,
+            AccountType type,
+            Currency currency,
+            long balanceCents,
+            Instant pointsExpiresAt) {
+        if (balanceCents < 0) {
+            throw new IllegalArgumentException("balance must not be negative");
+        }
+        if (type != AccountType.POINTS && pointsExpiresAt != null) {
+            throw new IllegalArgumentException("只有 POINTS 账户可以设置过期时间");
+        }
+        return new Account(
+                requireId(id),
+                Objects.requireNonNull(ownerType, "ownerType"),
+                requireId(ownerId),
+                Objects.requireNonNull(type, "type"),
+                Objects.requireNonNull(currency, "currency"),
+                balanceCents,
+                pointsExpiresAt);
+    }
+
     public Account debit(long amount) {
         if (amount < 0) {
             throw new IllegalArgumentException("amount must not be negative");

@@ -12,6 +12,7 @@ import com.evolutionary.mall.domain.MallOrder;
 import com.evolutionary.mall.domain.MallOrderLine;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.MallSku;
+import com.evolutionary.mall.domain.MerchantProfile;
 import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
@@ -27,6 +28,7 @@ public final class PurchaseMallOrder {
 
     private final MallSkuRepository skus;
     private final MallOrderRepository orders;
+    private final MerchantProfileRepository merchants;
     private final AccountRepository accounts;
     private final LedgerRepository ledger;
     private final Clock clock;
@@ -34,11 +36,13 @@ public final class PurchaseMallOrder {
     public PurchaseMallOrder(
             MallSkuRepository skus,
             MallOrderRepository orders,
+            MerchantProfileRepository merchants,
             AccountRepository accounts,
             LedgerRepository ledger,
             Clock clock) {
         this.skus = Objects.requireNonNull(skus, "skus");
         this.orders = Objects.requireNonNull(orders, "orders");
+        this.merchants = Objects.requireNonNull(merchants, "merchants");
         this.accounts = Objects.requireNonNull(accounts, "accounts");
         this.ledger = Objects.requireNonNull(ledger, "ledger");
         this.clock = Objects.requireNonNull(clock, "clock");
@@ -56,6 +60,12 @@ public final class PurchaseMallOrder {
         Objects.requireNonNull(skuId, "skuId");
         if (qty <= 0) {
             return MallOutcome.err(MallErrorCode.INVALID_QTY, "qty 必须为正");
+        }
+
+        MerchantProfile merchant =
+                merchants.findByOrgId(merchantOrgId).orElse(null);
+        if (merchant == null || !merchant.isActive()) {
+            return MallOutcome.err(MallErrorCode.MERCHANT_NOT_ACTIVE, "商家不可交易");
         }
 
         MallSku sku = skus.get(skuId);

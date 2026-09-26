@@ -7,12 +7,22 @@ import java.util.Objects;
 /** 营销活动（P5-6）；领券扣减 budgetRemaining。 */
 public final class Campaign {
 
+    /**
+     * 营销活动状态。
+     */
+    public enum Status {
+        DRAFT,
+        ACTIVE,
+        ENDED
+    }
+
+
     private final String id;
     private final String ownerOrgId;
     private final String name;
     private final Money budgetTotal;
     private final Money budgetRemaining;
-    private final CampaignStatus status;
+    private final Campaign.Status status;
     private final List<String> couponTemplateIds;
 
     private Campaign(
@@ -21,7 +31,7 @@ public final class Campaign {
             String name,
             Money budgetTotal,
             Money budgetRemaining,
-            CampaignStatus status,
+            Campaign.Status status,
             List<String> couponTemplateIds) {
         this.id = id;
         this.ownerOrgId = ownerOrgId;
@@ -49,8 +59,27 @@ public final class Campaign {
                 name,
                 budgetTotal,
                 budgetTotal,
-                CampaignStatus.ACTIVE,
+                Campaign.Status.ACTIVE,
                 couponTemplateIds);
+    }
+
+    /** 持久化回放（infrastructure → domain）。 */
+    public static Campaign rehydrate(
+            String id,
+            String ownerOrgId,
+            String name,
+            Money budgetTotal,
+            Money budgetRemaining,
+            Campaign.Status status,
+            List<String> couponTemplateIds) {
+        return new Campaign(
+                id,
+                ownerOrgId,
+                name,
+                Objects.requireNonNull(budgetTotal, "budgetTotal"),
+                Objects.requireNonNull(budgetRemaining, "budgetRemaining"),
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(couponTemplateIds, "couponTemplateIds"));
     }
 
     public boolean containsTemplate(String templateId) {
@@ -58,7 +87,7 @@ public final class Campaign {
     }
 
     public boolean isActive() {
-        return status == CampaignStatus.ACTIVE;
+        return status == Campaign.Status.ACTIVE;
     }
 
     /**
@@ -98,7 +127,7 @@ public final class Campaign {
         return budgetRemaining;
     }
 
-    public CampaignStatus status() {
+    public Campaign.Status status() {
         return status;
     }
 

@@ -1,6 +1,5 @@
 package com.evolutionary.settlement.application;
 
-import com.evolutionary.settlement.domain.AccrualStatus;
 import com.evolutionary.settlement.domain.ProfitShareAccrual;
 import com.evolutionary.settlement.domain.SettlementErrorCode;
 import com.evolutionary.settlement.domain.SettlementException;
@@ -34,7 +33,7 @@ public final class ReverseAccrualsOnRefund {
         }
 
         boolean anySettled =
-                existing.stream().anyMatch(a -> a.status() == AccrualStatus.SETTLED);
+                existing.stream().anyMatch(a -> a.status() == ProfitShareAccrual.Status.SETTLED);
         if (anySettled) {
             throw new SettlementException(
                     SettlementErrorCode.ORDER_NOT_REFUNDABLE_SETTLED, "已结算分润不可退款");
@@ -42,7 +41,7 @@ public final class ReverseAccrualsOnRefund {
 
         List<ProfitShareAccrual> pending =
                 existing.stream()
-                        .filter(a -> a.status() == AccrualStatus.PENDING)
+                        .filter(a -> a.status() == ProfitShareAccrual.Status.PENDING)
                         .toList();
         if (pending.isEmpty()) {
             return List.copyOf(existing);

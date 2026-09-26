@@ -10,12 +10,22 @@ import java.util.Objects;
  */
 public final class Organization {
 
+    /**
+     * 组织状态（对齐 IDL Organization.Status）。
+     */
+    public enum Status {
+        PENDING,
+        ACTIVE,
+        SUSPENDED
+    }
+
+
     private final String id;
     private final String name;
     private final String parentId;
     private final List<OrgCapability> capabilities;
     private final List<String> regionScope;
-    private final OrgStatus status;
+    private final Organization.Status status;
 
     private Organization(
             String id,
@@ -23,7 +33,7 @@ public final class Organization {
             String parentId,
             List<OrgCapability> capabilities,
             List<String> regionScope,
-            OrgStatus status) {
+            Organization.Status status) {
         this.id = id;
         this.name = name;
         this.parentId = parentId;
@@ -33,7 +43,7 @@ public final class Organization {
     }
 
     public static Organization createRoot(String id, String name, List<String> regionScope) {
-        return create(id, name, null, List.of(OrgCapability.OPERATOR), regionScope, OrgStatus.ACTIVE);
+        return create(id, name, null, List.of(OrgCapability.OPERATOR), regionScope, Organization.Status.ACTIVE);
     }
 
     public static Organization createChild(
@@ -42,7 +52,7 @@ public final class Organization {
             throw new IllegalArgumentException("子组织必须有 parentId");
         }
         return create(
-                id, name, parentId, List.of(OrgCapability.OPERATOR), regionScope, OrgStatus.ACTIVE);
+                id, name, parentId, List.of(OrgCapability.OPERATOR), regionScope, Organization.Status.ACTIVE);
     }
 
     public static Organization create(
@@ -51,7 +61,7 @@ public final class Organization {
             String parentId,
             List<OrgCapability> capabilities,
             List<String> regionScope,
-            OrgStatus status) {
+            Organization.Status status) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("org id 不能为空");
         }
@@ -64,8 +74,25 @@ public final class Organization {
         return new Organization(id, name, parentId, capabilities, regionScope, status);
     }
 
+    /**
+     * 从持久化回放。
+     *
+     * <p>与 {@link #create} 的区别只是**语义**：工厂表达"新建一份"，
+     * rehydrate 表达"把已有的读回来"。两者校验同一组形状约束 ——
+     * 一条从库里读出来就不合法的记录，说明库坏了，应该在被读到的那一刻就炸。
+     */
+    public static Organization rehydrate(
+            String id,
+            String name,
+            String parentId,
+            List<OrgCapability> capabilities,
+            List<String> regionScope,
+            Organization.Status status) {
+        return create(id, name, parentId, capabilities, regionScope, status);
+    }
+
     public boolean isActive() {
-        return status == OrgStatus.ACTIVE;
+        return status == Organization.Status.ACTIVE;
     }
 
     public boolean hasCapability(OrgCapability capability) {
@@ -80,6 +107,17 @@ public final class Organization {
         java.util.ArrayList<OrgCapability> next = new java.util.ArrayList<>(capabilities);
         next.add(capability);
         return new Organization(id, name, parentId, next, regionScope, status);
+    }
+
+    /** 挂上级组织（仅当尚无 parentId）。 */
+    public Organization withParent(String newParentId) {
+        if (newParentId == null || newParentId.isBlank()) {
+            throw new IllegalArgumentException("parentId 不能为空");
+        }
+        if (parentId != null) {
+            return this;
+        }
+        return new Organization(id, name, newParentId, capabilities, regionScope, status);
     }
 
     /** 仅 MERCHANT、无 OPERATOR 时不可发套餐模板。 */
@@ -111,7 +149,7 @@ public final class Organization {
         return regionScope;
     }
 
-    public OrgStatus status() {
+    public Organization.Status status() {
         return status;
     }
 }

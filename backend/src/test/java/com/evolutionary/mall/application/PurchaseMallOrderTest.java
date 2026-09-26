@@ -1,5 +1,7 @@
 package com.evolutionary.mall.application;
 
+
+import com.evolutionary.commerce.domain.Order;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -17,10 +19,11 @@ import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerInvariant;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.UsageEvent;
+import com.evolutionary.mall.domain.MallErrorCode;
 import com.evolutionary.mall.domain.MallOrder;
-import com.evolutionary.mall.domain.MallOrderStatus;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.MallSku;
+import com.evolutionary.mall.domain.MerchantProfile;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -43,6 +46,7 @@ class PurchaseMallOrderTest {
 
     private InMemorySkus skus;
     private InMemoryMallOrders orders;
+    private InMemoryMerchants merchants;
     private InMemoryAccounts accounts;
     private InMemoryLedger ledger;
     private InMemoryEntitlements entitlements;
@@ -53,16 +57,18 @@ class PurchaseMallOrderTest {
     void setUp() {
         skus = new InMemorySkus();
         orders = new InMemoryMallOrders();
+        merchants = new InMemoryMerchants();
         accounts = new InMemoryAccounts();
         ledger = new InMemoryLedger();
         entitlements = new InMemoryEntitlements();
         usages = new InMemoryUsages();
         // INV-16：用例构造不传入 entitlements / usages
-        purchase = new PurchaseMallOrder(skus, orders, accounts, ledger, CLOCK);
+        purchase = new PurchaseMallOrder(skus, orders, merchants, accounts, ledger, CLOCK);
 
         skus.put(
                 MallSku.createOnSale(
                         "S1", "M1", "商城配件", Money.cny(S1_PRICE_CENTS), 10));
+        merchants.put(MerchantProfile.activate("M1", "演示商家"));
         accounts.put(
                 Account.open(
                         "ACC-U-1",
@@ -89,7 +95,7 @@ class PurchaseMallOrderTest {
         assertInstanceOf(MallOutcome.Ok.class, outcome);
         MallOrder order = ((MallOutcome.Ok<MallOrder>) outcome).value();
 
-        assertEquals(MallOrderStatus.PAID, order.status());
+        assertEquals(MallOrder.Status.PAID, order.status());
         assertEquals(S1_PRICE_CENTS, order.paidAmount().cents());
         assertEquals(Currency.CNY, order.paidAmount().currency());
         assertEquals(1, order.lines().size());
@@ -116,6 +122,22 @@ class PurchaseMallOrderTest {
         assertEquals(10, skus.get("S1").stock());
         assertTrue(entitlements.isEmpty());
         assertTrue(usages.isEmpty());
+    }
+
+    @Test
+    @DisplayName("商家停用时拒绝下单")
+    void suspendedMerchantRejected() {
+        merchants.put(
+                MerchantProfile.rehydrate(
+                        "M1", "演示商家", MerchantProfile.Status.SUSPENDED));
+
+        MallOutcome<MallOrder> outcome = purchase.execute("U1", "M1", "S1", 1);
+
+        assertInstanceOf(MallOutcome.Err.class, outcome);
+        MallOutcome.Err<MallOrder> err = (MallOutcome.Err<MallOrder>) outcome;
+        assertEquals(MallErrorCode.MERCHANT_NOT_ACTIVE, err.code());
+        assertTrue(orders.all().isEmpty());
+        assertEquals(10, skus.get("S1").stock());
     }
 
     private static final class InMemorySkus implements MallSkuRepository {
@@ -155,6 +177,24 @@ class PurchaseMallOrderTest {
 
         List<MallOrder> all() {
             return List.copyOf(byId.values());
+        }
+    }
+
+    private static final class InMemoryMerchants implements MerchantProfileRepository {
+        private final Map<String, MerchantProfile> byOrgId = new HashMap<>();
+
+        void put(MerchantProfile profile) {
+            byOrgId.put(profile.orgId(), profile);
+        }
+
+        @Override
+        public void save(MerchantProfile profile) {
+            byOrgId.put(profile.orgId(), profile);
+        }
+
+        @Override
+        public Optional<MerchantProfile> findByOrgId(String orgId) {
+            return Optional.ofNullable(byOrgId.get(orgId));
         }
     }
 

@@ -1,5 +1,7 @@
 package com.evolutionary.mall.application;
 
+
+import com.evolutionary.commerce.domain.Order;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,11 +26,10 @@ import com.evolutionary.mall.domain.CouponTemplate;
 import com.evolutionary.mall.domain.IssuerType;
 import com.evolutionary.mall.domain.MallErrorCode;
 import com.evolutionary.mall.domain.MallOrder;
-import com.evolutionary.mall.domain.MallOrderStatus;
 import com.evolutionary.mall.domain.MallOutcome;
 import com.evolutionary.mall.domain.MallSku;
+import com.evolutionary.mall.domain.MerchantProfile;
 import com.evolutionary.mall.domain.UserCoupon;
-import com.evolutionary.mall.domain.UserCouponStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -53,6 +54,7 @@ class CheckoutMallOrderWithCouponsTest {
 
     private InMemorySkus skus;
     private InMemoryMallOrders orders;
+    private InMemoryMerchants merchants;
     private InMemoryUserCoupons userCoupons;
     private InMemoryTemplates templates;
     private InMemoryRedemptions redemptions;
@@ -66,6 +68,7 @@ class CheckoutMallOrderWithCouponsTest {
     void setUp() {
         skus = new InMemorySkus();
         orders = new InMemoryMallOrders();
+        merchants = new InMemoryMerchants();
         userCoupons = new InMemoryUserCoupons();
         templates = new InMemoryTemplates();
         redemptions = new InMemoryRedemptions();
@@ -77,6 +80,7 @@ class CheckoutMallOrderWithCouponsTest {
                 new CheckoutMallOrderWithCoupons(
                         skus,
                         orders,
+                        merchants,
                         userCoupons,
                         templates,
                         redemptions,
@@ -85,6 +89,7 @@ class CheckoutMallOrderWithCouponsTest {
                         CLOCK);
 
         skus.put(MallSku.createOnSale("S1", "M1", "商城配件", Money.cny(S1_PRICE_CENTS), 10));
+        merchants.put(MerchantProfile.activate("M1", "演示商家"));
         accounts.put(
                 Account.open(
                         "ACC-U-1",
@@ -189,11 +194,11 @@ class CheckoutMallOrderWithCouponsTest {
 
         assertInstanceOf(MallOutcome.Ok.class, outcome);
         MallOrder order = ((MallOutcome.Ok<MallOrder>) outcome).value();
-        assertEquals(MallOrderStatus.PAID, order.status());
+        assertEquals(MallOrder.Status.PAID, order.status());
         assertEquals(500, order.discountTotal().cents());
         assertEquals(4_500, order.paidAmount().cents());
 
-        assertEquals(UserCouponStatus.USED, userCoupons.get("UC-C1").status());
+        assertEquals(UserCoupon.Status.USED, userCoupons.get("UC-C1").status());
         List<CouponRedemption> reds = redemptions.findByOrderId(order.id());
         assertEquals(1, reds.size());
         assertEquals(500, reds.get(0).discountAmount().cents());
@@ -220,7 +225,7 @@ class CheckoutMallOrderWithCouponsTest {
                 MallErrorCode.COUPON_MUTEX_VIOLATION,
                 ((MallOutcome.Err<MallOrder>) outcome).code());
         assertTrue(orders.all().isEmpty());
-        assertEquals(UserCouponStatus.AVAILABLE, userCoupons.get("UC-C1").status());
+        assertEquals(UserCoupon.Status.AVAILABLE, userCoupons.get("UC-C1").status());
         assertTrue(redemptions.findAll().isEmpty());
         assertEquals(10, skus.get("S1").stock());
     }
@@ -307,6 +312,24 @@ class CheckoutMallOrderWithCouponsTest {
 
         List<MallOrder> all() {
             return List.copyOf(byId.values());
+        }
+    }
+
+    private static final class InMemoryMerchants implements MerchantProfileRepository {
+        private final Map<String, MerchantProfile> byOrgId = new HashMap<>();
+
+        void put(MerchantProfile profile) {
+            byOrgId.put(profile.orgId(), profile);
+        }
+
+        @Override
+        public void save(MerchantProfile profile) {
+            byOrgId.put(profile.orgId(), profile);
+        }
+
+        @Override
+        public Optional<MerchantProfile> findByOrgId(String orgId) {
+            return Optional.ofNullable(byOrgId.get(orgId));
         }
     }
 

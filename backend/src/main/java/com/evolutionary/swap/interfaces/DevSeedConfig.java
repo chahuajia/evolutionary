@@ -8,7 +8,11 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/** 开发种子：3 站供多站概览压测。H2 内存，重启重置。 */
+/**
+ * 开发/正式本地种子：S1/S2/S3 供 FE RSC 站列表与联调。
+ *
+ * <p>与 {@code CreditConfig} U1 共用同一 Spring 启动种子面；H2 内存，重启重置。
+ */
 @Configuration
 public class DevSeedConfig {
 

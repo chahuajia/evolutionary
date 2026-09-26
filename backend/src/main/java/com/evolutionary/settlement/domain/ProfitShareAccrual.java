@@ -11,13 +11,23 @@ import java.util.Objects;
  */
 public final class ProfitShareAccrual {
 
+    /**
+     * 分润意向状态。
+     */
+    public enum Status {
+        PENDING,
+        SETTLED,
+        REVERSED
+    }
+
+
     private final String id;
     private final String orderId;
     private final String orgId;
     private final long amountCents;
     private final String currency;
     private final int ruleVersion;
-    private final AccrualStatus status;
+    private final ProfitShareAccrual.Status status;
     private final Instant createdAt;
     private final Instant settledAt;
     private final String batchId;
@@ -30,7 +40,7 @@ public final class ProfitShareAccrual {
             long amountCents,
             String currency,
             int ruleVersion,
-            AccrualStatus status,
+            ProfitShareAccrual.Status status,
             Instant createdAt,
             Instant settledAt,
             String batchId,
@@ -46,6 +56,33 @@ public final class ProfitShareAccrual {
         this.settledAt = settledAt;
         this.batchId = batchId;
         this.reversalOf = reversalOf;
+    }
+
+    /** 持久化回放（infrastructure → domain）。 */
+    public static ProfitShareAccrual rehydrate(
+            String id,
+            String orderId,
+            String orgId,
+            long amountCents,
+            String currency,
+            int ruleVersion,
+            ProfitShareAccrual.Status status,
+            Instant createdAt,
+            Instant settledAt,
+            String batchId,
+            String reversalOf) {
+        return new ProfitShareAccrual(
+                requireId(id),
+                requireId(orderId),
+                requireId(orgId),
+                amountCents,
+                requireCurrency(currency),
+                ruleVersion,
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(createdAt, "createdAt"),
+                settledAt,
+                batchId,
+                reversalOf);
     }
 
     /** 订单完成后记一笔 PENDING 意向（不写账）。 */
@@ -67,7 +104,7 @@ public final class ProfitShareAccrual {
                 amountCents,
                 requireCurrency(currency),
                 ruleVersion,
-                AccrualStatus.PENDING,
+                ProfitShareAccrual.Status.PENDING,
                 Objects.requireNonNull(createdAt, "createdAt"),
                 null,
                 null,
@@ -82,7 +119,7 @@ public final class ProfitShareAccrual {
     public static ProfitShareAccrual reversalRecord(
             String id, ProfitShareAccrual original, Instant createdAt) {
         Objects.requireNonNull(original, "original");
-        if (original.status != AccrualStatus.PENDING && original.status != AccrualStatus.REVERSED) {
+        if (original.status != ProfitShareAccrual.Status.PENDING && original.status != ProfitShareAccrual.Status.REVERSED) {
             throw new SettlementException(
                     SettlementErrorCode.ACCRUAL_ALREADY_SETTLED, "仅未结算意向可写 reversal 记录");
         }
@@ -93,7 +130,7 @@ public final class ProfitShareAccrual {
                 original.amountCents,
                 original.currency,
                 original.ruleVersion,
-                AccrualStatus.REVERSED,
+                ProfitShareAccrual.Status.REVERSED,
                 Objects.requireNonNull(createdAt, "createdAt"),
                 null,
                 null,
@@ -102,7 +139,7 @@ public final class ProfitShareAccrual {
 
     /** 批结算：PENDING → SETTLED，关联 batchId。 */
     public ProfitShareAccrual settle(String batchId, Instant settledAt) {
-        if (status != AccrualStatus.PENDING) {
+        if (status != ProfitShareAccrual.Status.PENDING) {
             throw new IllegalStateException("仅 PENDING 可结算: " + id);
         }
         return new ProfitShareAccrual(
@@ -112,7 +149,7 @@ public final class ProfitShareAccrual {
                 amountCents,
                 currency,
                 ruleVersion,
-                AccrualStatus.SETTLED,
+                ProfitShareAccrual.Status.SETTLED,
                 createdAt,
                 Objects.requireNonNull(settledAt, "settledAt"),
                 requireId(batchId),
@@ -121,7 +158,7 @@ public final class ProfitShareAccrual {
 
     /** 结算前退款：PENDING → REVERSED（不进 Batch，INV-15）。 */
     public ProfitShareAccrual reverse() {
-        if (status != AccrualStatus.PENDING) {
+        if (status != ProfitShareAccrual.Status.PENDING) {
             throw new SettlementException(
                     SettlementErrorCode.ORDER_NOT_REFUNDABLE_SETTLED,
                     "已结算分润不可退款: " + id);
@@ -133,7 +170,7 @@ public final class ProfitShareAccrual {
                 amountCents,
                 currency,
                 ruleVersion,
-                AccrualStatus.REVERSED,
+                ProfitShareAccrual.Status.REVERSED,
                 createdAt,
                 null,
                 null,
@@ -164,7 +201,7 @@ public final class ProfitShareAccrual {
         return ruleVersion;
     }
 
-    public AccrualStatus status() {
+    public ProfitShareAccrual.Status status() {
         return status;
     }
 

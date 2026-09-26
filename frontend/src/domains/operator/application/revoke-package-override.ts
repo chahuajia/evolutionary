@@ -1,0 +1,48 @@
+/**
+ * 用例：L2 撤销套餐覆盖（编排 gateway → PackageOverrideView）。
+ */
+
+import {
+  parsePackageOverrideStatus,
+  toPackageOverrideView,
+  type PackageOverrideView,
+} from "@/domains/operator/domain/package-override-view";
+import {
+  DEFAULT_OVERRIDE_ACTOR_ORG_ID,
+  DEFAULT_OVERRIDE_ACTOR_USER_ID,
+  DEFAULT_OVERRIDE_ID,
+  postRevokePackageOverride,
+} from "@/domains/operator/infrastructure/operator-gateway";
+
+export type RevokePackageOverrideInput = {
+  overrideId?: string;
+  actorUserId?: string;
+  actorOrgId?: string;
+};
+
+export type { PackageOverrideView };
+
+export async function revokePackageOverride(
+  input: RevokePackageOverrideInput = {},
+): Promise<PackageOverrideView> {
+  const r = await postRevokePackageOverride({
+    overrideId: input.overrideId?.trim() || DEFAULT_OVERRIDE_ID,
+    actorUserId:
+      input.actorUserId?.trim() || DEFAULT_OVERRIDE_ACTOR_USER_ID,
+    actorOrgId: input.actorOrgId?.trim() || DEFAULT_OVERRIDE_ACTOR_ORG_ID,
+  });
+  return toPackageOverrideView({
+    overrideId: r.overrideId,
+    orgId: r.orgId,
+    templateId: r.templateId,
+    templateVersion: r.templateVersion,
+    status: parsePackageOverrideStatus(r.status),
+    priceCents: r.priceCents,
+  });
+}
+
+export {
+  DEFAULT_OVERRIDE_ACTOR_ORG_ID,
+  DEFAULT_OVERRIDE_ACTOR_USER_ID,
+  DEFAULT_OVERRIDE_ID,
+};

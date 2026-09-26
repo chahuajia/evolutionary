@@ -9,19 +9,15 @@ import com.evolutionary.commerce.application.LedgerRepository;
 import com.evolutionary.commerce.application.OrderRepository;
 import com.evolutionary.commerce.application.ProductRepository;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerRefType;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Order;
-import com.evolutionary.commerce.domain.OrderStatus;
 import com.evolutionary.commerce.domain.Product;
-import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.credit.domain.CreditErrorCode;
 import com.evolutionary.credit.domain.CreditLedgerDebt;
 import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditProfile;
-import com.evolutionary.credit.domain.DebtStatus;
 import com.evolutionary.credit.domain.ScoreTier;
 import java.time.Clock;
 import java.time.Instant;
@@ -68,7 +64,7 @@ class PurchaseWithCreditTest {
                         "月卡",
                         Money.cny(3_000),
                         30,
-                        ProductStatus.PUBLISHED));
+                        Product.Status.PUBLISHED));
         profiles.save(CreditProfile.open("U1", Money.cny(10_000), ScoreTier.A, 1));
     }
 
@@ -79,11 +75,11 @@ class PurchaseWithCreditTest {
         assertInstanceOf(CreditOutcome.Ok.class, outcome);
         CreditPurchaseResult result = ((CreditOutcome.Ok<CreditPurchaseResult>) outcome).value();
 
-        assertEquals(OrderStatus.PAID, result.order().status());
-        assertEquals(DebtStatus.OPEN, result.debt().status());
+        assertEquals(Order.Status.PAID, result.order().status());
+        assertEquals(CreditLedgerDebt.Status.OPEN, result.debt().status());
         assertEquals(3_000, result.debt().amount().cents());
         assertEquals(3_000, result.profile().usedCredit().cents());
-        assertEquals(EntitlementStatus.ACTIVE, result.entitlement().status());
+        assertEquals(Entitlement.Status.ACTIVE, result.entitlement().status());
         assertTrue(
                 ledger.findByOrderId(result.order().id()).stream()
                         .noneMatch(e -> e.refType() == LedgerRefType.ORDER_PAYMENT_BALANCE));
@@ -110,6 +106,11 @@ class PurchaseWithCreditTest {
 
         void put(Product p) {
             byId.put(p.id(), p);
+        }
+
+        @Override
+        public void save(Product product) {
+            put(product);
         }
 
         @Override
@@ -158,7 +159,7 @@ class PurchaseWithCreditTest {
         public List<Entitlement> findActiveByUser(String userId) {
             return byId.values().stream()
                     .filter(e -> e.userId().equals(userId))
-                    .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                    .filter(e -> e.status() == Entitlement.Status.ACTIVE)
                     .toList();
         }
     }
@@ -210,14 +211,14 @@ class PurchaseWithCreditTest {
         }
 
         @Override
-        public List<CreditLedgerDebt> findByUserIdAndStatus(String userId, DebtStatus status) {
+        public List<CreditLedgerDebt> findByUserIdAndStatus(String userId, CreditLedgerDebt.Status status) {
             return byId.values().stream()
                     .filter(d -> d.userId().equals(userId) && d.status() == status)
                     .toList();
         }
 
         @Override
-        public List<CreditLedgerDebt> findByStatus(DebtStatus status) {
+        public List<CreditLedgerDebt> findByStatus(CreditLedgerDebt.Status status) {
             return byId.values().stream().filter(d -> d.status() == status).toList();
         }
 

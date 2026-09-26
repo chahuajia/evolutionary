@@ -5,6 +5,15 @@ import java.util.Objects;
 
 public final class Entitlement {
 
+    public enum Status {
+        ACTIVE,
+        /** 信用逾期冻结，可恢复为 ACTIVE（区别于 REVOKED）。 */
+        FROZEN,
+        EXPIRED,
+        REVOKED
+    }
+
+
     private final String id;
     private final String orderId;
     private final String userId;
@@ -12,7 +21,7 @@ public final class Entitlement {
     private final Instant validFrom;
     /** null = 无窗口截止（PAY_AS_YOU_GO）；TIME_WINDOW 必有值。 */
     private final Instant validUntil;
-    private final EntitlementStatus status;
+    private final Entitlement.Status status;
     /** null = UNLIMITED；非 null = FINITE 剩余次数（INV-6/7）。 */
     private final Integer remainingSwaps;
     /** null = 非计量；PAY_AS_YOU_GO = 后付计量。 */
@@ -25,7 +34,7 @@ public final class Entitlement {
             String productId,
             Instant validFrom,
             Instant validUntil,
-            EntitlementStatus status,
+            Entitlement.Status status,
             Integer remainingSwaps,
             MeteringMode meteringMode) {
         this.id = id;
@@ -62,7 +71,7 @@ public final class Entitlement {
                 product.id(),
                 now,
                 validUntil,
-                EntitlementStatus.ACTIVE,
+                Entitlement.Status.ACTIVE,
                 remaining,
                 null);
     }
@@ -77,13 +86,13 @@ public final class Entitlement {
                 requireId(productId),
                 Objects.requireNonNull(now, "now"),
                 null,
-                EntitlementStatus.ACTIVE,
+                Entitlement.Status.ACTIVE,
                 null,
                 MeteringMode.PAY_AS_YOU_GO);
     }
 
     public boolean isActiveAt(Instant at) {
-        if (status != EntitlementStatus.ACTIVE || at.isBefore(validFrom)) {
+        if (status != Entitlement.Status.ACTIVE || at.isBefore(validFrom)) {
             return false;
         }
         // PAY_AS_YOU_GO：validUntil 为 null，不因窗口误杀
@@ -127,12 +136,12 @@ public final class Entitlement {
 
     /** INV-5：退款时撤销权益，阻止后续 COMPLETED 履约。 */
     public Entitlement revoke() {
-        if (status == EntitlementStatus.REVOKED) {
+        if (status == Entitlement.Status.REVOKED) {
             return this;
         }
-        if (status != EntitlementStatus.ACTIVE
-                && status != EntitlementStatus.EXPIRED
-                && status != EntitlementStatus.FROZEN) {
+        if (status != Entitlement.Status.ACTIVE
+                && status != Entitlement.Status.EXPIRED
+                && status != Entitlement.Status.FROZEN) {
             throw new IllegalStateException("cannot revoke entitlement in status " + status);
         }
         return new Entitlement(
@@ -142,17 +151,17 @@ public final class Entitlement {
                 productId,
                 validFrom,
                 validUntil,
-                EntitlementStatus.REVOKED,
+                Entitlement.Status.REVOKED,
                 remainingSwaps,
                 meteringMode);
     }
 
     /** 信用逾期：ACTIVE → FROZEN（可恢复）。 */
     public Entitlement freeze() {
-        if (status == EntitlementStatus.FROZEN) {
+        if (status == Entitlement.Status.FROZEN) {
             return this;
         }
-        if (status != EntitlementStatus.ACTIVE) {
+        if (status != Entitlement.Status.ACTIVE) {
             throw new IllegalStateException("cannot freeze entitlement in status " + status);
         }
         return new Entitlement(
@@ -162,14 +171,14 @@ public final class Entitlement {
                 productId,
                 validFrom,
                 validUntil,
-                EntitlementStatus.FROZEN,
+                Entitlement.Status.FROZEN,
                 remainingSwaps,
                 meteringMode);
     }
 
     /** 还款解冻：FROZEN → ACTIVE。 */
     public Entitlement unfreeze() {
-        if (status != EntitlementStatus.FROZEN) {
+        if (status != Entitlement.Status.FROZEN) {
             throw new IllegalStateException("cannot unfreeze entitlement in status " + status);
         }
         return new Entitlement(
@@ -179,7 +188,7 @@ public final class Entitlement {
                 productId,
                 validFrom,
                 validUntil,
-                EntitlementStatus.ACTIVE,
+                Entitlement.Status.ACTIVE,
                 remainingSwaps,
                 meteringMode);
     }
@@ -208,7 +217,7 @@ public final class Entitlement {
         return validUntil;
     }
 
-    public EntitlementStatus status() {
+    public Entitlement.Status status() {
         return status;
     }
 
@@ -227,7 +236,7 @@ public final class Entitlement {
             String productId,
             Instant validFrom,
             Instant validUntil,
-            EntitlementStatus status) {
+            Entitlement.Status status) {
         return rehydrate(id, orderId, userId, productId, validFrom, validUntil, status, null, null);
     }
 
@@ -238,7 +247,7 @@ public final class Entitlement {
             String productId,
             Instant validFrom,
             Instant validUntil,
-            EntitlementStatus status,
+            Entitlement.Status status,
             Integer remainingSwaps) {
         return rehydrate(
                 id, orderId, userId, productId, validFrom, validUntil, status, remainingSwaps, null);
@@ -251,7 +260,7 @@ public final class Entitlement {
             String productId,
             Instant validFrom,
             Instant validUntil,
-            EntitlementStatus status,
+            Entitlement.Status status,
             Integer remainingSwaps,
             MeteringMode meteringMode) {
         if (remainingSwaps != null && remainingSwaps < 0) {

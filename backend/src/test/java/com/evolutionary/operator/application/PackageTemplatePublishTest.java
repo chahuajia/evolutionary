@@ -13,7 +13,6 @@ import com.evolutionary.operator.domain.Organization;
 import com.evolutionary.operator.domain.OverridableField;
 import com.evolutionary.operator.domain.PackageTemplate;
 import com.evolutionary.operator.domain.TemplateBaseProduct;
-import com.evolutionary.operator.domain.TemplateStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -66,7 +65,7 @@ class PackageTemplatePublishTest {
         assertInstanceOf(OperatorOutcome.Ok.class, outcome);
         PackageTemplate published = ((OperatorOutcome.Ok<PackageTemplate>) outcome).value();
 
-        assertEquals(TemplateStatus.PUBLISHED, published.status());
+        assertEquals(PackageTemplate.Status.PUBLISHED, published.status());
         assertEquals(1, published.version());
         assertEquals(FIXED, published.publishedAt());
         assertEquals(l1.id(), published.ownerOrgId());
@@ -101,7 +100,7 @@ class PackageTemplatePublishTest {
 
         PackageTemplate still = templates.get("T1");
         assertEquals(30, still.baseProduct().durationDays());
-        assertEquals(TemplateStatus.PUBLISHED, still.status());
+        assertEquals(PackageTemplate.Status.PUBLISHED, still.status());
 
         OperatorOutcome<PackageTemplate> v2 =
                 still.createNextVersionDraft("T1-v2", base.withDurationDays(60));
@@ -152,6 +151,11 @@ class PackageTemplatePublishTest {
         @Override
         public Optional<Organization> findById(String id) {
             return Optional.ofNullable(store.get(id));
+        }
+
+        @Override
+        public List<Organization> findAll() {
+            return List.copyOf(store.values());
         }
     }
 }

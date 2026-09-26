@@ -11,14 +11,12 @@ import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.DomainErrorCode;
 import com.evolutionary.commerce.domain.DomainOutcome;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerRefType;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Order;
 import com.evolutionary.commerce.domain.PaymentIntent;
 import com.evolutionary.commerce.domain.Product;
-import com.evolutionary.commerce.domain.ProductStatus;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -55,7 +53,7 @@ class PointsExpiryAndRefTypeTest {
 
         products.put(
                 Product.create(
-                        "P-1", "ORG-1", "月卡", Money.cny(3_000), 30, ProductStatus.PUBLISHED));
+                        "P-1", "ORG-1", "月卡", Money.cny(3_000), 30, Product.Status.PUBLISHED));
         accounts.put(
                 Account.open(
                         "ACC-BAL",
@@ -130,6 +128,11 @@ class PointsExpiryAndRefTypeTest {
 
         void put(Product p) {
             byId.put(p.id(), p);
+        }
+
+        @Override
+        public void save(Product product) {
+            put(product);
         }
 
         @Override
@@ -215,7 +218,7 @@ class PointsExpiryAndRefTypeTest {
         @Override
         public List<Entitlement> findActiveByUser(String userId) {
             return saved.stream()
-                    .filter(e -> e.userId().equals(userId) && e.status() == EntitlementStatus.ACTIVE)
+                    .filter(e -> e.userId().equals(userId) && e.status() == Entitlement.Status.ACTIVE)
                     .toList();
         }
     }

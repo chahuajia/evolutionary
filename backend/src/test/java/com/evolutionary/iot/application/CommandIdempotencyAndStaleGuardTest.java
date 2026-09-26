@@ -1,25 +1,30 @@
 package com.evolutionary.iot.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.evolutionary.iot.domain.BatteryCommand;
 import com.evolutionary.iot.domain.BatteryCommandAcked;
+import com.evolutionary.iot.domain.CommandDispatchLog;
 import com.evolutionary.iot.domain.DeviceShadow;
 import com.evolutionary.iot.domain.IotErrorCode;
 import com.evolutionary.iot.domain.IotOutcome;
+import com.evolutionary.iot.infrastructure.InMemoryCommandDispatchLogRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** AC-58 / AC-59。 */
+/** AC-58 / AC-59；切片31b 命令下发审计。 */
 class CommandIdempotencyAndStaleGuardTest {
 
     private static final Instant T0 = Instant.parse("2026-09-17T10:00:00Z");
@@ -29,6 +34,7 @@ class CommandIdempotencyAndStaleGuardTest {
     void duplicateCommandIdDeduped() {
         AtomicInteger physical = new AtomicInteger();
         Clock clock = Clock.fixed(T0, ZoneOffset.UTC);
+        InMemoryCommandDispatchLogRepository logs = new InMemoryCommandDispatchLogRepository();
         IdempotentCommandGateway gateway =
                 new IdempotentCommandGateway(
                         cmd -> {
@@ -40,6 +46,7 @@ class CommandIdempotencyAndStaleGuardTest {
                                     true,
                                     clock.instant());
                         },
+                        logs,
                         clock);
 
         BatteryCommand cmd =
@@ -51,6 +58,85 @@ class CommandIdempotencyAndStaleGuardTest {
         assertEquals(1, gateway.physicalSendCount());
         assertEquals(first.commandId(), second.commandId());
         assertTrue(first.success() && second.success());
+        assertEquals(1, logs.findByCommandId("CMD-X").size(), "幂等命中不再追加审计");
+    }
+
+    @Test
+    @DisplayName("切片31b：物理下发成功 → CommandDispatchLog ack=true")
+    void physicalSendAppendsSuccessAudit() {
+        Clock clock = Clock.fixed(T0, ZoneOffset.UTC);
+        InMemoryCommandDispatchLogRepository logs = new InMemoryCommandDispatchLogRepository();
+        IdempotentCommandGateway gateway =
+                new IdempotentCommandGateway(
+                        cmd ->
+                                BatteryCommandAcked.of(
+                                        cmd.commandId(),
+                                        cmd.batteryId(),
+                                        cmd.action(),
+                                        true,
+                                        clock.instant()),
+                        logs,
+                        clock);
+
+        gateway.send(BatteryCommand.of("CMD-OK", "B1", BatteryCommand.Action.UNLOCK, "U1", T0));
+
+        List<CommandDispatchLog> rows = logs.findByCommandId("CMD-OK");
+        assertEquals(1, rows.size());
+        assertTrue(rows.get(0).ack());
+        assertEquals("B1", rows.get(0).batteryId());
+        assertEquals(BatteryCommand.Action.UNLOCK, rows.get(0).action());
+    }
+
+    @Test
+    @DisplayName("切片31b：物理下发失败 ack → CommandDispatchLog ack=false")
+    void physicalSendAppendsFailureAckAudit() {
+        Clock clock = Clock.fixed(T0, ZoneOffset.UTC);
+        InMemoryCommandDispatchLogRepository logs = new InMemoryCommandDispatchLogRepository();
+        IdempotentCommandGateway gateway =
+                new IdempotentCommandGateway(
+                        cmd ->
+                                BatteryCommandAcked.of(
+                                        cmd.commandId(),
+                                        cmd.batteryId(),
+                                        cmd.action(),
+                                        false,
+                                        clock.instant()),
+                        logs,
+                        clock);
+
+        BatteryCommandAcked ack =
+                gateway.send(BatteryCommand.of("CMD-FAIL", "B2", BatteryCommand.Action.RESET, "U1", T0));
+
+        assertFalse(ack.success());
+        List<CommandDispatchLog> rows = logs.findByCommandId("CMD-FAIL");
+        assertEquals(1, rows.size());
+        assertFalse(rows.get(0).ack());
+    }
+
+    @Test
+    @DisplayName("切片31b：物理下发抛错 → 仍 append ack=false 审计")
+    void physicalSendExceptionStillAudited() {
+        Clock clock = Clock.fixed(T0, ZoneOffset.UTC);
+        InMemoryCommandDispatchLogRepository logs = new InMemoryCommandDispatchLogRepository();
+        IdempotentCommandGateway gateway =
+                new IdempotentCommandGateway(
+                        cmd -> {
+                            throw new IllegalStateException("vendor down");
+                        },
+                        logs,
+                        clock);
+
+        assertThrows(
+                IllegalStateException.class,
+                () ->
+                        gateway.send(
+                                BatteryCommand.of(
+                                        "CMD-EX", "B3", BatteryCommand.Action.LOCK, "U1", T0)));
+
+        List<CommandDispatchLog> rows = logs.findByCommandId("CMD-EX");
+        assertEquals(1, rows.size());
+        assertFalse(rows.get(0).ack());
+        assertEquals("B3", rows.get(0).batteryId());
     }
 
     @Test

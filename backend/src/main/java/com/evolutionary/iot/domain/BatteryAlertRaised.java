@@ -32,6 +32,16 @@ public final class BatteryAlertRaised {
                 Objects.requireNonNull(raisedAt, "raisedAt"));
     }
 
+    /** 持久化回放（infrastructure → domain）。 */
+    public static BatteryAlertRaised rehydrate(
+            String batteryId, AlertType alertType, Severity severity, Instant raisedAt) {
+        return new BatteryAlertRaised(
+                Objects.requireNonNull(batteryId, "batteryId"),
+                Objects.requireNonNull(alertType, "alertType"),
+                Objects.requireNonNull(severity, "severity"),
+                Objects.requireNonNull(raisedAt, "raisedAt"));
+    }
+
     public String batteryId() {
         return batteryId;
     }

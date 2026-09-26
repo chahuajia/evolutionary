@@ -1,0 +1,66 @@
+/**
+ * 默认选卡策略 — 对齐后端 `SelectEntitlement.selectDefault`（AC-14）。
+ *
+ * 优先 FINITE 次卡（未用尽）；无可用次卡则用 UNLIMITED。
+ */
+
+import {
+  canSwapWithEntitlement,
+  isExhaustedEntitlement,
+  parseEntitlementStatus,
+  type EntitlementStatus,
+} from "./entitlement-view";
+
+export type SelectableEntitlement = {
+  readonly id: string;
+  readonly status: EntitlementStatus;
+  /** null = UNLIMITED；非 null = FINITE 剩余次数。 */
+  readonly remainingSwaps: number | null;
+};
+
+/** wire → 选卡目录项（parse status，不透 DTO）。 */
+export function toSelectableEntitlement(dto: {
+  id: string;
+  status: unknown;
+  remainingSwaps: number | null;
+}): SelectableEntitlement {
+  return {
+    id: dto.id,
+    status: parseEntitlementStatus(dto.status),
+    remainingSwaps: dto.remainingSwaps,
+  };
+}
+
+export function isFiniteEntitlement(
+  remainingSwaps: number | null,
+): boolean {
+  return remainingSwaps != null;
+}
+
+export { isExhaustedEntitlement };
+
+/**
+ * 展示不变量：默认选卡。
+ * 对齐 `SelectEntitlement.selectDefault`（已过滤 isActiveAt / !isExhausted）。
+ */
+export function selectDefaultEntitlement(
+  candidates: readonly SelectableEntitlement[],
+): SelectableEntitlement | null {
+  const usable = candidates.filter(
+    (e) =>
+      canSwapWithEntitlement(e.status) &&
+      !isExhaustedEntitlement(e.remainingSwaps),
+  );
+  const finite = usable.find((e) => isFiniteEntitlement(e.remainingSwaps));
+  if (finite) return finite;
+  return usable[0] ?? null;
+}
+
+/** 目录加载后仍无可用默认卡时的说明（勿岛内裸写 ACTIVE）。 */
+export function defaultSelectBlockMessage(
+  candidates: readonly SelectableEntitlement[] | null,
+): string | null {
+  if (candidates == null) return null;
+  if (selectDefaultEntitlement(candidates) != null) return null;
+  return "无可用权益（须有效且未用尽）";
+}

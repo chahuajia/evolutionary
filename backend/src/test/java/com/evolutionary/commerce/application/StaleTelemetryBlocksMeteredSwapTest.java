@@ -12,12 +12,10 @@ import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.DomainErrorCode;
 import com.evolutionary.commerce.domain.DomainOutcome;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.MeteringMode;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.Product;
-import com.evolutionary.commerce.domain.ProductStatus;
 import com.evolutionary.commerce.domain.UsageEvent;
 import com.evolutionary.iot.application.AssertShadowFreshForMetered;
 import com.evolutionary.iot.application.DeviceShadowRepository;
@@ -61,7 +59,7 @@ class StaleTelemetryBlocksMeteredSwapTest {
 
         products.put(
                 Product.createMetered(
-                        "P-3", "ORG-1", "按电量计费", Money.cny(50), ProductStatus.PUBLISHED));
+                        "P-3", "ORG-1", "按电量计费", Money.cny(50), Product.Status.PUBLISHED));
         batteries.put(BatteryAsset.createIdle("B1", "ORG-1", "v", "m"));
         accounts.put(
                 Account.open(
@@ -87,7 +85,7 @@ class StaleTelemetryBlocksMeteredSwapTest {
                         "P-3",
                         T0.minusSeconds(60),
                         null,
-                        EntitlementStatus.ACTIVE,
+                        Entitlement.Status.ACTIVE,
                         null,
                         MeteringMode.PAY_AS_YOU_GO));
     }
@@ -170,7 +168,7 @@ class StaleTelemetryBlocksMeteredSwapTest {
         public List<Entitlement> findActiveByUser(String userId) {
             return byId.values().stream()
                     .filter(e -> e.userId().equals(userId))
-                    .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                    .filter(e -> e.status() == Entitlement.Status.ACTIVE)
                     .toList();
         }
     }
@@ -238,6 +236,11 @@ class StaleTelemetryBlocksMeteredSwapTest {
 
         void put(Product p) {
             byId.put(p.id(), p);
+        }
+
+        @Override
+        public void save(Product product) {
+            put(product);
         }
 
         @Override

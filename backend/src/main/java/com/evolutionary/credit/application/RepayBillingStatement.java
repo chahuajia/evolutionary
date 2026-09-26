@@ -5,7 +5,6 @@ import com.evolutionary.commerce.application.EntitlementRepository;
 import com.evolutionary.commerce.application.LedgerRepository;
 import com.evolutionary.commerce.domain.Account;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerInvariant;
 import com.evolutionary.commerce.domain.Money;
@@ -14,7 +13,6 @@ import com.evolutionary.credit.domain.CreditErrorCode;
 import com.evolutionary.credit.domain.CreditLedgerDebt;
 import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditProfile;
-import com.evolutionary.credit.domain.StatementStatus;
 import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
@@ -62,8 +60,8 @@ public final class RepayBillingStatement {
         if (!statement.userId().equals(userId)) {
             return CreditOutcome.err(CreditErrorCode.STATEMENT_NOT_DUE, "账单不属于该用户");
         }
-        if (statement.status() != StatementStatus.DUE
-                && statement.status() != StatementStatus.OVERDUE) {
+        if (statement.status() != BillingStatement.Status.DUE
+                && statement.status() != BillingStatement.Status.OVERDUE) {
             return CreditOutcome.err(CreditErrorCode.STATEMENT_NOT_DUE, "账单不可还款");
         }
         if (amount.cents() < statement.totalDue().cents()) {
@@ -107,7 +105,7 @@ public final class RepayBillingStatement {
         profiles.save(profile);
 
         for (Entitlement e :
-                entitlements.findByUserIdAndStatus(userId, EntitlementStatus.FROZEN)) {
+                entitlements.findByUserIdAndStatus(userId, Entitlement.Status.FROZEN)) {
             entitlements.save(e.unfreeze());
         }
 

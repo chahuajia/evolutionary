@@ -11,7 +11,6 @@ import com.evolutionary.commerce.domain.AccountOwnerType;
 import com.evolutionary.commerce.domain.AccountType;
 import com.evolutionary.commerce.domain.Currency;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerRefType;
 import com.evolutionary.commerce.domain.Money;
@@ -19,10 +18,8 @@ import com.evolutionary.credit.domain.BillingStatement;
 import com.evolutionary.credit.domain.CreditLedgerDebt;
 import com.evolutionary.credit.domain.CreditOutcome;
 import com.evolutionary.credit.domain.CreditProfile;
-import com.evolutionary.credit.domain.CreditStatus;
-import com.evolutionary.credit.domain.DebtStatus;
 import com.evolutionary.credit.domain.ScoreTier;
-import com.evolutionary.credit.domain.StatementStatus;
+import com.evolutionary.operator.infrastructure.InMemoryAuditLogRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -58,7 +55,9 @@ class BillingAndRepayTest {
         profiles = new InMemoryProfiles();
         accounts = new InMemoryAccounts();
         ledger = new InMemoryLedger();
-        billing = new RunMonthlyBilling(debts, statements, CLOCK);
+        billing =
+                new RunMonthlyBilling(
+                        debts, statements, new InMemoryAuditLogRepository(), CLOCK);
         repay =
                 new RepayBillingStatement(
                         statements,
@@ -105,9 +104,9 @@ class BillingAndRepayTest {
         assertInstanceOf(CreditOutcome.Ok.class, outcome);
         BillingStatement stmt = ((CreditOutcome.Ok<BillingStatement>) outcome).value();
 
-        assertEquals(StatementStatus.DUE, stmt.status());
+        assertEquals(BillingStatement.Status.DUE, stmt.status());
         assertEquals(3_000, stmt.totalDue().cents());
-        assertEquals(DebtStatus.BILLED, debts.get("DEBT-1").status());
+        assertEquals(CreditLedgerDebt.Status.BILLED, debts.get("DEBT-1").status());
         assertEquals(stmt.id(), debts.get("DEBT-1").billedStatementId());
     }
 
@@ -124,10 +123,10 @@ class BillingAndRepayTest {
         assertInstanceOf(CreditOutcome.Ok.class, outcome);
         BillingStatement paid = ((CreditOutcome.Ok<BillingStatement>) outcome).value();
 
-        assertEquals(StatementStatus.PAID, paid.status());
-        assertEquals(DebtStatus.PAID, debts.get("DEBT-1").status());
+        assertEquals(BillingStatement.Status.PAID, paid.status());
+        assertEquals(CreditLedgerDebt.Status.PAID, debts.get("DEBT-1").status());
         assertEquals(0, profiles.get("U1").usedCredit().cents());
-        assertEquals(CreditStatus.GOOD, profiles.get("U1").status());
+        assertEquals(CreditProfile.Status.GOOD, profiles.get("U1").status());
         assertEquals(2_000, accounts.get("ACC-U").balanceCents());
         assertEquals(
                 1,
@@ -170,14 +169,14 @@ class BillingAndRepayTest {
         }
 
         @Override
-        public List<CreditLedgerDebt> findByUserIdAndStatus(String userId, DebtStatus status) {
+        public List<CreditLedgerDebt> findByUserIdAndStatus(String userId, CreditLedgerDebt.Status status) {
             return byId.values().stream()
                     .filter(d -> d.userId().equals(userId) && d.status() == status)
                     .toList();
         }
 
         @Override
-        public List<CreditLedgerDebt> findByStatus(DebtStatus status) {
+        public List<CreditLedgerDebt> findByStatus(CreditLedgerDebt.Status status) {
             return byId.values().stream().filter(d -> d.status() == status).toList();
         }
 

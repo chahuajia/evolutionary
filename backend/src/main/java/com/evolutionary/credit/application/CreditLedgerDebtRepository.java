@@ -1,7 +1,6 @@
 package com.evolutionary.credit.application;
 
 import com.evolutionary.credit.domain.CreditLedgerDebt;
-import com.evolutionary.credit.domain.DebtStatus;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,9 +9,9 @@ public interface CreditLedgerDebtRepository {
 
     Optional<CreditLedgerDebt> findById(String id);
 
-    List<CreditLedgerDebt> findByUserIdAndStatus(String userId, DebtStatus status);
+    List<CreditLedgerDebt> findByUserIdAndStatus(String userId, CreditLedgerDebt.Status status);
 
-    List<CreditLedgerDebt> findByStatus(DebtStatus status);
+    List<CreditLedgerDebt> findByStatus(CreditLedgerDebt.Status status);
 
     List<CreditLedgerDebt> findByBilledStatementId(String statementId);
 

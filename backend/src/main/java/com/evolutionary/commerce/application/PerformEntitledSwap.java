@@ -5,7 +5,6 @@ import com.evolutionary.commerce.domain.BatteryAsset;
 import com.evolutionary.commerce.domain.DomainErrorCode;
 import com.evolutionary.commerce.domain.DomainOutcome;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.LedgerEntry;
 import com.evolutionary.commerce.domain.LedgerInvariant;
 import com.evolutionary.commerce.domain.MeterReading;
@@ -141,11 +140,11 @@ public final class PerformEntitledSwap {
     }
 
     private DomainOutcome<Void> gateEntitlement(Entitlement entitlement, String userId, java.time.Instant now) {
-        if (entitlement.status() == EntitlementStatus.FROZEN) {
+        if (entitlement.status() == Entitlement.Status.FROZEN) {
             return DomainOutcome.err(
                     DomainErrorCode.CREDIT_OVERDUE_BLOCKED, "credit overdue: entitlement frozen");
         }
-        if (entitlement.status() != EntitlementStatus.ACTIVE) {
+        if (entitlement.status() != Entitlement.Status.ACTIVE) {
             return DomainOutcome.err(DomainErrorCode.ENTITLEMENT_INACTIVE, "entitlement not active");
         }
         if (!entitlement.isActiveAt(now)) {

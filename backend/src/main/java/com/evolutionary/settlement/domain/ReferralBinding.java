@@ -10,25 +10,52 @@ import java.util.Objects;
  */
 public final class ReferralBinding {
 
+    /**
+     * 推广绑定状态。
+     */
+    public enum Status {
+        ACTIVE,
+        EXPIRED
+    }
+
+
     public static final long BINDING_WINDOW_SECONDS = 72L * 3600L;
 
     private final String userId;
     private final String promoterOrgId;
     private final Instant boundAt;
     private final Instant expiresAt;
-    private final ReferralStatus status;
+    private final ReferralBinding.Status status;
 
     private ReferralBinding(
             String userId,
             String promoterOrgId,
             Instant boundAt,
             Instant expiresAt,
-            ReferralStatus status) {
+            ReferralBinding.Status status) {
         this.userId = userId;
         this.promoterOrgId = promoterOrgId;
         this.boundAt = boundAt;
         this.expiresAt = expiresAt;
         this.status = status;
+    }
+
+    /** 持久化回放（infrastructure → domain）。 */
+    public static ReferralBinding rehydrate(
+            String userId,
+            String promoterOrgId,
+            Instant boundAt,
+            Instant expiresAt,
+            ReferralBinding.Status status) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("userId 不能为空");
+        }
+        return new ReferralBinding(
+                userId,
+                Objects.requireNonNull(promoterOrgId, "promoterOrgId"),
+                Objects.requireNonNull(boundAt, "boundAt"),
+                Objects.requireNonNull(expiresAt, "expiresAt"),
+                Objects.requireNonNull(status, "status"));
     }
 
     public static ReferralBinding bind(String userId, String promoterOrgId, Instant boundAt) {
@@ -44,21 +71,21 @@ public final class ReferralBinding {
                 promoterOrgId,
                 at,
                 at.plusSeconds(BINDING_WINDOW_SECONDS),
-                ReferralStatus.ACTIVE);
+                ReferralBinding.Status.ACTIVE);
     }
 
     /** 下单时刻是否仍在推广窗口内。 */
     public boolean coversOrderAt(Instant orderAt) {
-        return status == ReferralStatus.ACTIVE
+        return status == ReferralBinding.Status.ACTIVE
                 && !orderAt.isBefore(boundAt)
                 && orderAt.isBefore(expiresAt);
     }
 
     public ReferralBinding expire() {
-        if (status == ReferralStatus.EXPIRED) {
+        if (status == ReferralBinding.Status.EXPIRED) {
             return this;
         }
-        return new ReferralBinding(userId, promoterOrgId, boundAt, expiresAt, ReferralStatus.EXPIRED);
+        return new ReferralBinding(userId, promoterOrgId, boundAt, expiresAt, ReferralBinding.Status.EXPIRED);
     }
 
     public String userId() {
@@ -77,7 +104,7 @@ public final class ReferralBinding {
         return expiresAt;
     }
 
-    public ReferralStatus status() {
+    public ReferralBinding.Status status() {
         return status;
     }
 }

@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import com.evolutionary.commerce.domain.BatteryAsset;
 import com.evolutionary.commerce.domain.DomainOutcome;
 import com.evolutionary.commerce.domain.Entitlement;
-import com.evolutionary.commerce.domain.EntitlementStatus;
 import com.evolutionary.commerce.domain.UsageEvent;
 import java.time.Clock;
 import java.time.Instant;
@@ -52,7 +51,7 @@ class DefaultEntitlementSelectTest {
                         "P-1",
                         T0.minusSeconds(60),
                         T0.plusSeconds(86_400),
-                        EntitlementStatus.ACTIVE,
+                        Entitlement.Status.ACTIVE,
                         null));
         entitlements.put(
                 Entitlement.rehydrate(
@@ -62,7 +61,7 @@ class DefaultEntitlementSelectTest {
                         "P-2",
                         T0.minusSeconds(60),
                         T0.plusSeconds(86_400),
-                        EntitlementStatus.ACTIVE,
+                        Entitlement.Status.ACTIVE,
                         3));
 
         DomainOutcome<UsageEvent> outcome = swap.executeWithoutId("U-1", "CAB-1");
@@ -72,7 +71,7 @@ class DefaultEntitlementSelectTest {
         assertEquals("E-P2", event.entitlementId());
         assertEquals(2, entitlements.get("E-P2").remainingSwaps());
         assertNull(entitlements.get("E-P1").remainingSwaps());
-        assertEquals(EntitlementStatus.ACTIVE, entitlements.get("E-P1").status());
+        assertEquals(Entitlement.Status.ACTIVE, entitlements.get("E-P1").status());
     }
 
     private static final class InMemoryEntitlements implements EntitlementRepository {
@@ -105,7 +104,7 @@ class DefaultEntitlementSelectTest {
         public List<Entitlement> findActiveByUser(String userId) {
             return byId.values().stream()
                     .filter(e -> e.userId().equals(userId))
-                    .filter(e -> e.status() == EntitlementStatus.ACTIVE)
+                    .filter(e -> e.status() == Entitlement.Status.ACTIVE)
                     .toList();
         }
     }

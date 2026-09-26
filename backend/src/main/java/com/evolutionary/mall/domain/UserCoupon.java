@@ -5,23 +5,49 @@ import java.util.Objects;
 /** 用户持有的优惠券实例。 */
 public final class UserCoupon {
 
+    /**
+     * 用户持券状态。
+     */
+    public enum Status {
+        AVAILABLE,
+        LOCKED,
+        USED,
+        EXPIRED
+    }
+
+
     private final String id;
     private final String userId;
     private final String templateId;
-    private final UserCouponStatus status;
+    private final UserCoupon.Status status;
     private final String lockedByOrderId;
 
     private UserCoupon(
             String id,
             String userId,
             String templateId,
-            UserCouponStatus status,
+            UserCoupon.Status status,
             String lockedByOrderId) {
         this.id = id;
         this.userId = userId;
         this.templateId = templateId;
         this.status = status;
         this.lockedByOrderId = lockedByOrderId;
+    }
+
+    /** JPA 回放；不做业务校验。 */
+    public static UserCoupon rehydrate(
+            String id,
+            String userId,
+            String templateId,
+            UserCoupon.Status status,
+            String lockedByOrderId) {
+        return new UserCoupon(
+                id,
+                userId,
+                templateId,
+                Objects.requireNonNull(status, "status"),
+                lockedByOrderId);
     }
 
     public static UserCoupon issue(String id, String userId, String templateId) {
@@ -34,28 +60,28 @@ public final class UserCoupon {
         if (templateId == null || templateId.isBlank()) {
             throw new IllegalArgumentException("templateId 不能为空");
         }
-        return new UserCoupon(id, userId, templateId, UserCouponStatus.AVAILABLE, null);
+        return new UserCoupon(id, userId, templateId, UserCoupon.Status.AVAILABLE, null);
     }
 
     public MallOutcome<UserCoupon> lock(String orderId) {
         Objects.requireNonNull(orderId, "orderId");
-        if (status != UserCouponStatus.AVAILABLE) {
+        if (status != UserCoupon.Status.AVAILABLE) {
             return MallOutcome.err(MallErrorCode.COUPON_NOT_AVAILABLE, "券不可锁定");
         }
         return MallOutcome.ok(
-                new UserCoupon(id, userId, templateId, UserCouponStatus.LOCKED, orderId));
+                new UserCoupon(id, userId, templateId, UserCoupon.Status.LOCKED, orderId));
     }
 
     public MallOutcome<UserCoupon> markUsed() {
-        if (status != UserCouponStatus.LOCKED && status != UserCouponStatus.AVAILABLE) {
+        if (status != UserCoupon.Status.LOCKED && status != UserCoupon.Status.AVAILABLE) {
             return MallOutcome.err(MallErrorCode.COUPON_NOT_AVAILABLE, "券不可核销");
         }
         return MallOutcome.ok(
-                new UserCoupon(id, userId, templateId, UserCouponStatus.USED, lockedByOrderId));
+                new UserCoupon(id, userId, templateId, UserCoupon.Status.USED, lockedByOrderId));
     }
 
     public boolean isAvailable() {
-        return status == UserCouponStatus.AVAILABLE;
+        return status == UserCoupon.Status.AVAILABLE;
     }
 
     public String id() {
@@ -70,7 +96,7 @@ public final class UserCoupon {
         return templateId;
     }
 
-    public UserCouponStatus status() {
+    public UserCoupon.Status status() {
         return status;
     }
 

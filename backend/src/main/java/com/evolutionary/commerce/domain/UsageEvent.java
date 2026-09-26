@@ -5,12 +5,19 @@ import java.util.Objects;
 
 public final class UsageEvent {
 
+    public enum Status {
+        STARTED,
+        COMPLETED,
+        FAILED
+    }
+
+
     private final String id;
     private final String userId;
     private final String entitlementId;
     private final String batteryId;
     private final String cabinetId;
-    private final UsageEventStatus status;
+    private final UsageEvent.Status status;
     private final Instant startedAt;
     private final Instant completedAt;
     private final MeterReading meterReading;
@@ -22,7 +29,7 @@ public final class UsageEvent {
             String entitlementId,
             String batteryId,
             String cabinetId,
-            UsageEventStatus status,
+            UsageEvent.Status status,
             Instant startedAt,
             Instant completedAt,
             MeterReading meterReading,
@@ -52,11 +59,36 @@ public final class UsageEvent {
                 requireId(entitlementId),
                 requireId(batteryId),
                 requireId(cabinetId),
-                UsageEventStatus.STARTED,
+                UsageEvent.Status.STARTED,
                 Objects.requireNonNull(startedAt, "startedAt"),
                 null,
                 null,
                 null);
+    }
+
+    /** 持久化回放（infrastructure → domain）。 */
+    public static UsageEvent rehydrate(
+            String id,
+            String userId,
+            String entitlementId,
+            String batteryId,
+            String cabinetId,
+            UsageEvent.Status status,
+            Instant startedAt,
+            Instant completedAt,
+            MeterReading meterReading,
+            Money chargedAmount) {
+        return new UsageEvent(
+                requireId(id),
+                requireId(userId),
+                requireId(entitlementId),
+                requireId(batteryId),
+                requireId(cabinetId),
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(startedAt, "startedAt"),
+                completedAt,
+                meterReading,
+                chargedAmount);
     }
 
     public UsageEvent complete(Instant at) {
@@ -64,8 +96,8 @@ public final class UsageEvent {
     }
 
     public UsageEvent complete(Instant at, MeterReading meterReading, Money chargedAmount) {
-        if (status != UsageEventStatus.STARTED) {
-            throw new IllegalTransitionException(UsageEventStatus.COMPLETED);
+        if (status != UsageEvent.Status.STARTED) {
+            throw new IllegalTransitionException(UsageEvent.Status.COMPLETED);
         }
         Objects.requireNonNull(at, "completedAt");
         return new UsageEvent(
@@ -74,7 +106,7 @@ public final class UsageEvent {
                 entitlementId,
                 batteryId,
                 cabinetId,
-                UsageEventStatus.COMPLETED,
+                UsageEvent.Status.COMPLETED,
                 startedAt,
                 at,
                 meterReading,
@@ -82,16 +114,16 @@ public final class UsageEvent {
     }
 
     public UsageEvent fail(Instant at) {
-        if (status != UsageEventStatus.STARTED) {
-            throw new IllegalTransitionException(UsageEventStatus.FAILED);
+        if (status != UsageEvent.Status.STARTED) {
+            throw new IllegalTransitionException(UsageEvent.Status.FAILED);
         }
         Objects.requireNonNull(at, "failedAt");
         return new UsageEvent(
-                id, userId, entitlementId, batteryId, cabinetId, UsageEventStatus.FAILED, startedAt, at, null, null);
+                id, userId, entitlementId, batteryId, cabinetId, UsageEvent.Status.FAILED, startedAt, at, null, null);
     }
 
     public boolean isStarted() {
-        return status == UsageEventStatus.STARTED;
+        return status == UsageEvent.Status.STARTED;
     }
 
     public String id() {
@@ -114,7 +146,7 @@ public final class UsageEvent {
         return cabinetId;
     }
 
-    public UsageEventStatus status() {
+    public UsageEvent.Status status() {
         return status;
     }
 
@@ -135,7 +167,7 @@ public final class UsageEvent {
     }
 
     public static final class IllegalTransitionException extends RuntimeException {
-        IllegalTransitionException(UsageEventStatus next) {
+        IllegalTransitionException(UsageEvent.Status next) {
             super("illegal usage event transition to " + next);
         }
     }

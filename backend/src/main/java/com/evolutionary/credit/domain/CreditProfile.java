@@ -6,10 +6,20 @@ import java.util.Objects;
 /** 用户信用档案（P6-1）。 */
 public final class CreditProfile {
 
+    /**
+     * 信用档案状态。
+     */
+    public enum Status {
+        GOOD,
+        OVERDUE,
+        FROZEN
+    }
+
+
     private final String userId;
     private final Money creditLimit;
     private final Money usedCredit;
-    private final CreditStatus status;
+    private final CreditProfile.Status status;
     private final ScoreTier scoreTier;
     private final int policyVersion;
 
@@ -17,7 +27,7 @@ public final class CreditProfile {
             String userId,
             Money creditLimit,
             Money usedCredit,
-            CreditStatus status,
+            CreditProfile.Status status,
             ScoreTier scoreTier,
             int policyVersion) {
         this.userId = userId;
@@ -38,8 +48,28 @@ public final class CreditProfile {
                 userId,
                 creditLimit,
                 Money.cny(0),
-                CreditStatus.GOOD,
+                CreditProfile.Status.GOOD,
                 Objects.requireNonNull(tier, "tier"),
+                policyVersion);
+    }
+
+    /** 持久化回放（infrastructure → domain）。 */
+    public static CreditProfile rehydrate(
+            String userId,
+            Money creditLimit,
+            Money usedCredit,
+            CreditProfile.Status status,
+            ScoreTier scoreTier,
+            int policyVersion) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("userId 不能为空");
+        }
+        return new CreditProfile(
+                userId,
+                Objects.requireNonNull(creditLimit, "creditLimit"),
+                Objects.requireNonNull(usedCredit, "usedCredit"),
+                Objects.requireNonNull(status, "status"),
+                Objects.requireNonNull(scoreTier, "scoreTier"),
                 policyVersion);
     }
 
@@ -49,17 +79,17 @@ public final class CreditProfile {
 
     public boolean canCharge(Money amount) {
         Objects.requireNonNull(amount, "amount");
-        if (status != CreditStatus.GOOD) {
+        if (status != CreditProfile.Status.GOOD) {
             return false;
         }
         return usedCredit.cents() + amount.cents() <= creditLimit.cents();
     }
 
     public CreditOutcome<CreditProfile> charge(Money amount) {
-        if (status == CreditStatus.FROZEN) {
+        if (status == CreditProfile.Status.FROZEN) {
             return CreditOutcome.err(CreditErrorCode.CREDIT_PROFILE_FROZEN, "信用已冻结");
         }
-        if (status == CreditStatus.OVERDUE) {
+        if (status == CreditProfile.Status.OVERDUE) {
             return CreditOutcome.err(CreditErrorCode.CREDIT_OVERDUE_BLOCKED, "信用逾期不可新购");
         }
         if (!canCharge(amount)) {
@@ -77,9 +107,9 @@ public final class CreditProfile {
 
     public CreditProfile repay(Money amount) {
         long next = Math.max(0, usedCredit.cents() - amount.cents());
-        CreditStatus restored =
-                (status == CreditStatus.OVERDUE || status == CreditStatus.FROZEN)
-                        ? CreditStatus.GOOD
+        CreditProfile.Status restored =
+                (status == CreditProfile.Status.OVERDUE || status == CreditProfile.Status.FROZEN)
+                        ? CreditProfile.Status.GOOD
                         : status;
         return new CreditProfile(
                 userId, creditLimit, Money.cny(next), restored, scoreTier, policyVersion);
@@ -87,12 +117,12 @@ public final class CreditProfile {
 
     public CreditProfile markOverdue() {
         return new CreditProfile(
-                userId, creditLimit, usedCredit, CreditStatus.OVERDUE, scoreTier, policyVersion);
+                userId, creditLimit, usedCredit, CreditProfile.Status.OVERDUE, scoreTier, policyVersion);
     }
 
     public CreditProfile markFrozen() {
         return new CreditProfile(
-                userId, creditLimit, usedCredit, CreditStatus.FROZEN, scoreTier, policyVersion);
+                userId, creditLimit, usedCredit, CreditProfile.Status.FROZEN, scoreTier, policyVersion);
     }
 
     /** 政策降额：仅改 limit，不清零 usedCredit。 */
@@ -118,7 +148,7 @@ public final class CreditProfile {
         return usedCredit;
     }
 
-    public CreditStatus status() {
+    public CreditProfile.Status status() {
         return status;
     }
 

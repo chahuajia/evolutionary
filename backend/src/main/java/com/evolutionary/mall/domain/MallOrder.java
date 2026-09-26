@@ -1,5 +1,7 @@
 package com.evolutionary.mall.domain;
 
+
+import com.evolutionary.commerce.domain.Order;
 import com.evolutionary.commerce.domain.Money;
 import com.evolutionary.commerce.domain.PaymentIntent;
 import java.time.Instant;
@@ -13,11 +15,23 @@ import java.util.Objects;
  */
 public final class MallOrder {
 
+    /**
+     * 商城订单状态（与换电 Order 独立）。
+     */
+    public enum Status {
+        CREATED,
+        PAID,
+        SHIPPED,
+        COMPLETED,
+        REFUNDED
+    }
+
+
     private final String id;
     private final String userId;
     private final String merchantOrgId;
     private final List<MallOrderLine> lines;
-    private final MallOrderStatus status;
+    private final MallOrder.Status status;
     private final PaymentIntent paymentIntent;
     private final Money discountTotal;
     private final Money paidAmount;
@@ -29,7 +43,7 @@ public final class MallOrder {
             String userId,
             String merchantOrgId,
             List<MallOrderLine> lines,
-            MallOrderStatus status,
+            MallOrder.Status status,
             PaymentIntent paymentIntent,
             Money discountTotal,
             Money paidAmount,
@@ -84,7 +98,7 @@ public final class MallOrder {
                 userId,
                 merchantOrgId,
                 lines,
-                MallOrderStatus.CREATED,
+                MallOrder.Status.CREATED,
                 paymentIntent,
                 discountTotal,
                 Objects.requireNonNull(paidAmount, "paidAmount"),
@@ -92,17 +106,46 @@ public final class MallOrder {
                 null);
     }
 
-    /** CREATED → PAID。调用方不得据此创建 Entitlement（INV-16）。 */
-    public MallOrder pay(Instant at) {
-        if (status != MallOrderStatus.CREATED) {
-            throw new IllegalTransitionException(MallOrderStatus.PAID);
+    /** 从持久化层重建聚合（跳过 create 不变量）。 */
+    public static MallOrder rehydrate(
+            String id,
+            String userId,
+            String merchantOrgId,
+            List<MallOrderLine> lines,
+            MallOrder.Status status,
+            PaymentIntent paymentIntent,
+            Money discountTotal,
+            Money paidAmount,
+            Instant createdAt,
+            Instant paidAt) {
+        Objects.requireNonNull(lines, "lines");
+        if (lines.isEmpty()) {
+            throw new IllegalArgumentException("lines 不能为空");
         }
         return new MallOrder(
                 id,
                 userId,
                 merchantOrgId,
                 lines,
-                MallOrderStatus.PAID,
+                Objects.requireNonNull(status, "status"),
+                paymentIntent,
+                discountTotal,
+                Objects.requireNonNull(paidAmount, "paidAmount"),
+                Objects.requireNonNull(createdAt, "createdAt"),
+                paidAt);
+    }
+
+    /** CREATED → PAID。调用方不得据此创建 Entitlement（INV-16）。 */
+    public MallOrder pay(Instant at) {
+        if (status != MallOrder.Status.CREATED) {
+            throw new IllegalTransitionException(MallOrder.Status.PAID);
+        }
+        return new MallOrder(
+                id,
+                userId,
+                merchantOrgId,
+                lines,
+                MallOrder.Status.PAID,
                 paymentIntent,
                 discountTotal,
                 paidAmount,
@@ -111,7 +154,7 @@ public final class MallOrder {
     }
 
     public boolean isPaid() {
-        return status == MallOrderStatus.PAID;
+        return status == MallOrder.Status.PAID;
     }
 
     public String id() {
@@ -130,7 +173,7 @@ public final class MallOrder {
         return lines;
     }
 
-    public MallOrderStatus status() {
+    public MallOrder.Status status() {
         return status;
     }
 
@@ -155,7 +198,7 @@ public final class MallOrder {
     }
 
     public static final class IllegalTransitionException extends RuntimeException {
-        IllegalTransitionException(MallOrderStatus next) {
+        IllegalTransitionException(MallOrder.Status next) {
             super("非法商城订单状态迁移至 " + next);
         }
     }
