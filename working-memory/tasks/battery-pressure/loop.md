@@ -1,6 +1,6 @@
 # 换电业务压测 — 长运行
 
-**更新**：2026-09-17 ｜ **状态**：✅ 七阶段收口，**已停循环**（无增量不 arm）
+**更新**：2026-09-26（只更正下面第 1 步的命令）｜ **状态**：✅ 七阶段收口，**已停循环**（无增量不 arm）
 
 ## 句柄
 
@@ -14,7 +14,17 @@
 
 ## 每 tick
 
-1. `node working-memory/check-freshness.mjs`
+1. **工作记忆对账** —— 在 **collab-cli 仓**里跑（不在本仓）：
+   `npm run memory`（只读看变了什么用 `npm run memory:draft`；人签完时间戳再 `npm run memory:attest`）。
+   路径见 `HANDOVER.md` 的三仓表。
+
+   > **2026-09-26 更正**：本行原写 `node working-memory/check-freshness.mjs` ——
+   > 那个文件**在本仓从来不存在**（`git log` 全历史零命中）：2026-09-17 把
+   > battery-pressure 从 collab-cli 迁过来时，命令跟着一起搬了，而它只在**原仓**成立。
+   > 于是本循环的"每 tick 第 1 步"从迁过来那天起就是个坏引用。
+   > 同一天那个脚本本身也从 `collab-cli/working-memory/` 搬到了 `collab-cli/scripts/`，
+   > 入口统一成 `npm run memory*`。
+   > **这是剧本更正，不是重新开始** —— 本循环自 2026-09-17 起就是停的。
 2. 读 `spec.md` + 本文件 + 最近 `phase-*-report.md`
 3. 推进当前阶段（暴露点 → 规格/契约/报告）
 4. 有可验证增量 → 本地 commit + 刷新 WM（不 push）
